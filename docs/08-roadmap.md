@@ -92,9 +92,9 @@ Sequencing rationale: the catalogue is the substrate everything else operates on
 - Colab exploration per [11](./11-training-workflow.md), graduating to repository scripts by the end of the phase
 - ETL from the Kaggle CSVs to processed parquet with a row-count report, retaining right-censored stays
 - `features.py` shared by notebooks, training and serving
-- **3a** — training and evaluation for the classifier and regressor, all baselines, temporal split, per-segment metrics, calibration
-- **3b** — competing-risks survival model on the same features and split, per [12](./12-modelling-approaches.md) §3
-- **3c** — head-to-head comparison; ship the winner and revise [05](./05-ml-spec.md) §4 if survival wins
+- **3a** — comparators (classifier, regressor) plus the three baselines, temporal split, per-segment metrics, calibration; unblocks the API and dashboard
+- **3b** — **the primary model**: competing-risks survival, same features and split, censored stays included; validate per-prediction attribution here
+- **3c** — head-to-head on concordance and bucket calibration; survival ships unless it loses, and the numbers are recorded either way
 - Auto-generated model card
 - FastAPI service with the contract in [04](./04-api-contracts.md) §4, plus `/health` and `/model-info`
 - Typed ML client in the web app, with timeout, degradation and no inline retry
@@ -107,8 +107,10 @@ Sequencing rationale: the catalogue is the substrate everything else operates on
 **Exit criteria**
 - [ ] ETL is reproducible from raw CSVs with a documented row count at every step, including the censored count
 - [ ] A test asserts identical features from the training path and the serving path for the same input
-- [ ] Both models beat all three baselines on the temporal test split
-- [ ] The survival challenger has been built and compared, and the choice between it and the baseline is recorded with its numbers — an untested "we'll try it later" does not close this phase
+- [ ] The survival model beats all three baselines on concordance on the temporal test split
+- [ ] Censored stays reach the survival model as censored observations — asserted by a test
+- [ ] The head-to-head against the comparators is recorded with its numbers, whichever way it goes
+- [ ] Per-prediction attribution populates `top_factors` for every row in the triage list
 - [ ] Every released artifact carries the full reproducibility record from [11](./11-training-workflow.md) §4
 - [ ] Training runs from a single command in the repository, not only from a notebook
 - [ ] Calibration error under 0.05 or isotonic calibration applied

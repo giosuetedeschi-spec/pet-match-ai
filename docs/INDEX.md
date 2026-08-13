@@ -131,12 +131,15 @@ Spacing base 4px · radii 6/10/16/24/full · 3 elevation levels, warm-tinted
 ### ML — owned by [05](./05-ml-spec.md)
 
 ```
-Models        adoption_classifier (binary) · los_regressor (days + bucket)   ← Phase 3a baseline
-Challenger    competing-risks survival model (doc 12 §3) ← Phase 3b, ship whichever wins
+PRIMARY       adoption_survival — competing-risks survival (RSF / gradient-boosted survival)
+              one curve → adoption probability, median days, bucket probabilities,
+              competing outcomes.  Censored stays ARE training data.
+Comparators   adoption_classifier · los_regressor — evaluation only, never served
 Training data Austin Animal Center, Kaggle, ~80k records, Oct 2013 – early 2018
 Split         TEMPORAL. train <2017-01-01 · val 2017-H1 · test 2017-07-01+
-Baselines     constant · age-band×species lookup · logistic/linear  (must beat all three)
-Primary metric ranking quality — ROC-AUC (baseline) / concordance index (survival)
+Baselines     constant · Kaplan-Meier by species×age×size · Cox PH  (must beat all three)
+Primary metric concordance index — ranking is the only claim the product makes
+Endpoint      POST /predict/outcome (one call, both answers) · /predict/batch
 Batch         nightly 02:00; on publish; on relevant field change
 Timeout       2s, no inline retry, degrade to a labelled "not available" state
 Environment   Colab for exploration, repo scripts for artifacts (doc 11). No GPU, ever.
@@ -203,7 +206,8 @@ Carried from the documents, unresolved, listed so nobody assumes they were settl
 |---|---|---|---|
 | 1 | Do the matching weights actually predict adoption success? | [06](./06-matching-algorithm.md) §8 | 12 months of return-rate data by score band |
 | 2 | Does the transferred model perform well enough per segment to be shown at all? | [05](./05-ml-spec.md) §5 | Phase 3 evaluation; under-performing segments get suppressed |
-| 2b | Does the survival model beat the classifier+regressor baseline? | [12](./12-modelling-approaches.md) §3 | Phase 3c head-to-head on concordance and bucket calibration |
+| 2b | Does the survival model earn its complexity against the comparators? | [12](./12-modelling-approaches.md) §3 | Phase 3c head-to-head. If it loses, [05](./05-ml-spec.md) §4 reverts to two models |
+| 2c | Can per-prediction attribution populate `top_factors` on a survival model? | [05](./05-ml-spec.md) §7 | Phase 3b — validate early, it is an API requirement with named fallbacks |
 | 3 | Will shelters act on triage suggestions or dismiss them? | [10](./10-marketing-plan.md) §11 | Phase 3 + 3 months of `at_risk_action_taken` |
 | 4 | Will shelters pay anything at all? | [10](./10-marketing-plan.md) appendix | Pilot conversations, months 0–2 |
 | 5 | Do adopters finish 14 questions? | [10](./10-marketing-plan.md) §10 | Phase 2 + `quiz_abandoned(index)` |

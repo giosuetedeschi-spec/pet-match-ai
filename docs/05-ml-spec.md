@@ -1,13 +1,18 @@
 # 05 — Machine Learning Specification
 
-Two models, both trained offline on the Austin Animal Center dataset, both serving shelter staff only:
+Trained offline on the Austin Animal Center dataset, serving shelter staff only.
 
-| Model | Question | Type | Target |
+**The primary model is a competing-risks survival model.** An animal enters care and exits by one of several routes — adoption, transfer, return to owner, death — or is still there when we look. That is a time-to-event problem, and modelling it as one answers both product questions from a single fitted curve instead of from two models that can disagree. The reasoning, and the alternatives considered, are in [12 — Modelling Approaches](./12-modelling-approaches.md) §3.
+
+| Model | Question | Type | Role |
 |---|---|---|---|
-| `adoption_classifier` | Will this animal be adopted? | Binary classification | `outcome_type == 'Adoption'` |
-| `los_regressor` | How long will it take? | Regression + bucketed classification | Days from intake to outcome |
+| `adoption_survival` | How likely is adoption, and how soon? | Competing-risks survival | **Primary** |
+| `adoption_classifier` | Will this animal be adopted? | Binary classification | Baseline comparator |
+| `los_regressor` | How many days until an outcome? | Regression | Baseline comparator |
 
-Neither model is ever shown to an adopter. They exist so that a shelter with limited hours can direct those hours at the animals that need them.
+The two comparators are still built, because a primary model that cannot beat a simpler one is not worth its complexity — but they are evaluation instruments, not what the product serves.
+
+Nothing here is ever shown to an adopter. It exists so that a shelter with limited hours can direct those hours at the animals that need them.
 
 ## 1. The dataset
 
@@ -87,25 +92,54 @@ Preprocessing: one-hot for low-cardinality categoricals, ordinal for age bands, 
 
 ## 4. Targets
 
-### Classification — `adopted`
+### Primary — survival with competing risks
+
+Each stay contributes three values rather than one label:
 
 ```
-adopted = 1  if outcome_type in ('Adoption', 'Rto-Adopt')
-adopted = 0  if outcome_type in ('Transfer', 'Return to Owner', 'Euthanasia', 'Died')
-excluded     if outcome_type in ('Disposal', 'Missing') or outcome is null
+duration     days from intake to exit, or to the export date if still in care
+event_type   adoption | transfer | return_to_owner | death | censored
+is_censored  true when the animal was still in care at the export date
 ```
 
-Base rate in Austin is roughly 40–45% adoption across dogs and cats — imbalanced but not severely.
+Event types map from Austin's outcome vocabulary:
 
-**`Return to Owner` is a negative, and that is a modelling choice with consequences.** From the shelter's operational view, a stray reclaimed by its owner was never an adoption candidate. But it is a *good* outcome, and a model trained this way will mark reclaim-likely animals as "hard to adopt". The at-risk list therefore excludes animals in the reclaim hold period, and the model card states this explicitly.
+```
+adoption        Adoption, Rto-Adopt
+transfer        Transfer
+return_to_owner Return to Owner
+death           Euthanasia, Died
+censored        no outcome row at export       ← TRAINING DATA, not discarded
+excluded        Disposal, Missing              ← genuinely uninformative
+```
 
-### Regression — `days_to_outcome`
+**Censored stays are training data.** An animal still waiting at day 400 tells us "not adopted within 400 days", which is strong signal about exactly the population the product exists to find. The previous formulation dropped these rows, which biased the estimates optimistic precisely where accuracy mattered most; see §8, limitation 2.
 
-`(outcome_date − intake_date).days`, clipped at the 99th percentile to stop a handful of multi-year stays from dominating the loss. Heavily right-skewed, so `log1p` transformation is fitted and predictions are inverse-transformed.
+**Competing risks are modelled separately, not collapsed.** Earlier drafts treated transfer, reclaim and death as one "not adopted" negative class. That distorted reclaim-likely strays into "hard to adopt" animals, which is both wrong and operationally misleading. Cause-specific hazards are fitted per event type, and the adoption-specific cumulative incidence is what the product uses.
 
-A bucketed classifier is trained on the same features against `lt_7 / 7_30 / 30_90 / gt_90`. The bucket probabilities are what the UI actually shows, because "63% chance of more than 90 days" is honest in a way that "265 days" is not.
+### What it produces
 
-> **A better formulation exists, and it is scheduled.** Treating this as two independent models discards the right-censored animals (§8, limitation 2) and collapses distinct outcome types into a single negative class. A **competing-risks survival model** fixes both and produces the bucket probabilities natively rather than by post-hoc bucketing. It is specified in [12 — Modelling Approaches](./12-modelling-approaches.md) §3 and staged so that Phase 3 is not blocked on it: the two models here are the baseline, the survival model is the challenger, and whichever wins on concordance and calibration is what ships. If survival wins, this section is revised and the regressor retired.
+One fitted curve per animal — the cumulative incidence of adoption over time — from which every number the product needs is read directly:
+
+```
+P(adopted by 7 days)    →  bucket probability  lt_7
+P(adopted by 30 days)   →  bucket probability  7_30
+P(adopted by 90 days)   →  bucket probability  30_90
+1 − P(adopted by 90d)   →  bucket probability  gt_90
+curve plateau           →  overall adoption probability
+curve crosses 0.5       →  median days to adoption
+```
+
+This matters for honesty, not just tidiness. The curve states something about a *population* — "at 90 days, 63% of animals like this one are still waiting" — which is what the model actually knows. A point estimate of 265 days implies a precision about *this individual animal* that no model trained on Austin data possesses. The UI leads with bucket probabilities for exactly this reason, and now they are the model's native output rather than a point estimate chopped into bins after the fact.
+
+### Baseline comparators
+
+Still built, still evaluated, because the primary model has to earn its complexity:
+
+- **`adoption_classifier`** — binary on `event_type == 'adoption'` among uncensored stays. Base rate in Austin is roughly 40–45% across dogs and cats.
+- **`los_regressor`** — `days_to_outcome` on uncensored stays, clipped at the 99th percentile, `log1p`-transformed.
+
+If the survival model does not beat these on ranking quality (§5), it does not ship, and this section gets rewritten back. That comparison is a Phase 3 exit criterion in [08](./08-roadmap.md), not an optional extra.
 
 ## 5. Splitting and evaluation
 
@@ -121,9 +155,17 @@ Hyperparameters are chosen on validation; test is touched once, at the end, per 
 
 ### Metrics
 
-**Classification** — ROC-AUC, PR-AUC, Brier score, and a **calibration curve**. Calibration matters more than discrimination here: the number is displayed to a human as a probability, so "0.7 means roughly seven in ten" has to be true. If calibration is poor, isotonic regression is fitted on the validation fold.
+**Primary model — survival.**
+- **Concordance index** (Harrell's, and Uno's for censoring-adjusted comparison) — does the model rank animals correctly by risk? This is the primary metric because relative ranking is the only claim the product makes.
+- **Integrated Brier Score** — calibration across the whole time range rather than at one horizon.
+- **Time-dependent AUC** at 30, 90 and 180 days — the horizons shelters actually plan around.
+- **Bucket calibration** — predicted versus observed adoption rates in each of the four buckets. These are the numbers on screen, so they are the ones that must be true.
 
-**Regression** — MAE and RMSE in days, plus MAE within each true bucket (an overall MAE of 27 days hides a model that is excellent on quick adoptions and useless on long stays). Bucket classifier: macro F1 and a confusion matrix.
+**Comparators.** Classification: ROC-AUC, PR-AUC, Brier, calibration curve. Regression: MAE and RMSE in days, plus MAE within each true bucket (an overall MAE of 27 days hides a model that is excellent on quick adoptions and useless on long stays).
+
+**The head-to-head** is survival concordance against classifier ROC-AUC on the same temporal test split and the same animals, plus bucket calibration against bucket calibration. Both are ranking measures on the same population, which makes the comparison fair.
+
+Calibration matters more than discrimination throughout: a number displayed to a human as a probability has to mean what it says. Where calibration is poor, isotonic regression is fitted on the validation fold — never on test.
 
 **Breakdowns, always.** Every metric is reported separately by species, age band, and size. A model that is strong on kittens and worthless on senior large dogs is exactly the model that fails the animals the feature exists to help. If a segment's performance is materially worse than the aggregate, the UI suppresses predictions for that segment rather than showing an unreliable number.
 
@@ -132,10 +174,18 @@ Hyperparameters are chosen on validation; test is touched once, at the end, per 
 Nothing ships without beating these:
 
 1. **Constant** — always predict the base rate / median days.
-2. **Age-band × species lookup** — empirical rates from the training set.
-3. **Logistic / linear regression** — the interpretable comparator named in the brief.
+2. **Kaplan–Meier stratified by species × age band × size** — the empirical lookup, done correctly with censoring accounted for.
+3. **Cox proportional hazards** — the interpretable survival comparator, the analogue of the logistic regression named in the brief. Check the proportional-hazards assumption before trusting it.
 
-Then Random Forest (the specified model), and gradient boosting as a stretch comparison. The simplest model within one standard error of the best wins — if logistic regression is within noise of the forest, we ship logistic regression and say so.
+### Algorithms
+
+| Candidate | Library | Notes |
+|---|---|---|
+| **Random Survival Forest** | `scikit-survival` | The forest the brief names, in its time-to-event form. Non-parametric, captures interactions, no proportional-hazards assumption. ⚠️ Benchmark training time on 80k rows before committing — RSF is materially heavier than a plain forest and may need subsampling |
+| **Gradient-boosted survival** | `scikit-survival`, or XGBoost `survival:aft` | Usually the strongest on tabular data; AFT gives an interpretable time scale |
+| **Cox PH** | `lifelines` / `scikit-survival` | Interpretable baseline |
+
+The simplest model within one standard error of the best wins. If Cox is within noise of the survival forest, we ship Cox and say so.
 
 ## 6. Training
 
@@ -145,7 +195,7 @@ Exploration starts in Google Colab and graduates to repository scripts; the note
 services/ml/training/
 ├── etl/            01_load … 05_split
 ├── features.py     the single transform used by BOTH training and serving
-├── train.py        --model {adoption,los} --algo {rf,logreg,gbm}
+├── train.py        --model {survival,adoption,los} --algo {rsf,gbs,cox,rf,logreg}
 ├── evaluate.py     metrics, breakdowns, calibration plot, model card
 └── artifacts/      {model}-{version}/
                     ├── model.joblib
@@ -157,7 +207,7 @@ services/ml/training/
 
 `features.py` is imported by both the training scripts and the FastAPI service. Training/serving skew — the classic failure where a feature is computed one way offline and another way online — is prevented structurally, not by discipline, and a test asserts that the same input row produces identical features through both paths.
 
-Random Forest starting grid: `n_estimators` 300–800, `max_depth` {None, 10, 20, 30}, `min_samples_leaf` {1, 5, 20}, `max_features` {sqrt, 0.3}, `class_weight` {None, balanced}. Randomised search over the validation fold, fixed `random_state`, everything logged.
+Random Survival Forest starting grid: `n_estimators` 200–600, `max_depth` {None, 10, 20}, `min_samples_leaf` {5, 15, 50}, `max_features` {sqrt, 0.3}. Larger leaves than a classification forest, because each leaf must estimate a survival curve rather than a class proportion, and thin leaves give noisy curves. Comparator forest grid: `n_estimators` 300–800, `max_depth` {None, 10, 20, 30}, `min_samples_leaf` {1, 5, 20}, `class_weight` {None, balanced}. Randomised search over the validation fold, fixed `random_state`, everything logged.
 
 Reproducibility: a training run records the dataset checksum, the code commit, the full parameter grid, the chosen parameters, and the environment lockfile in `metadata.json`. A version that cannot be reproduced is not released.
 
@@ -165,7 +215,9 @@ Reproducibility: a training run records the dataset checksum, the code commit, t
 
 The FastAPI service loads artifacts at startup and holds them in memory. Contract in [04 — API Contracts](./04-api-contracts.md) §4.
 
-**Explanations.** `top_factors` comes from per-prediction feature attribution — permutation importance at the model level and SHAP values per prediction where the runtime cost allows, falling back to the forest's own feature importances. Each factor is mapped to a human sentence through a fixed dictionary (`age_months_at_intake` + negative direction → "Età superiore a 8 anni"). The model never writes the sentence; it selects one.
+**Explanations.** `top_factors` comes from per-prediction feature attribution — SHAP values per prediction where the runtime cost allows, permutation importance at the model level otherwise, falling back to the forest's own importances. Each factor is mapped to a human sentence through a fixed dictionary (`age_months_at_intake` + negative direction → "Età superiore a 8 anni"). The model never writes the sentence; it selects one.
+
+⚠️ **Attribution over a survival model needs validating early in Phase 3.** SHAP is less turnkey for survival forests than for classifiers, and `top_factors` is a hard API requirement ([04](./04-api-contracts.md) §4), not a nice-to-have — the triage list is useless without a reason attached to each row. If per-prediction attribution proves impractical, the acceptable fallbacks in order are: attribution against the risk score at a fixed horizon (90 days), then model-level permutation importance combined with the animal's own feature values. Discovering this in the final week of the phase is the failure mode to avoid.
 
 **When predictions run:**
 - on publication of an animal;
@@ -181,7 +233,7 @@ This section is normative. Its content appears in the shelter UI, not only in th
 
 1. **Different country, different everything.** Austin, Texas 2013–2018 is not Italy 2026. Adoption culture, breed mix (Austin's population is heavily pit-bull-type; Italy's is overwhelmingly *meticci*), legal framework (Italy's no-kill law and municipal *canile* system have no US equivalent), average length of stay, and seasonality all differ. Absolute numbers will be wrong. **Relative ranking — which of my animals will struggle most — is what the model is for, and it is the only claim we make.**
 
-2. **Right-censoring biases the length-of-stay model optimistic.** Animals still in care at the export date have no outcome and are excluded from training, and those are disproportionately the long stays. Real waits are likely longer than predicted, particularly at the top of the distribution. *This limitation is a consequence of the regression formulation, not of the data — the survival approach in [12](./12-modelling-approaches.md) §3 uses those animals as training signal instead of discarding them, and would remove this caveat entirely.*
+2. **Right-censoring is handled, not ignored — but only for the primary model.** Animals still in care at the export date are used as censored observations by the survival model, which is the main reason it is primary. The baseline comparators still drop them and remain optimistically biased as a result; that is one of the things the head-to-head is measuring. Note the residual limitation: censoring is handled correctly under the assumption that it is *uninformative* — that being still-in-care at the export date says nothing beyond the elapsed time. Since the export date is arbitrary rather than related to any animal's circumstances, that assumption is reasonable here, but it is an assumption.
 
 3. **The model learns what happened, including the unfair parts.** If black dogs, senior animals, and bully breeds waited longer in Austin, the model reproduces that. Used correctly this is the point — those animals need more help, and surfacing them is the feature. Used incorrectly it becomes self-fulfilling. Hence: predictions are shelter-facing only, always paired with a suggested action, and never visible to adopters.
 
@@ -213,10 +265,13 @@ Retraining is quarterly and manual — reviewed by a human against the model car
 
 ## 10. Definition of done for the ML phase
 
-- [ ] ETL runs from raw CSVs to processed parquet with a row-count report at every step
-- [ ] `features.py` is shared by training and serving, with a test asserting identical output through both paths
-- [ ] Both models beat all three baselines on the temporal test split
-- [ ] Classification calibration error under 0.05, or isotonic calibration applied
+- [ ] ETL runs from raw CSVs to processed parquet with a row-count report at every step, including the censored count
+- [ ] `features.py` is shared by notebooks, training and serving, with a test asserting identical output through all paths
+- [ ] Censored stays reach the survival model as censored observations — asserted by a test, since silently dropping them is the exact failure this formulation exists to prevent
+- [ ] The survival model beats all three baselines on concordance on the temporal test split
+- [ ] The head-to-head against the classifier and regressor is recorded with its numbers, whichever way it goes
+- [ ] Bucket calibration error under 0.05, or isotonic calibration applied
+- [ ] Per-prediction attribution works well enough to populate `top_factors` for every row in the triage list
 - [ ] Metrics reported by species, age band and size — and segments below the reliability bar are suppressed in the UI
 - [ ] A model card is generated automatically and rendered verbatim in the shelter UI
 - [ ] The FastAPI service serves both models with the documented contract and a working `/health`

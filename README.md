@@ -24,10 +24,12 @@ A web platform for responsible animal adoption in Italy, built for **both** side
 
 ## Machine learning
 
-Two models, trained offline on the [Austin Animal Center Shelter Intakes and Outcomes](https://www.kaggle.com/datasets/aaronschlegel/austin-animal-center-shelter-intakes-and-outcomes) dataset (~80,000 real records):
+A **competing-risks survival model**, trained offline on the [Austin Animal Center Shelter Intakes and Outcomes](https://www.kaggle.com/datasets/aaronschlegel/austin-animal-center-shelter-intakes-and-outcomes) dataset (~80,000 real records). One fitted curve per animal answers both questions a shelter has:
 
 1. **Adoption probability** — how likely is this animal to be adopted?
-2. **Length of stay** — roughly how long will it take?
+2. **Length of stay** — how likely is it to still be waiting at 7, 30, 90 days?
+
+Survival analysis rather than a classifier plus a regressor because animals still in care have no outcome yet — and they are disproportionately the long stays this feature exists to find. A survival model treats them as training signal instead of discarding them, keeps adoption distinct from transfer and reclaim, and cannot contradict itself the way two separate models can.
 
 The Kaggle data is a *training source only*. The live catalogue is always real animals entered by real shelters. The limits of transferring an Austin, Texas model to the Italian context are documented honestly in [`docs/05-ml-spec.md`](./docs/05-ml-spec.md), along with the decisions these predictions must never be used for.
 

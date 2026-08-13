@@ -555,11 +555,14 @@ CREATE TABLE visits (
 CREATE TABLE predictions (
   id                  BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   animal_id           CHAR(26) NOT NULL,
-  model_name          VARCHAR(60) NOT NULL,       -- adoption_classifier | los_regressor
+  model_name          VARCHAR(60) NOT NULL,       -- adoption_survival
   model_version       VARCHAR(20) NOT NULL,
-  adoption_probability DECIMAL(4,3) NULL,         -- 0.000–1.000
-  expected_days       SMALLINT UNSIGNED NULL,
+  adoption_probability DECIMAL(4,3) NULL,         -- 0.000–1.000, curve plateau
+  median_days         SMALLINT UNSIGNED NULL,     -- NULL when the curve never crosses 0.5
   days_bucket         ENUM('lt_7','7_30','30_90','gt_90') NULL,
+  bucket_probabilities JSON NULL,                 -- {"lt_7":0.04,"7_30":0.11,"30_90":0.22,"gt_90":0.63}
+  survival_curve      JSON NULL,                  -- [{"day":7,"adopted_by":0.04}, …]
+  competing_outcomes  JSON NULL,                  -- {"transfer":0.12,"return_to_owner":0.04,"death":0.03}
   top_factors         JSON NULL,                  -- [{"feature":"age_days","direction":"negative","impact":0.18}]
   features_snapshot   JSON NOT NULL,
   computed_at         DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
