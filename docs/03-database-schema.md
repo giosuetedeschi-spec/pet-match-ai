@@ -730,6 +730,67 @@ CREATE TABLE donations (
 ) ENGINE=InnoDB;
 ```
 
+## 13b. Welcome Kit programmes
+
+Supports Epic K in [01](./01-product-spec.md). Eligibility is expressed as objective criteria over already-public animal facts; there is deliberately no column here that could hold a model score.
+
+```sql
+CREATE TABLE incentive_programs (
+  id                CHAR(26) NOT NULL,
+  name              VARCHAR(120) NOT NULL,
+  description_it    TEXT NULL,
+  description_en    TEXT NULL,
+  funder_name       VARCHAR(160) NULL,      -- partner brand, local business, or NULL = donation fund
+  funder_type       ENUM('partner','donation_fund','shelter','platform') NOT NULL DEFAULT 'donation_fund',
+  criteria          JSON NOT NULL,          -- {"min_days_in_care":180,"min_age_years":8,"special_needs":true}
+                                            -- objective, public facts only — NEVER a prediction
+  kit_contents      JSON NULL,              -- ["ciotola","guinzaglio","pettorina","cuccia","crocchette 2kg"]
+  estimated_value_cents INT UNSIGNED NULL,
+  budget_cents      INT UNSIGNED NULL,
+  granted_count     SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+  max_grants        SMALLINT UNSIGNED NULL,
+  region_scope      JSON NULL,              -- null = national
+  starts_on         DATE NOT NULL,
+  ends_on           DATE NULL,
+  status            ENUM('draft','active','exhausted','ended') NOT NULL DEFAULT 'draft',
+  created_by        CHAR(26) NULL,
+  created_at        DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at        DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (id),
+  KEY idx_program_active (status, starts_on, ends_on)
+) ENGINE=InnoDB;
+
+CREATE TABLE incentive_grants (
+  id             CHAR(26) NOT NULL,
+  program_id     CHAR(26) NOT NULL,
+  animal_id      CHAR(26) NOT NULL,
+  application_id CHAR(26) NULL,
+  adopter_user_id CHAR(26) NULL,
+  shelter_id     CHAR(26) NOT NULL,
+  status         ENUM('eligible','granted','declined','expired') NOT NULL DEFAULT 'eligible',
+  matched_criteria JSON NOT NULL,           -- which criteria the animal met, for audit
+  granted_at     DATETIME(3) NULL,          -- set on COMPLETED adoption, never on application
+  granted_by     CHAR(26) NULL,
+  notes          VARCHAR(255) NULL,
+  created_at     DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_grant (program_id, animal_id),
+  KEY idx_grant_shelter (shelter_id, status),
+  KEY idx_grant_animal (animal_id),
+  CONSTRAINT fk_grant_program FOREIGN KEY (program_id) REFERENCES incentive_programs(id) ON DELETE CASCADE,
+  CONSTRAINT fk_grant_animal FOREIGN KEY (animal_id) REFERENCES animals(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+```
+
+`animals` gains one column to support shelter opt-out:
+
+```sql
+ALTER TABLE animals
+  ADD COLUMN incentive_opt_out TINYINT(1) NOT NULL DEFAULT 0 AFTER adoption_fee_cents;
+```
+
+Two invariants worth stating because they are easy to break later: `granted_at` is only ever set when the linked application reaches `completed`, and nothing in `criteria` may reference the `predictions` table. Both are asserted by tests.
+
 ## 14. Governance
 
 ```sql

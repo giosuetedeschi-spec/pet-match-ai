@@ -247,6 +247,44 @@ any non-terminal ──▶ expired     (system, after 60 days of inactivity)
 
 **J2. Donations.** One-off and recurring donations from adopters, optionally attributed to a specific shelter, with receipt by email, an optional public thank-you (never itemised, never showing amounts), and an anonymous option.
 
+### Epic K — Welcome Kit (hard-to-place incentives)
+
+Practical goods — bowl, lead, harness, bed, carrier, a first bag of food, a voucher toward the first veterinary check — given to adopters of animals that have been hardest to place. Deferred to Phase 5, and deliberately constrained by the rules below.
+
+**The tension this resolves.** The obvious design is "offer a kit on animals the model flags as at-risk". That would breach the rule that predictions never reach adopters ([INDEX](./INDEX.md) hard rule 1): a kit badge on a listing is a prediction badge in disguise, and it tells every visitor that this animal is the one nobody wants. Eligibility is therefore defined on **objective, already-public facts**, never on model output.
+
+**K1. Eligibility.** As a platform admin, I want eligibility to be rule-based, so that no prediction leaks to the public.
+- An animal qualifies when it meets one or more objective criteria, all of which are already visible on its public profile: **in care longer than 180 days**, **age 8 years or older**, or **flagged as having special needs**.
+- Model output is **never** an input to eligibility. This is asserted by a test.
+- Criteria and thresholds are configurable per programme, not hardcoded.
+- A shelter can opt an individual animal out (some shelters will consider it undignified, and they get to decide).
+
+**K2. Framing.** As an adopter, I want the kit presented as support, not as a discount.
+- The badge reads *"Kit di benvenuto incluso"* — never "hard to place", "difficult", "long-term resident", "urgent", or anything implying the animal is a problem.
+- Copy frames it as help with the practical start: *"Chi adotta un animale adulto o con esigenze particolari riceve tutto l'occorrente per i primi giorni."*
+- The kit is **never** described as compensation, and the animal is never described as a burden.
+- A dedicated page explains the programme, who funds it, and why it exists — visible before adoption, not a surprise at handover.
+
+**K3. Fulfilment.** As shelter staff, I want to record that a kit was given, so that the programme can be audited and measured.
+- The kit is granted **on completed adoption**, not on application — it must never be an incentive to apply, only support for someone who has already decided.
+- Handed over physically by the shelter at collection, with the grant recorded against the adoption.
+- Where a partner ships directly, the adopter's address is shared only with explicit consent, for that single purpose.
+- Stock or budget per programme is tracked; when a programme is exhausted, badges disappear rather than promising what cannot be delivered.
+
+**K4. Funding.** As a platform admin, I want programmes funded by partners or the donation fund, not from operating margin.
+- A programme records its funder (pet-food or accessory brand, local business, or the unattributed donation fund), its budget, and its period.
+- Partner attribution is a discreet line on the programme page, never a logo on an animal's profile.
+- No partner ever influences which animals qualify, or ranking of any kind.
+
+**K5. Measurement.** As a platform admin, I want to know whether this works, so that we can stop if it does not.
+- Tracked per eligible animal: time-to-adoption with and without an active kit programme, application volume, and — the metric that decides it — **12-month return rate for kit adoptions versus non-kit adoptions of comparable animals**.
+- The programme is treated as an experiment with a stated kill condition: if kit adoptions return at a materially higher rate, the programme ends. See open question 7 in the [INDEX](./INDEX.md).
+
+**Risks, recorded rather than assumed away.**
+- *Adverse selection* — goods may attract adopters motivated by the goods. Mitigated by granting at completion rather than application, by keeping value modest (~€40–70 of practical items), and by never offering cash or fee reductions.
+- *Dignity* — the badge risks marking an animal as unwanted. Mitigated by objective public criteria, careful copy, and shelter opt-out.
+- *Perverse incentive on shelters* — a shelter could hold an animal to 180 days to unlock a kit. Mitigated because eligibility criteria are also independently visible and length of stay is a metric shelters are measured on improving, not extending.
+
 ## 6. Screen inventory
 
 ### Public
@@ -267,6 +305,7 @@ any non-terminal ──▶ expired     (system, after 60 days of inactivity)
 | Adopter profile editor | `/it/area-personale/profilo-adottante` | Re-take or amend quiz answers |
 | Notifications | `/it/area-personale/notifiche` | |
 | Donation | `/it/sostieni` | One-off or recurring, optional shelter attribution |
+| Welcome Kit | `/it/kit-di-benvenuto` | What the programme is, who qualifies, who funds it (Epic K) |
 | Assistant | Persistent widget + `/it/assistente` | Full-page conversation view |
 | Auth | `/it/accedi`, `/it/registrati`, `/it/recupera-password` | |
 | Content | `/it/come-funziona`, `/it/guide/[slug]`, `/it/chi-siamo`, `/it/per-le-strutture` | Care guides double as SEO surface |
@@ -300,6 +339,7 @@ any non-terminal ──▶ expired     (system, after 60 days of inactivity)
 | Moderation | Reported or flagged listings, takedown with reason |
 | Platform metrics | Adoptions, applications, active shelters, funnel, growth |
 | AI monitoring | Conversation volume, token cost, error and refusal rates, flagged exchanges |
+| Welcome Kit programmes | Create programmes, set criteria and budget, funders, grants issued, effectiveness vs return rate |
 | Audit log | Filterable by actor, entity, action, date |
 | Feature flags | Per-environment toggles |
 

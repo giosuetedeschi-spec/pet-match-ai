@@ -302,6 +302,22 @@ Donations are therefore **not a revenue line.** They are a retention and acquisi
 
 ⚠️ Legal check required before launch: whether collecting and forwarding donations makes us a payment intermediary under Italian rules, and what tax-receipt obligations follow. This may require the shelter to be the merchant of record with Stripe Connect rather than us collecting and forwarding.
 
+### 16b. Welcome Kit as a partnership channel
+
+The Welcome Kit programme (Epic K in [01](./01-product-spec.md)) is specified as a product feature, but its commercial logic belongs here: **it is the natural home for brand partnerships, and the only one that does not compromise the ranking.**
+
+Pet-food and accessory brands want presence in front of new animal owners at the exact moment of acquisition — the highest-value moment in the category, since first-purchase brand choice tends to persist. We can offer that without a single sponsored listing, because the kit is a physical object handed over at adoption rather than a placement in a result set.
+
+**What a partner gets:** their goods in the hands of new adopters at the moment of maximum receptivity, a discreet attribution line on the programme page, and a genuinely good story — "we fund the first weeks for the animals who waited longest" is a better piece of brand communication than any banner.
+
+**What a partner never gets:** influence over which animals qualify, any ranking effect, adopter contact details without explicit consent, or a logo on an animal's profile.
+
+**Why this is the right partnership shape:** it monetises attention we have without selling the thing that makes the product trustworthy. The moment adopters suspect a brand influenced which animal they were shown, the matching promise is worthless. A kit at handover touches none of that.
+
+**Realistic scale.** ⚠️ At ~€50 of goods per kit and a few hundred eligible adoptions a year, a regional programme costs a partner €10–20k annually — small enough for a brand's local marketing budget, meaningful enough to matter to the shelters. Approach partners only once volumes are demonstrable, which means month twelve at the earliest. Until then, fund it from the unattributed donation pool.
+
+**It is an experiment, and it has a kill condition.** If kit adoptions return at a materially higher rate than comparable non-kit adoptions, we are attracting the wrong adopters and the programme ends regardless of the partnership revenue. That condition is written into the partner agreement so it is not a negotiation later.
+
 ### 17. Twelve-month revenue scenarios
 
 ⚠️ Illustrative. Assumes paid tiers introduced at month 6, the first 40 shelters grandfathered free permanently, and no external funding.

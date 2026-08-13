@@ -161,6 +161,7 @@ Sequencing rationale: the catalogue is the substrate everything else operates on
 - Admin AI monitoring: volume, cost, errors, flagged exchanges
 - Stripe: shelter subscriptions, checkout, portal, webhooks, plan enforcement, invoices
 - Donations: one-off and recurring, shelter attribution, receipts, anonymity
+- Welcome Kit programmes (Epic K): rule-based eligibility on objective public criteria, badge and programme page, grant on completed adoption, shelter opt-out, admin programme management, effectiveness tracking
 - Platform admin console completion: moderation, metrics, audit viewer, feature flags
 - Launch readiness: error reporting, uptime monitoring, backup and restore rehearsal, legal pages finalised
 
@@ -174,6 +175,9 @@ Sequencing rationale: the catalogue is the substrate everything else operates on
 - [ ] Exceeding a plan limit blocks new creation with a clear message and never hides or deletes existing data
 - [ ] A downgrade never deletes data
 - [ ] A donation produces a receipt and, when attributed, is visible to the shelter without exposing the donor when anonymous
+- [ ] Welcome Kit eligibility references only objective public criteria — a test asserts no code path reads `predictions` when computing it
+- [ ] A kit grant can only be marked granted once its application reaches `completed`
+- [ ] Kit badge copy contains none of the prohibited framings, and a shelter opt-out removes the badge immediately
 - [ ] A restore-from-backup rehearsal succeeds on a clean environment
 
 **Risks**

@@ -2,10 +2,15 @@
 
 Everything below describes a product that has **not been built yet**. These documents are the specification the build will follow. They are written to be implementation-ready: real SQL, real payload shapes, real numbers.
 
+## Start here
+
+**→ [INDEX.md](./INDEX.md)** — the whole set is ~34,000 words. The index carries the product in a paragraph, a question-to-document routing table, every normative constant (matching weights, enums, plan limits, design tokens) in one place, the hard rules that must never be broken, the Austin caveat, and the open questions. Read it first; read a full document only when you are about to build the thing it describes.
+
 ## Reading order
 
 | # | Document | What it covers | Read it if you want to know… |
 |---|---|---|---|
+| — | [**INDEX**](./INDEX.md) | Routing, constants, hard rules, open questions | anything, quickly |
 | 01 | [Product Specification](./01-product-spec.md) | Personas, user stories, every screen, the adoption state machine, out-of-scope | *what* we are building |
 | 02 | [Technical Architecture](./02-architecture.md) | Stack and rationale, repo layout, auth, tenancy, i18n, media, geo, env vars, Docker | *how* the pieces fit together |
 | 03 | [Database Schema](./03-database-schema.md) | Full MySQL DDL, ERD, enums, indexes, seed plan, retention policy | where every piece of data lives |
