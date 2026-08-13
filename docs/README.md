@@ -4,7 +4,7 @@ Everything below describes a product that has **not been built yet**. These docu
 
 ## Start here
 
-**→ [INDEX.md](./INDEX.md)** — the whole set is ~34,000 words. The index carries the product in a paragraph, a question-to-document routing table, every normative constant (matching weights, enums, plan limits, design tokens) in one place, the hard rules that must never be broken, the Austin caveat, and the open questions. Read it first; read a full document only when you are about to build the thing it describes.
+**→ [INDEX.md](./INDEX.md)** — the whole set is ~42,000 words. The index carries the product in a paragraph, a question-to-document routing table, every normative constant (matching weights, enums, plan limits, design tokens) in one place, the hard rules that must never be broken, the Austin caveat, and the open questions. Read it first; read a full document only when you are about to build the thing it describes.
 
 ## Reading order
 
@@ -21,6 +21,8 @@ Everything below describes a product that has **not been built yet**. These docu
 | 08 | [Roadmap](./08-roadmap.md) | Five build phases with exit criteria, testing strategy, definition of done | in what order it gets built |
 | 09 | [Compliance & GDPR](./09-compliance-gdpr.md) | Lawful bases, data inventory, consent points, erasure procedure, microchip/anagrafe | what the law requires of us |
 | 10 | [Marketing Plan](./10-marketing-plan.md) | Positioning, competitors, go-to-market, metrics, pricing, projections, naming | how it reaches shelters and adopters — **later** |
+| 11 | [Training Workflow](./11-training-workflow.md) | Colab notebook sequence, reproducibility checklist, graduation to scripts | how the models actually get built |
+| 12 | [Modelling Approaches](./12-modelling-approaches.md) | Problem formulation, survival analysis recommendation, why not LLM fine-tuning, rejected ideas | which model to build, and why not the others |
 
 If you only read three: **01** (what), **03** (data), **08** (order).
 
