@@ -35,7 +35,7 @@ Matching adopters to animals is deliberately **not** machine learning: it is a t
 
 ## Documentation
 
-**Start at [`docs/INDEX.md`](./docs/INDEX.md)** — a routing table, every normative constant, and the hard rules, so you do not have to read 34,000 words to make a change. [`docs/README.md`](./docs/README.md) has the full contents and a suggested reading order.
+**Start at [`docs/INDEX.md`](./docs/INDEX.md)** — a routing table, every normative constant, and the hard rules, so you do not have to read 42,000 words to make a change. [`docs/README.md`](./docs/README.md) has the full contents and a suggested reading order.
 
 ## Licence
 

@@ -105,6 +105,8 @@ Base rate in Austin is roughly 40–45% adoption across dogs and cats — imbala
 
 A bucketed classifier is trained on the same features against `lt_7 / 7_30 / 30_90 / gt_90`. The bucket probabilities are what the UI actually shows, because "63% chance of more than 90 days" is honest in a way that "265 days" is not.
 
+> **A better formulation exists, and it is scheduled.** Treating this as two independent models discards the right-censored animals (§8, limitation 2) and collapses distinct outcome types into a single negative class. A **competing-risks survival model** fixes both and produces the bucket probabilities natively rather than by post-hoc bucketing. It is specified in [12 — Modelling Approaches](./12-modelling-approaches.md) §3 and staged so that Phase 3 is not blocked on it: the two models here are the baseline, the survival model is the challenger, and whichever wins on concordance and calibration is what ships. If survival wins, this section is revised and the regressor retired.
+
 ## 5. Splitting and evaluation
 
 **Temporal split, never random.** A random split leaks the future into the past: seasonal patterns, policy changes and population shifts all make an animal's neighbours in time far more informative than they would be at prediction time. Random cross-validation on this dataset produces flattering numbers that will not survive contact with a real shelter.
@@ -136,6 +138,8 @@ Nothing ships without beating these:
 Then Random Forest (the specified model), and gradient boosting as a stretch comparison. The simplest model within one standard error of the best wins — if logistic regression is within noise of the forest, we ship logistic regression and say so.
 
 ## 6. Training
+
+Exploration starts in Google Colab and graduates to repository scripts; the notebook sequence, reproducibility checklist and graduation rules are in [11 — Training Workflow](./11-training-workflow.md).
 
 ```
 services/ml/training/
@@ -177,7 +181,7 @@ This section is normative. Its content appears in the shelter UI, not only in th
 
 1. **Different country, different everything.** Austin, Texas 2013–2018 is not Italy 2026. Adoption culture, breed mix (Austin's population is heavily pit-bull-type; Italy's is overwhelmingly *meticci*), legal framework (Italy's no-kill law and municipal *canile* system have no US equivalent), average length of stay, and seasonality all differ. Absolute numbers will be wrong. **Relative ranking — which of my animals will struggle most — is what the model is for, and it is the only claim we make.**
 
-2. **Right-censoring biases the length-of-stay model optimistic.** Animals still in care at the export date have no outcome and are excluded from training, and those are disproportionately the long stays. Real waits are likely longer than predicted, particularly at the top of the distribution.
+2. **Right-censoring biases the length-of-stay model optimistic.** Animals still in care at the export date have no outcome and are excluded from training, and those are disproportionately the long stays. Real waits are likely longer than predicted, particularly at the top of the distribution. *This limitation is a consequence of the regression formulation, not of the data — the survival approach in [12](./12-modelling-approaches.md) §3 uses those animals as training signal instead of discarding them, and would remove this caveat entirely.*
 
 3. **The model learns what happened, including the unfair parts.** If black dogs, senior animals, and bully breeds waited longer in Austin, the model reproduces that. Used correctly this is the point — those animals need more help, and surfacing them is the feature. Used incorrectly it becomes self-fulfilling. Hence: predictions are shelter-facing only, always paired with a suggested action, and never visible to adopters.
 

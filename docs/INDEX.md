@@ -1,6 +1,6 @@
 # INDEX — read this first
 
-**Purpose of this file:** the documentation set is ~34,000 words. This index exists so you do not have to read it. It carries the product in one paragraph, a routing table from question to document, every normative constant in one place, and the hard rules that must never be broken. Read the full document only when you are about to build the thing it describes.
+**Purpose of this file:** the documentation set is ~42,000 words. This index exists so you do not have to read it. It carries the product in one paragraph, a routing table from question to document, every normative constant in one place, and the hard rules that must never be broken. Read the full document only when you are about to build the thing it describes.
 
 ---
 
@@ -37,6 +37,12 @@
 | How models are evaluated | [05](./05-ml-spec.md) | §5 |
 | **Model limitations (normative)** | [05](./05-ml-spec.md) | **§8** |
 | Retraining plan | [05](./05-ml-spec.md) | §9 |
+| How to actually train (Colab) | [11](./11-training-workflow.md) | §2 notebook sequence |
+| Reproducibility requirements | [11](./11-training-workflow.md) | §4 |
+| **Which model to build, and why** | [12](./12-modelling-approaches.md) | **§3 survival recommendation, §7 summary** |
+| Why not fine-tune an LLM | [12](./12-modelling-approaches.md) | §5 |
+| Adapting the model to Italian data | [12](./12-modelling-approaches.md) | §6 |
+| Modelling ideas already rejected | [12](./12-modelling-approaches.md) | §8 |
 | The quiz questions | [06](./06-matching-algorithm.md) | §1 |
 | Scoring formulas | [06](./06-matching-algorithm.md) | §4 |
 | Worked examples (= regression tests) | [06](./06-matching-algorithm.md) | §5 |
@@ -125,12 +131,15 @@ Spacing base 4px · radii 6/10/16/24/full · 3 elevation levels, warm-tinted
 ### ML — owned by [05](./05-ml-spec.md)
 
 ```
-Models        adoption_classifier (binary) · los_regressor (days + bucket)
+Models        adoption_classifier (binary) · los_regressor (days + bucket)   ← Phase 3a baseline
+Challenger    competing-risks survival model (doc 12 §3) ← Phase 3b, ship whichever wins
 Training data Austin Animal Center, Kaggle, ~80k records, Oct 2013 – early 2018
 Split         TEMPORAL. train <2017-01-01 · val 2017-H1 · test 2017-07-01+
 Baselines     constant · age-band×species lookup · logistic/linear  (must beat all three)
+Primary metric ranking quality — ROC-AUC (baseline) / concordance index (survival)
 Batch         nightly 02:00; on publish; on relevant field change
 Timeout       2s, no inline retry, degrade to a labelled "not available" state
+Environment   Colab for exploration, repo scripts for artifacts (doc 11). No GPU, ever.
 ```
 
 ---
@@ -194,6 +203,7 @@ Carried from the documents, unresolved, listed so nobody assumes they were settl
 |---|---|---|---|
 | 1 | Do the matching weights actually predict adoption success? | [06](./06-matching-algorithm.md) §8 | 12 months of return-rate data by score band |
 | 2 | Does the transferred model perform well enough per segment to be shown at all? | [05](./05-ml-spec.md) §5 | Phase 3 evaluation; under-performing segments get suppressed |
+| 2b | Does the survival model beat the classifier+regressor baseline? | [12](./12-modelling-approaches.md) §3 | Phase 3c head-to-head on concordance and bucket calibration |
 | 3 | Will shelters act on triage suggestions or dismiss them? | [10](./10-marketing-plan.md) §11 | Phase 3 + 3 months of `at_risk_action_taken` |
 | 4 | Will shelters pay anything at all? | [10](./10-marketing-plan.md) appendix | Pilot conversations, months 0–2 |
 | 5 | Do adopters finish 14 questions? | [10](./10-marketing-plan.md) §10 | Phase 2 + `quiz_abandoned(index)` |

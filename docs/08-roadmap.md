@@ -89,9 +89,12 @@ Sequencing rationale: the catalogue is the substrate everything else operates on
 **~12–15 days.** The goal: shelter staff open the dashboard and immediately see which animals need help and why.
 
 **Scope**
-- ETL from the Kaggle CSVs to processed parquet with a row-count report
-- `features.py` shared by training and serving
-- Training and evaluation for both models, all baselines, temporal split, per-segment metrics, calibration
+- Colab exploration per [11](./11-training-workflow.md), graduating to repository scripts by the end of the phase
+- ETL from the Kaggle CSVs to processed parquet with a row-count report, retaining right-censored stays
+- `features.py` shared by notebooks, training and serving
+- **3a** — training and evaluation for the classifier and regressor, all baselines, temporal split, per-segment metrics, calibration
+- **3b** — competing-risks survival model on the same features and split, per [12](./12-modelling-approaches.md) §3
+- **3c** — head-to-head comparison; ship the winner and revise [05](./05-ml-spec.md) §4 if survival wins
 - Auto-generated model card
 - FastAPI service with the contract in [04](./04-api-contracts.md) §4, plus `/health` and `/model-info`
 - Typed ML client in the web app, with timeout, degradation and no inline retry
@@ -102,9 +105,12 @@ Sequencing rationale: the catalogue is the substrate everything else operates on
 - Admin: model status, prediction volume, realised-accuracy scaffolding
 
 **Exit criteria**
-- [ ] ETL is reproducible from raw CSVs with a documented row count at every step
+- [ ] ETL is reproducible from raw CSVs with a documented row count at every step, including the censored count
 - [ ] A test asserts identical features from the training path and the serving path for the same input
 - [ ] Both models beat all three baselines on the temporal test split
+- [ ] The survival challenger has been built and compared, and the choice between it and the baseline is recorded with its numbers — an untested "we'll try it later" does not close this phase
+- [ ] Every released artifact carries the full reproducibility record from [11](./11-training-workflow.md) §4
+- [ ] Training runs from a single command in the repository, not only from a notebook
 - [ ] Calibration error under 0.05 or isotonic calibration applied
 - [ ] Metrics reported by species, age band and size; under-performing segments suppressed in the UI
 - [ ] The model card renders verbatim in the shelter UI
