@@ -393,14 +393,15 @@ The scoring contract is specified in full in [06 — Matching Algorithm](./06-ma
       "days_in_care": 418,
       "prediction": {
         "adoption_probability": 0.31,
-        "expected_days": 265,
+        "median_days_to_adoption": 265,
         "days_bucket": "gt_90",
+        "bucket_probabilities": { "lt_7": 0.04, "7_30": 0.11, "30_90": 0.22, "gt_90": 0.63 },
         "top_factors": [
           { "feature": "age_months", "label": "Età superiore a 8 anni", "direction": "negative", "impact": 0.22 },
           { "feature": "size", "label": "Taglia grande", "direction": "negative", "impact": 0.14 },
-          { "feature": "photo_count", "label": "Una sola foto", "direction": "negative", "impact": 0.09 }
+          { "feature": "intake_condition", "label": "Arrivato in condizioni non ottimali", "direction": "negative", "impact": 0.09 }
         ],
-        "model_version": "los-1.0.0",
+        "model_version": "adoption_survival-1.0.0",
         "computed_at": "2026-08-13T02:00:00.000Z"
       },
       "suggested_actions": [
@@ -450,16 +451,20 @@ Base URL `ML_SERVICE_URL`. Bearer token auth. The service is stateless, has no d
 {
   "status": "ok",
   "models": [
-    { "name": "adoption_classifier", "version": "1.0.0", "trained_at": "2026-07-02T10:00:00Z",
-      "algorithm": "random_forest", "metrics": { "roc_auc": 0.784, "pr_auc": 0.812, "brier": 0.164 } },
-    { "name": "los_regressor", "version": "1.0.0", "trained_at": "2026-07-02T10:00:00Z",
-      "algorithm": "random_forest", "metrics": { "mae_days": 27.4, "rmse_days": 48.1 } }
+    { "name": "adoption_survival", "version": "1.0.0", "trained_at": "2026-07-02T10:00:00Z",
+      "algorithm": "random_survival_forest", "role": "primary",
+      "metrics": { "concordance": 0.731, "integrated_brier": 0.147,
+                   "auc_90d": 0.768, "bucket_calibration_error": 0.031 } }
   ],
   "uptime_seconds": 84213
 }
 ```
 
-### `POST /predict/adoption`
+Baseline comparators (`adoption_classifier`, `los_regressor`) are evaluation instruments and are not served — they exist in the training pipeline and the model card only.
+
+### `POST /predict/outcome`
+
+One call, one model, both answers — probability and timing are read from the same fitted curve, so they cannot contradict each other ([05](./05-ml-spec.md) §4).
 
 ```jsonc
 // request — the feature contract. Every field is nullable; the service imputes
@@ -493,39 +498,46 @@ Base URL `ML_SERVICE_URL`. Bearer token auth. The service is stateless, has no d
 
 // 200
 {
-  "model": { "name": "adoption_classifier", "version": "1.0.0" },
-  "adoption_probability": 0.31,
+  "model": { "name": "adoption_survival", "version": "1.0.0",
+             "algorithm": "random_survival_forest" },
+
+  // read off the adoption cumulative incidence curve
+  "adoption_probability": 0.31,          // curve plateau — eventual adoption
   "confidence_interval": [0.24, 0.39],
+  "median_days_to_adoption": 265,        // null when the curve never reaches 0.5
+  "prediction_interval": [120, 460],     // conformal, see 12 §4
+  "days_bucket": "gt_90",                // the highest-probability bucket
+  "bucket_probabilities": { "lt_7": 0.04, "7_30": 0.11, "30_90": 0.22, "gt_90": 0.63 },
+
+  // the curve itself, for the sparkline on the animal record
+  "survival_curve": [
+    { "day": 7,   "adopted_by": 0.04 },
+    { "day": 30,  "adopted_by": 0.15 },
+    { "day": 90,  "adopted_by": 0.37 },
+    { "day": 180, "adopted_by": 0.54 },
+    { "day": 365, "adopted_by": 0.68 }
+  ],
+
+  // competing risks — distinct exits, not collapsed into "not adopted"
+  "competing_outcomes": {
+    "transfer": 0.12, "return_to_owner": 0.04, "death": 0.03
+  },
+
   "top_factors": [
     { "feature": "age_months_at_intake", "direction": "negative", "impact": 0.22 },
     { "feature": "size", "direction": "negative", "impact": 0.14 },
-    { "feature": "photo_count", "direction": "negative", "impact": 0.09 }
+    { "feature": "intake_condition", "direction": "negative", "impact": 0.09 }
   ],
   "imputed_fields": ["coat_length"],
   "computed_at": "2026-08-13T02:00:00Z"
 }
 ```
 
-### `POST /predict/length-of-stay`
-
-Same feature payload.
-
-```jsonc
-{
-  "model": { "name": "los_regressor", "version": "1.0.0" },
-  "expected_days": 265,
-  "prediction_interval": [120, 460],
-  "days_bucket": "gt_90",
-  "bucket_probabilities": { "lt_7": 0.04, "7_30": 0.11, "30_90": 0.22, "gt_90": 0.63 },
-  "top_factors": [ /* … */ ],
-  "imputed_fields": [],
-  "computed_at": "2026-08-13T02:00:00Z"
-}
-```
+`bucket_probabilities` are the numbers the UI leads with, and they are now the model's native output rather than a point estimate chopped into bins. `median_days_to_adoption` is deliberately secondary and may be `null` — for an animal whose curve never crosses 0.5 within the observable window, "no median within 2 years" is the honest answer, and inventing a number there would be worse than omitting it.
 
 ### `POST /predict/batch`
 
-Accepts up to 500 items, each `{ "ref": "<animal_id>", "features": { … } }`, and returns both predictions per ref plus a `failed` array with per-ref reasons. Used by the nightly job.
+Accepts up to 500 items, each `{ "ref": "<animal_id>", "features": { … } }`, returns one prediction per ref plus a `failed` array with per-ref reasons. Used by the nightly job. `survival_curve` is omitted in batch responses to keep payloads small; the dashboard fetches it per animal on demand.
 
 ### `GET /model-info`
 

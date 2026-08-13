@@ -38,9 +38,9 @@ These were settled during the requirements interview and are treated as fixed by
 | Languages | Italian + English, i18n from day one |
 | Species | Dogs and cats only |
 | Web stack | Next.js (TypeScript, App Router) + Prisma + MySQL |
-| ML stack | Separate Python FastAPI service, scikit-learn |
+| ML stack | Separate Python FastAPI service; scikit-learn + scikit-survival |
 | UI | Tailwind + shadcn/ui, custom theme, warm & editorial tone |
-| ML targets | Adoption probability **and** length of stay |
+| ML targets | Adoption probability **and** length of stay, from one competing-risks survival model |
 | Matching | Rule-based weighted scoring + Claude-written explanations, saved adopter profiles |
 | Chatbot | Claude + RAG, two personas (public adopter, shelter staff) |
 | Adoption journey | Application → shelter review → status tracking → in-app visit scheduling |

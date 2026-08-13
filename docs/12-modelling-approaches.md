@@ -2,7 +2,7 @@
 
 What to train, why, and what was considered and rejected. The environment and mechanics are in [11 — Training Workflow](./11-training-workflow.md); the current specification is [05 — ML Specification](./05-ml-spec.md).
 
-**This document contains one recommendation that supersedes part of doc 05.** See §3.
+**Status: decided.** Competing-risks survival analysis is the primary model. [05](./05-ml-spec.md) has been updated to match; the classifier and regressor remain as baseline comparators. §3 records the reasoning.
 
 ---
 
@@ -18,18 +18,18 @@ What to train, why, and what was considered and rejected. The environment and me
 
 So when the question is "should we train or fine-tune?", the honest answer is that they are not alternatives here. Fine-tuning is a technique for adapting a large pre-trained neural network — nearly always a language or vision model. The forecasting problem is 80,000 rows of tabular data with categorical and numeric columns. Those are different worlds, and §5 explains why bringing an LLM to the tabular problem makes it strictly worse.
 
-The interesting question is not "train or fine-tune" but **"what is the right formulation of the forecasting problem?"** — and there the current specification can be improved substantially.
+The interesting question is not "train or fine-tune" but **"what is the right formulation of the forecasting problem?"** — and answering it changed the specification. §3.
 
 ---
 
-## 2. The problem with the current formulation
+## 2. The problem with the two-model formulation
 
-[05](./05-ml-spec.md) specifies two independent models:
+Earlier drafts of [05](./05-ml-spec.md) specified two independent models:
 
 1. `adoption_classifier` — binary: was the animal adopted?
 2. `los_regressor` — regression: how many days until the outcome?
 
-This works, it is simple, and it is a reasonable Phase 3 baseline. But it has three real weaknesses, and doc 05 already admits two of them:
+This works, it is simple, and it remains a reasonable baseline — which is why both models are still built as comparators. But it has three real weaknesses, two of which doc 05 already admitted:
 
 **Weakness 1 — it throws away the most informative data.** Animals still in care at the export date have no outcome, so they are excluded from regression training ([05](./05-ml-spec.md) §8, limitation 2). Those are disproportionately the *long stays* — precisely the animals the entire feature exists to identify. We are excluding our best examples of the phenomenon we are trying to predict, and the documented consequence is a model biased optimistic exactly where accuracy matters most.
 
@@ -41,7 +41,7 @@ All three have the same root cause: **the problem is a time-to-event problem, an
 
 ---
 
-## 3. Recommendation — competing-risks survival analysis
+## 3. Decision — competing-risks survival analysis (primary)
 
 ### The idea
 
@@ -57,7 +57,7 @@ Modelling it that way fixes all three weaknesses at once:
 
 ### What it produces
 
-For each animal, a **cumulative incidence function** for adoption: the probability of having been adopted by time *t*. From one curve you get everything the product currently asks two models for:
+For each animal, a **cumulative incidence function** for adoption: the probability of having been adopted by time *t*. From one curve you get everything the product needs:
 
 ```
 P(adopted by 7 days)   → 0.04    ┐
@@ -77,7 +77,7 @@ It is also more honest in a way that matters for this specific product. A curve 
 
 | Approach | Library | Notes |
 |---|---|---|
-| **Random Survival Forest** | `scikit-survival` | Non-parametric, captures interactions, no proportional-hazards assumption, closest in spirit to the Random Forest the brief names. **Recommended primary.** ⚠️ Verify training time on 80k rows; RSF is heavier than a plain forest and may need subsampling |
+| **Random Survival Forest** | `scikit-survival` | Non-parametric, captures interactions, no proportional-hazards assumption, closest in spirit to the Random Forest the brief names. **Chosen as primary.** ⚠️ Verify training time on 80k rows; RSF is heavier than a plain forest and may need subsampling |
 | **Gradient-boosted survival** | `scikit-survival`, or XGBoost's `survival:aft` objective | Usually strongest on tabular; AFT gives interpretable time-scale coefficients |
 | **Cox proportional hazards** | `lifelines`, `scikit-survival` | The interpretable comparator — the survival analogue of the logistic-regression baseline the brief asks for. Check the proportional-hazards assumption before trusting it |
 | **Kaplan–Meier / Aalen–Johansen** | `lifelines` | Not a predictor — the descriptive baseline. Stratified by species × age band × size, this is the "empirical lookup" baseline of [05](./05-ml-spec.md) §5, done correctly with censoring |
@@ -99,19 +99,22 @@ Survival models need their own evaluation, and the ones in [05](./05-ml-spec.md)
 - **Compute.** RSF is materially slower than a classifier. ⚠️ Benchmark before committing.
 - **Ceremony risk.** If concordance is no better than the simple classifier's AUC, the added complexity is not earned. Test it, do not assume it.
 
-### Staging — do not block Phase 3 on this
+### Build order
+
+Survival is the target, but the comparators are built first — they are a day's work, they unblock the UI while the survival model is being tuned, and without them there is no way to know whether the primary model earned its complexity.
 
 ```
-Phase 3a  Build classifier + regressor exactly as 05 specifies.
-          They are the baseline, they are low-risk, and they unblock the UI.
-Phase 3b  Build the competing-risks survival model on the SAME features
-          and the SAME temporal split, including the censored rows.
-Phase 3c  Compare head to head: concordance vs AUC on ranking; bucket
-          calibration vs bucket calibration. Ship the winner. If survival
-          wins, 05 §4 is revised and the regressor is retired.
+Phase 3a  Comparators: classifier + regressor on uncensored stays.
+          Low-risk, unblocks the API and the dashboard against real numbers.
+Phase 3b  PRIMARY: competing-risks survival model, same features, same
+          temporal split, INCLUDING the censored rows.
+          Validate per-prediction attribution here — it is an API requirement.
+Phase 3c  Head to head: concordance vs AUC on ranking, bucket calibration
+          vs bucket calibration. Survival ships unless it loses, in which
+          case 05 §4 reverts and the reason is recorded.
 ```
 
-That ordering means the better idea gets a fair trial without putting the phase at risk if it does not pan out.
+**The failure condition is explicit.** If the survival model does not beat the comparators on ranking quality, or if per-prediction attribution cannot populate `top_factors`, it does not ship and doc 05 reverts to the two-model formulation. Complexity has to pay for itself, and "we chose the more sophisticated method" is not a result.
 
 ---
 
@@ -187,9 +190,9 @@ That last row is worth acting on early. The Austin caveat says only relative ran
 | Question | Answer |
 |---|---|
 | Train or fine-tune, for forecasting? | **Train.** Gradient-boosted / random forest ensembles on tabular features. Fine-tuning an LLM is the wrong tool — §5 |
-| Best formulation? | **Competing-risks survival analysis** — §3. Uses censored data, separates outcome types, yields probability and duration from one coherent model |
-| Does that block Phase 3? | **No.** Classifier + regressor first as the baseline, survival second, ship the winner — §3 staging |
-| Primary algorithm to try? | Random Survival Forest, with gradient-boosted survival as the likely stronger contender and Cox as the interpretable comparator |
+| Formulation? | **Competing-risks survival analysis, primary** — §3. Uses censored data, separates outcome types, yields probability and duration from one coherent model. Adopted into [05](./05-ml-spec.md) |
+| Does that block Phase 3? | **No.** Comparators built first in 3a, survival in 3b, head-to-head in 3c — §3 build order |
+| Primary algorithm? | Random Survival Forest, with gradient-boosted survival as the likely stronger contender and Cox as the interpretable comparator |
 | Primary metric? | **Concordance index** — it measures ranking, which is the only claim the product makes |
 | Intervals? | Conformal prediction, for coverage guarantees rather than invented ranges |
 | High-cardinality breed? | Compare CatBoost's native handling against the hand-built grouping |
@@ -209,3 +212,4 @@ That last row is worth acting on early. The Austin caveat says only relative ran
 | Per-shelter models | Not enough data per shelter for years. Hierarchical modelling is the right version of this instinct — §6 |
 | Online / continuously updating learning | [05](./05-ml-spec.md) §9 is right: retraining is quarterly and human-reviewed. Automatic retraining at this scale is a way to silently ship a worse model |
 | Reinforcement learning on adoption outcomes | Feedback loop measured in months, tiny sample, and it would optimise a system that decides about living animals. No |
+| **`gigatoken`** ([marcelroed/gigatoken](https://github.com/marcelroed/gigatoken)) | A genuinely impressive Rust text tokenizer — ~1000× faster than HuggingFace `tokenizers`, ~24 GB/s. It accelerates **text tokenization for LLM pretraining and inference pipelines**, which is a bottleneck this project does not have: the forecasting model is tabular, with zero text tokenization anywhere in training. Our only LLM traffic is Claude API calls, where tokenization happens server-side at Anthropic. Even in the one place text could enter — the description-embedding experiment in §5 — we would be embedding a few thousand short strings, where the encoder forward pass dominates and tokenization is noise. Right tool, wrong problem |
