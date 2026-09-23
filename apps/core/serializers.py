@@ -228,3 +228,23 @@ class PublicAnimalDetailSerializer(serializers.ModelSerializer):
                     'predicted_adoption_time_days': match_res.predicted_adoption_time_days
                 }
         return None
+
+
+from rest_framework import serializers
+from apps.core.models import AdoptionApplication, ApplicationStatus
+
+
+class AdoptionApplicationCreateSerializer(serializers.ModelSerializer):
+    """
+    Serializzatore per l'invio di una nuova candidatura di adozione da parte dell'adottante.
+    """
+    class Meta:
+        model = AdoptionApplication
+        fields = ('id', 'motivational_notes', 'submitted_at')
+        read_only_fields = ('id', 'submitted_at')
+
+    def validate_motivational_notes(self, value):
+        text = value.strip()
+        if len(text) < 50:
+            raise serializers.ValidationError("La lettera motivazionale deve contenere almeno 50 caratteri spiegando le tue motivazioni.")
+        return text

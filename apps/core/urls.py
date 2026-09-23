@@ -72,3 +72,19 @@ urlpatterns = [
 
     # ... rotte media e dashboard rifugio ...
 ]
+
+from django.urls import path
+from apps.core.views import (
+    AdoptionApplicationCreateAPIView,
+    # ... le altre viste ...
+)
+
+app_name = 'core'
+
+urlpatterns = [
+    # Invio Candidatura Adozione
+    path('animals/<int:animal_id>/apply/', AdoptionApplicationCreateAPIView.as_view(), name='animal_apply'),
+
+    # ... altre rotte ...
+]
+

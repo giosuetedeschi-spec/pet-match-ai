@@ -324,3 +324,56 @@ class PublicAnimalDetailAPIView(generics.RetrieveAPIView):
             'breed', 'shelter', 'shelter__user'
         ).prefetch_related('images')
 
+from rest_framework import status, permissions
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
+
+from apps.core.models import Animal, AnimalStatus, AdoptionApplication, ApplicationStatus
+from apps.core.serializers import AdoptionApplicationCreateSerializer, ShelterApplicationSerializer
+from apps.core.permissions import IsAdopterUser
+from apps.matching.services import MatchingService
+
+
+class AdoptionApplicationCreateAPIView(APIView):
+    """
+    API per l'inoltro di una domanda di adozione per uno specifico animale.
+    """
+    permission_classes = (IsAdopterUser,)
+
+    def post(self, request, animal_id):
+        animal = get_object_or_404(Animal, id=animal_id)
+
+        # 1. Verifica disponibilità dell'animale
+        if animal.status != AnimalStatus.AVAILABLE:
+            return Response(
+                {"detail": "Questo animale non è al momento disponibile per l'adozione."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # 2. Verifica candidatura duplicata
+        if AdoptionApplication.objects.filter(adopter=request.user, animal=animal).exists():
+            return Response(
+                {"detail": "Hai già inviato una candidatura per questo animale."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        serializer = AdoptionApplicationCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            # 3. Calcolo o recupero dello score ML di compatibilità all'atto dell'invio
+            match_record = MatchingService.process_and_save_match(request.user, animal)
+            score_at_submission = match_record.overall_score if match_record else 0.0
+
+            # 4. Creazione e salvataggio della domanda
+            application = serializer.save(
+                adopter=request.user,
+                animal=animal,
+                status=ApplicationStatus.SUBMITTED,
+                compatibility_score_at_submission=score_at_submission
+            )
+
+            # Ritorna la candidatura creata con il dettaglio completo
+            response_serializer = ShelterApplicationSerializer(application, context={'request': request})
+            return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

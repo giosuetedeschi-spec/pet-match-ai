@@ -15,3 +15,19 @@ class IsShelterOwnerOfAnimal(permissions.BasePermission):
             return obj.animal.shelter.user == request.user
         # Se l'oggetto è direttamente Animal
         return obj.shelter.user == request.user
+
+
+from rest_framework import permissions
+
+
+class IsAdopterUser(permissions.BasePermission):
+    """
+    Permesso personalizzato: consente l'accesso solo agli utenti autenticati con ruolo ADOPTER
+    e profilo adottante associato.
+    """
+    def has_permission(self, request, view):
+        return (
+            request.user.is_authenticated and
+            request.user.role == 'ADOPTER' and
+            hasattr(request.user, 'adopter_profile')
+        )

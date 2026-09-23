@@ -1,9 +1,5 @@
 1. API Lato Adottante (Flusso Pubblico e Candidature)
 
-Catalogo e Ricerca Pubblica Animali: Endpoint per esplorare gli animali disponibili con filtri avanzati (specie, taglia, età, compatibilità con bambini/gatti/cani, vicinanza).
-
-Invio Candidatura Adozione: API per inoltrare la domanda di adozione per uno specifico animale con lettera motivazionale.
-
 Tracking Candidature Utente: API per permettere all'adottante di consultare lo stato delle proprie candidature inviate (In valutazione, Visita programmata, Approvata, Rifiutata).
 
 2. Attuazione dei Diritti GDPR a Livello API
