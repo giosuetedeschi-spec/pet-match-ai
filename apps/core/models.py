@@ -218,3 +218,40 @@ class HomeVisit(models.Model):
 
     def __str__(self):
         return f"Visita per {self.application.animal.name} - {self.get_outcome_display()}"
+
+# Aggiungi questa logica all'interno di apps/core/models.py nel modello AnimalImage
+
+from apps.core.utils import optimize_image
+
+class AnimalImage(models.Model):
+    animal = models.ForeignKey(
+        Animal,
+        on_delete=models.CASCADE,
+        related_name='images',
+        verbose_name=_('Animale')
+    )
+    image = models.ImageField(upload_to='animals/', verbose_name=_('File Immagine'))
+    caption = models.CharField(max_length=150, blank=True, verbose_name=_('Didascalia'))
+    is_primary = models.BooleanField(default=False, verbose_name=_('Foto Copertina'))
+    order = models.PositiveIntegerField(default=0, verbose_name=_('Ordine Ordinamento'))
+
+    class Meta:
+        verbose_name = _('Immagine Animale')
+        verbose_name_plural = _('Immagini Animali')
+        ordering = ['order', '-is_primary', 'id']
+
+    def save(self, *args, **kwargs):
+        # Se è un nuovo upload o l'immagine è stata modificata
+        if self.image and not getattr(self, '_optimized', False):
+            self.image = optimize_image(self.image, max_width=1200, max_height=1200, quality=80)
+            self._optimized = True
+
+        # Gestione foto copertina univoca per animale
+        if self.is_primary:
+            AnimalImage.objects.filter(animal=self.animal, is_primary=True).exclude(pk=self.pk).update(is_primary=False)
+            
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Immagine {self.animal.name} ({'Copertina' if self.is_primary else 'Galleria'})"
+
