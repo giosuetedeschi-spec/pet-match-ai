@@ -95,3 +95,27 @@ class RegisterSerializer(serializers.ModelSerializer):
 class GDPRConsentUpdateSerializer(serializers.Serializer):
     consent_type = serializers.ChoiceField(choices=ConsentType.choices)
     granted = serializers.BooleanField()
+
+
+
+from rest_framework import serializers
+
+
+class AccountDeletionSerializer(serializers.Serializer):
+    """
+    Serializzatore per la conferma di sicurezza dell'eliminazione account.
+    Richiede la password attuale e una conferma esplicita.
+    """
+    password = serializers.CharField(write_only=True, required=True)
+    confirm_deletion = serializers.BooleanField(required=True)
+
+    def validate_confirm_deletion(self, value):
+        if not value:
+            raise serializers.ValidationError("È necessario confermare la volontà di eliminare l'account.")
+        return value
+
+    def validate(self, attrs):
+        user = self.context['request'].user
+        if not user.check_password(attrs['password']):
+            raise serializers.ValidationError({"password": "La password inserita non è corretta."})
+        return attrs

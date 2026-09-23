@@ -45,3 +45,20 @@ urlpatterns = [
 
     # ... rotte esistenti ...
 ]
+
+
+from django.urls import path
+from apps.users.views import (
+    GDPRDeleteAccountAPIView,
+    # ... le altre viste ...
+)
+
+app_name = 'users'
+
+urlpatterns = [
+    # Diritto all'Oblio GDPR Art. 17
+    path('me/gdpr-delete/', GDPRDeleteAccountAPIView.as_view(), name='gdpr_delete'),
+
+    # ... altre rotte ...
+]
+

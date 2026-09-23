@@ -110,3 +110,33 @@ class GDPRExportDataAPIView(APIView):
         response['Content-Length'] = len(zip_content)
         
         return response
+
+
+
+from rest_framework import status, permissions
+from rest_framework.views import APIView
+from rest_framework.response import Response
+
+from apps.users.serializers import AccountDeletionSerializer
+from apps.users.services import GDPRAnonymizationService
+
+
+class GDPRDeleteAccountAPIView(APIView):
+    """
+    API (Art. 17 GDPR): Anonimizza in modo irreversibile i dati dell'utente
+    e disattiva permanentemente l'account (Diritto all'Oblio).
+    """
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def post(self, request):
+        serializer = AccountDeletionSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            user = request.user
+            GDPRAnonymizationService.anonymize_and_delete_user(user, request=request)
+            
+            return Response(
+                {"detail": "Il tuo account e i tuoi dati personali sono stati anonimizzati ed eliminati con successo in conformità al GDPR."},
+                status=status.HTTP_200_OK
+            )
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

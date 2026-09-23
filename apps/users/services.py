@@ -131,3 +131,72 @@ class GDPRExportService:
                     pass
 
         return zip_buffer.getvalue()
+
+
+import uuid
+from django.contrib.auth import get_user_model
+from apps.audit.models import GDPRConsentLog, ConsentType
+
+User = get_user_model()
+
+
+class GDPRAnonymizationService:
+    """
+    Servizio per l'anonimizzazione irreversibile dei dati personali e la disattivazione dell'account
+    ai sensi dell'Art. 17 del GDPR (Diritto all'Oblio / Right to be Forgotten).
+    """
+
+    @staticmethod
+    def anonymize_and_delete_user(user: User, request=None) -> User:
+        """
+        Elimina o anonimizza in modo irreversibile tutti i dati personali dell'utente.
+        """
+        # 1. Registrazione dell'ultimo log di revoca consensi nel registro di audit
+        ip_addr = request.META.get('REMOTE_ADDR') if request else None
+        user_agent = request.META.get('HTTP_USER_AGENT', '') if request else ''
+
+        GDPRConsentLog.objects.create(
+            user=user,
+            consent_type=ConsentType.PRIVACY,
+            granted=False,
+            ip_address=ip_addr,
+            user_agent=user_agent
+        )
+
+        # 2. Eliminazione file fisici collegati (Avatar)
+        if user.avatar:
+            user.avatar.delete(save=False)
+
+        # 3. Anonimizzazione campi identificativi base dell'Utente
+        anon_id = str(uuid.uuid4())[:8]
+        user.username = f"deleted_user_{user.id}_{anon_id}"
+        user.email = f"deleted_{user.id}_{anon_id}@anonymized.local"
+        user.first_name = "Utente"
+        user.last_name = "Anonimizzato"
+        user.phone_number = ""
+        user.address = ""
+        user.city = ""
+        user.province = ""
+        user.postal_code = ""
+        user.gdpr_consent = False
+        user.gdpr_consent_date = None
+        user.marketing_consent = False
+        user.is_active = False  # Disattiva l'account impedendo qualsiasi login futuro
+        user.set_unusable_password()  # Invalida la password
+        user.save()
+
+        # 4. Pulizia dei dati sensibili o personali nei profili collegati
+        if user.role == User.Role.ADOPTER and hasattr(user, 'adopter_profile'):
+            profile = user.adopter_profile
+            profile.children_ages_info = ""
+            profile.other_pets_details = ""
+            profile.save()
+
+        elif user.role == User.Role.SHELTER and hasattr(user, 'shelter_profile'):
+            shelter = user.shelter_profile
+            shelter.official_email = user.email
+            shelter.tax_code_vat = f"DELETED_{user.id}"
+            shelter.description = "Account rifugio chiuso o disattivato dall'utente."
+            shelter.save()
+
+        return user
