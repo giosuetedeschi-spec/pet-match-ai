@@ -269,3 +269,58 @@ class ShelterDashboardStatsAPIView(APIView):
         }
 
         return Response(data, status=status.HTTP_200_OK)
+
+
+from rest_framework import generics, permissions, filters
+from rest_framework.pagination import PageNumberPagination
+from django_filters.rest_framework import DjangoFilterBackend
+
+from apps.core.models import Animal, AnimalStatus
+from apps.core.filters import AnimalFilter
+from apps.core.serializers import (
+    PublicAnimalListSerializer,
+    PublicAnimalDetailSerializer
+)
+
+
+class CatalogPagination(PageNumberPagination):
+    page_size = 12
+    page_size_query_param = 'page_size'
+    max_page_size = 48
+
+
+class PublicAnimalCatalogAPIView(generics.ListAPIView):
+    """
+    API Pubblica: Esplora il catalogo degli animali disponibili per l'adozione.
+    Supporta: Filtri avanzati, Ricerca testuale, Ordinamento e Paginazione.
+    """
+    permission_classes = (permissions.AllowAny,)
+    serializer_class = PublicAnimalListSerializer
+    pagination_class = CatalogPagination
+    filter_backends = (DjangoFilterBackend, filters.OrderingFilter)
+    filterset_class = AnimalFilter
+    ordering_fields = ['created_at', 'age_years', 'name']
+    ordering = ['-created_at']
+
+    def get_queryset(self):
+        return Animal.objects.filter(
+            status=AnimalStatus.AVAILABLE
+        ).select_related(
+            'breed', 'shelter', 'shelter__user'
+        ).prefetch_related('images')
+
+
+class PublicAnimalDetailAPIView(generics.RetrieveAPIView):
+    """
+    API Pubblica: Dettaglio completo di una singola scheda animale.
+    """
+    permission_classes = (permissions.AllowAny,)
+    serializer_class = PublicAnimalDetailSerializer
+
+    def get_queryset(self):
+        return Animal.objects.filter(
+            status=AnimalStatus.AVAILABLE
+        ).select_related(
+            'breed', 'shelter', 'shelter__user'
+        ).prefetch_related('images')
+

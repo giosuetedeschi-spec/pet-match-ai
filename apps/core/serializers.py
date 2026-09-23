@@ -128,3 +128,103 @@ class ApplicationStatusUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = AdoptionApplication
         fields = ('status', 'shelter_notes')
+
+
+from rest_framework import serializers
+from apps.core.models import Animal, AnimalImage
+from apps.matching.models import MatchResult
+
+
+class PublicAnimalImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AnimalImage
+        fields = ('id', 'image', 'caption', 'is_primary', 'order')
+
+
+class PublicAnimalListSerializer(serializers.ModelSerializer):
+    """
+    Serializzatore leggero per la griglia del catalogo pubblico.
+    """
+    species_display = serializers.CharField(source='get_species_display', read_only=True)
+    size_display = serializers.CharField(source='get_size_display', read_only=True)
+    gender_display = serializers.CharField(source='get_gender_display', read_only=True)
+    breed_name = serializers.CharField(source='breed.name', read_only=True, default="Meticcio")
+    shelter_name = serializers.CharField(source='shelter.shelter_name', read_only=True)
+    city = serializers.CharField(source='shelter.user.city', read_only=True)
+    province = serializers.CharField(source='shelter.user.province', read_only=True)
+    primary_image = serializers.SerializerMethodField()
+    match_score = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Animal
+        fields = (
+            'id', 'name', 'species', 'species_display', 'breed_name',
+            'age_years', 'age_months', 'gender', 'gender_display',
+            'size', 'size_display', 'energy_level', 'city', 'province',
+            'shelter_name', 'primary_image', 'match_score', 'created_at'
+        )
+
+    def get_primary_image(self, obj):
+        primary = obj.images.filter(is_primary=True).first() or obj.images.first()
+        if primary and primary.image:
+            request = self.context.get('request')
+            return request.build_absolute_uri(primary.image.url) if request else primary.image.url
+        return None
+
+    def get_match_score(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated and request.user.role == 'ADOPTER':
+            match_res = MatchResult.objects.filter(adopter=request.user, animal=obj).first()
+            return round(match_res.overall_score, 1) if match_res else None
+        return None
+
+
+class PublicAnimalDetailSerializer(serializers.ModelSerializer):
+    """
+    Serializzatore completo per la scheda di dettaglio dell'animale.
+    """
+    species_display = serializers.CharField(source='get_species_display', read_only=True)
+    size_display = serializers.CharField(source='get_size_display', read_only=True)
+    energy_level_display = serializers.CharField(source='get_energy_level_display', read_only=True)
+    gender_display = serializers.CharField(source='get_gender_display', read_only=True)
+    breed_name = serializers.CharField(source='breed.name', read_only=True, default="Meticcio")
+    images = PublicAnimalImageSerializer(many=True, read_only=True)
+    
+    shelter_info = serializers.SerializerMethodField()
+    match_data = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Animal
+        fields = (
+            'id', 'name', 'species', 'species_display', 'breed_name',
+            'age_years', 'age_months', 'gender', 'gender_display',
+            'size', 'size_display', 'energy_level', 'energy_level_display',
+            'good_with_cats', 'good_with_dogs', 'good_with_children',
+            'requires_garden', 'max_hours_alone_per_day', 'required_experience_level',
+            'is_spayed_neutered', 'is_vaccinated', 'special_needs',
+            'description', 'status', 'shelter_info', 'images', 'match_data',
+            'created_at'
+        )
+
+    def get_shelter_info(self, obj):
+        shelter = obj.shelter
+        return {
+            'id': shelter.id,
+            'shelter_name': shelter.shelter_name,
+            'city': shelter.user.city,
+            'province': shelter.user.province,
+            'official_email': shelter.official_email,
+            'is_verified': shelter.is_verified
+        }
+
+    def get_match_data(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated and request.user.role == 'ADOPTER':
+            match_res = MatchResult.objects.filter(adopter=request.user, animal=obj).first()
+            if match_res:
+                return {
+                    'overall_score': round(match_res.overall_score, 1),
+                    'score_breakdown': match_res.score_breakdown,
+                    'predicted_adoption_time_days': match_res.predicted_adoption_time_days
+                }
+        return None

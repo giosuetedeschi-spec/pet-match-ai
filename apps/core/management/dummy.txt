@@ -1,0 +1,54 @@
+1. API Lato Adottante (Flusso Pubblico e Candidature)
+
+Catalogo e Ricerca Pubblica Animali: Endpoint per esplorare gli animali disponibili con filtri avanzati (specie, taglia, età, compatibilità con bambini/gatti/cani, vicinanza).
+
+Invio Candidatura Adozione: API per inoltrare la domanda di adozione per uno specifico animale con lettera motivazionale.
+
+Tracking Candidature Utente: API per permettere all'adottante di consultare lo stato delle proprie candidature inviate (In valutazione, Visita programmata, Approvata, Rifiutata).
+
+2. Attuazione dei Diritti GDPR a Livello API
+Abbiamo i modelli di log dei consensi, ma mancano gli endpoint operativi per l'utente:
+
+Export Dati (Art. 20 GDPR - Portabilità): Endpoint che genera ed eroga un file JSON/ZIP contenente tutti i dati personali dell'utente (profilo, domande inviate, consensi).
+
+Cancellazione / Anonimizzazione Account (Art. 17 GDPR - Diritto all'Oblio): Endpoint per l'eliminazione definitiva o l'anonimizzazione irreversibile dei dati utente a fini statistici.
+
+3. Sistema di Notifiche ed Email
+Manca il modulo di messaggistica e notifica per aggiornare gli utenti in tempo reale:
+
+Invio Email Transazionali (Django Email / Celery):
+
+Email di benvenuto/conferma registrazione.
+
+Notifica al rifugio all'arrivo di una nuova candidatura.
+
+Notifica all'adottante per cambio stato della candidatura o programmazione della visita pre-affido.
+
+Sistema di Notifiche In-App: Tabelle e API per visualizzare gli avvisi direttamente nell'applicazione.
+
+4. Modulo MLOps e Feedback Loop
+Il modello Cox Survival fa inferenza, ma manca la chiusura del ciclo di apprendimento continuo:
+
+API Raccolta Feedback Post-Adozione: Form/Endpoint per registrare l'esito dell'adozione (stabilità dell'affido, eventuali restituzioni) popolando la tabella AdoptionFeedback.
+
+Pipeline di Retraining Automatizzato: Script offline/scheduled per ri-addestrare il modello cox_survival_model.joblib periodicamente sui nuovi dati reali raccolti.
+
+5. Interfaccia Utente e Frontend (UI / UX)
+Manca la parte visuale/client con cui gli utenti e i rifugi interagiscono:
+
+Interfaccia Web / Mobile Adottante: Pagine HTML/Tailwind o app SPA per la navigazione delle schede, la visualizzazione del punteggio di compatibilità e la compilazione dei form.
+
+Dashboard Grafica del Rifugio: Interfaccia di gestione per caricare le foto drag-and-drop, spostare lo stato delle candidature e consultare i grafici delle metriche.
+
+Pannello Gestione Consensi Privacy: Interfaccia per la gestione rapida della revoca dei consensi.
+
+6. DevOps, Deployment e Script di Produzione
+Manca la configurazione per la messa in produzione su server VPS IONOS tramite Podman:
+
+File di Configurazione Systemd / Podman Quadlet: Per garantire il riavvio automatico dei container al reboot del VPS IONOS.
+
+Script Automation SSL / Certbot: Script per la richiesta e il rinnovo automatico dei certificati HTTPS su Nginx.
+
+Pipeline CI/CD (GitHub Actions / GitLab CI): Workflow per l'esecuzione automatica dei test d'integrazione a ogni push e il deployment automatizzato sul server.
+
+Logging e Monitoraggio: Integrazione di Sentry (tracciamento errori) e file di log ruotati per il server web.

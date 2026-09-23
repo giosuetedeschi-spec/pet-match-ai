@@ -55,3 +55,20 @@ urlpatterns = [
     # Rotte Dashboard Rifugio - Analytics e Statistiche
     path('shelter/dashboard/stats/', ShelterDashboardStatsAPIView.as_view(), name='shelter_dashboard_stats'),
 ]
+
+from django.urls import path
+from apps.core.views import (
+    PublicAnimalCatalogAPIView,
+    PublicAnimalDetailAPIView,
+    # ... le altre viste già presenti ...
+)
+
+app_name = 'core'
+
+urlpatterns = [
+    # Catalogo Pubblico Animali
+    path('catalog/animals/', PublicAnimalCatalogAPIView.as_view(), name='public_animal_catalog'),
+    path('catalog/animals/<int:pk>/', PublicAnimalDetailAPIView.as_view(), name='public_animal_detail'),
+
+    # ... rotte media e dashboard rifugio ...
+]
