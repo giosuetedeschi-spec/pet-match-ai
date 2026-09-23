@@ -88,3 +88,38 @@ urlpatterns = [
     # ... altre rotte ...
 ]
 
+from django.urls import path
+from apps.core.views import (
+    AdopterApplicationListAPIView,
+    AdopterApplicationDetailAPIView,
+    AdopterApplicationWithdrawAPIView,
+    # ... le altre viste ...
+)
+
+app_name = 'core'
+
+urlpatterns = [
+    # Tracking Candidature Adottante
+    path('user/applications/', AdopterApplicationListAPIView.as_view(), name='adopter_application_list'),
+    path('user/applications/<int:pk>/', AdopterApplicationDetailAPIView.as_view(), name='adopter_application_detail'),
+    path('user/applications/<int:pk>/withdraw/', AdopterApplicationWithdrawAPIView.as_view(), name='adopter_application_withdraw'),
+
+    # ... altre rotte ...
+]
+
+
+from django.urls import path
+from apps.core.views import (
+    AdopterApplicationListAPIView,
+    AdopterApplicationDetailAPIView,
+    AdopterApplicationWithdrawAPIView,
+)
+
+app_name = 'core'
+
+urlpatterns = [
+    # Tracking Candidature Adottante
+    path('user/applications/', AdopterApplicationListAPIView.as_view(), name='adopter_application_list'),
+    path('user/applications/<int:pk>/', AdopterApplicationDetailAPIView.as_view(), name='adopter_application_detail'),
+    path('user/applications/<int:pk>/withdraw/', AdopterApplicationWithdrawAPIView.as_view(), name='adopter_application_withdraw'),
+]

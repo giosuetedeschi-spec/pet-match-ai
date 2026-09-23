@@ -377,3 +377,167 @@ class AdoptionApplicationCreateAPIView(APIView):
             return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+from rest_framework import generics, status, permissions
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
+
+from apps.core.models import AdoptionApplication, ApplicationStatus
+from apps.core.serializers import (
+    AdopterApplicationListSerializer,
+    AdopterApplicationDetailSerializer
+)
+from apps.core.permissions import IsAdopterUser
+
+
+class AdopterApplicationListAPIView(generics.ListAPIView):
+    """
+    API: Elenco delle candidature inviate dall'adottante loggato.
+    Supporta filtri per stato (`?status=IN_REVIEW`).
+    """
+    permission_classes = (IsAdopterUser,)
+    serializer_class = AdopterApplicationListSerializer
+
+    def get_queryset(self):
+        queryset = AdoptionApplication.objects.filter(
+            adopter=self.request.user
+        ).select_related(
+            'animal', 'animal__breed', 'animal__shelter', 'animal__shelter__user'
+        ).prefetch_related('animal__images')
+
+        status_param = self.request.query_params.get('status')
+        if status_param:
+            queryset = queryset.filter(status=status_param)
+
+        return queryset
+
+
+class AdopterApplicationDetailAPIView(generics.RetrieveAPIView):
+    """
+    API: Dettaglio della singola candidatura dell'adottante.
+    """
+    permission_classes = (IsAdopterUser,)
+    serializer_class = AdopterApplicationDetailSerializer
+
+    def get_queryset(self):
+        return AdoptionApplication.objects.filter(
+            adopter=self.request.user
+        ).select_related(
+            'animal', 'animal__shelter', 'animal__shelter__user', 'home_visit'
+        )
+
+
+class AdopterApplicationWithdrawAPIView(APIView):
+    """
+    API: Permette all'adottante di ritirare spontaneamente una domanda di adozione.
+    """
+    permission_classes = (IsAdopterUser,)
+
+    def patch(self, request, pk):
+        application = get_object_or_404(
+            AdoptionApplication,
+            id=pk,
+            adopter=request.user
+        )
+
+        # Impossibile ritirare pratiche già archiviate o concluse
+        if application.status in [ApplicationStatus.APPROVED, ApplicationStatus.REJECTED, ApplicationStatus.WITHDRAWN]:
+            return Response(
+                {"detail": f"Impossibile ritirare una candidatura nello stato '{application.get_status_display()}'."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        application.status = ApplicationStatus.WITHDRAWN
+        application.save()
+
+        return Response(
+            {"detail": "La tua candidatura è stata ritirata con successo."},
+            status=status.HTTP_200_OK
+        )
+
+
+from rest_framework import generics, status, permissions
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
+
+from apps.core.models import AdoptionApplication, ApplicationStatus
+from apps.core.serializers import (
+    AdopterApplicationListSerializer,
+    AdopterApplicationDetailSerializer
+)
+from apps.core.permissions import IsAdopterUser
+
+
+class AdopterApplicationListAPIView(generics.ListAPIView):
+    """
+    API: Restituisce l'elenco delle candidature d'adozione inviate dall'utente.
+    Permette di filtrare per stato tramite query parameter:
+    ?status=SUBMITTED (Inviata)
+    ?status=IN_REVIEW (In Valutazione)
+    ?status=HOME_VISIT (Visita Programmata)
+    ?status=APPROVED (Approvata)
+    ?status=REJECTED (Rifiutata)
+    """
+    permission_classes = (IsAdopterUser,)
+    serializer_class = AdopterApplicationListSerializer
+
+    def get_queryset(self):
+        queryset = AdoptionApplication.objects.filter(
+            adopter=self.request.user
+        ).select_related(
+            'animal', 'animal__breed', 'animal__shelter', 'animal__shelter__user'
+        ).prefetch_related('animal__images')
+
+        status_param = self.request.query_params.get('status')
+        if status_param:
+            queryset = queryset.filter(status=status_param)
+
+        return queryset
+
+
+class AdopterApplicationDetailAPIView(generics.RetrieveAPIView):
+    """
+    API: Dettaglio di una singola candidatura d'adozione per l'adottante.
+    """
+    permission_classes = (IsAdopterUser,)
+    serializer_class = AdopterApplicationDetailSerializer
+
+    def get_queryset(self):
+        return AdoptionApplication.objects.filter(
+            adopter=self.request.user
+        ).select_related(
+            'animal', 'animal__shelter', 'animal__shelter__user', 'home_visit'
+        )
+
+
+class AdopterApplicationWithdrawAPIView(APIView):
+    """
+    API: Consente all'adottante di ritirare spontaneamente la propria candidatura
+    finché non è stata conclusa o rifiutata definitivamente.
+    """
+    permission_classes = (IsAdopterUser,)
+
+    def patch(self, request, pk):
+        application = get_object_or_404(
+            AdoptionApplication,
+            id=pk,
+            adopter=request.user
+        )
+
+        if application.status in [ApplicationStatus.APPROVED, ApplicationStatus.REJECTED, ApplicationStatus.WITHDRAWN]:
+            return Response(
+                {"detail": f"Impossibile ritirare una candidatura nello stato '{application.get_status_display()}'."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        application.status = ApplicationStatus.WITHDRAWN
+        application.save()
+
+        return Response(
+            {"detail": "La tua candidatura è stata ritirata con successo."},
+            status=status.HTTP_200_OK
+        )

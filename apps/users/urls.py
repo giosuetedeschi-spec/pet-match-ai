@@ -29,3 +29,19 @@ urlpatterns = [
     # GDPR Management
     path('me/gdpr-consent/', GDPRConsentView.as_view(), name='update_gdpr_consent'),
 ]
+
+
+from django.urls import path
+from apps.users.views import (
+    GDPRExportDataAPIView,
+    # ... le altre viste di autenticazione e profilo ...
+)
+
+app_name = 'users'
+
+urlpatterns = [
+    # Export Portabilità Dati GDPR Art. 20
+    path('me/gdpr-export/', GDPRExportDataAPIView.as_view(), name='gdpr_export'),
+
+    # ... rotte esistenti ...
+]

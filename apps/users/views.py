@@ -81,3 +81,32 @@ class GDPRConsentView(APIView):
             )
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+from django.http import HttpResponse
+from rest_framework.views import APIView
+from rest_framework import permissions, status
+from apps.users.services import GDPRExportService
+
+
+class GDPRExportDataAPIView(APIView):
+    """
+    API (Art. 20 GDPR): Genera ed eroga il file ZIP scaricabile contenente
+    tutti i dati personali e lo storico delle attività dell'utente autenticato.
+    """
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request):
+        user = request.user
+        
+        # Generazione archivio ZIP in memoria
+        zip_content = GDPRExportService.generate_zip_export(user)
+        
+        filename = f"gdpr_export_{user.username}.zip"
+        
+        response = HttpResponse(zip_content, content_type='application/zip')
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        response['Content-Length'] = len(zip_content)
+        
+        return response
