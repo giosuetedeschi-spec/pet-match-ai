@@ -85,7 +85,8 @@ def publish_animal(animal_id, token):
 CATALOG_TEXT = {
     "it": {
         "title": "Animali in cerca di casa", "search": "Cerca per nome, razza o rifugio",
-        "species": "Specie", "all_species": "Tutte", "city": "Città", "gender": "Sesso",
+        "species": "Specie", "all_species": "Tutte", "city": "Comune", "province": "Provincia",
+        "min_age": "Età minima", "max_age": "Età massima", "any_age": "Qualsiasi", "gender": "Sesso",
         "all_genders": "Tutti", "find": "Cerca", "empty": "Nessun animale corrisponde ai filtri. Prova a cambiarli.",
         "age": "Età: {years} anni e {months} mesi", "details": "Dettagli", "page": "Pagina {page} di {total}",
         "previous": "Precedenti", "next": "Successivi", "record": "Scheda animale", "shelter": "Rifugio",
@@ -93,7 +94,8 @@ CATALOG_TEXT = {
     },
     "en": {
         "title": "Animals looking for a home", "search": "Search by name, breed, or shelter",
-        "species": "Species", "all_species": "All", "city": "City", "gender": "Gender",
+        "species": "Species", "all_species": "All", "city": "Town", "province": "Province",
+        "min_age": "Min age", "max_age": "Max age", "any_age": "Any", "gender": "Gender",
         "all_genders": "All", "find": "Search", "empty": "No animals match these filters. Try changing them.",
         "age": "Age: {years} years and {months} months", "details": "Details", "page": "Page {page} of {total}",
         "previous": "Previous", "next": "Next", "record": "Animal profile", "shelter": "Shelter",
@@ -109,14 +111,18 @@ def render_catalog():
     st.header(text["title"])
     with st.form("catalog_filters"):
         search = st.text_input(text["search"])
-        c1, c2, c3 = st.columns(3)
+        c1, c2, c3, c4, c5, c6 = st.columns([2, 1, 1, 1, 1, 1])
         species = c1.selectbox(text["species"], [text["all_species"], "DOG", "CAT"], format_func=lambda value: {"DOG": "Dog" if language_code == "en" else "Cane", "CAT": "Cat" if language_code == "en" else "Gatto"}.get(value, value))
         city = c2.text_input(text["city"])
-        gender = c3.selectbox(text["gender"], [text["all_genders"], "M", "F"], format_func=lambda value: {"M": "Male" if language_code == "en" else "Maschio", "F": "Female" if language_code == "en" else "Femmina"}.get(value, value))
+        province = c3.text_input(text["province"], max_chars=10)
+        ages = [text["any_age"], *range(41)]
+        min_age = c4.selectbox(text["min_age"], ages)
+        max_age = c5.selectbox(text["max_age"], ages)
+        gender = c6.selectbox(text["gender"], [text["all_genders"], "M", "F"], format_func=lambda value: {"M": "Male" if language_code == "en" else "Maschio", "F": "Female" if language_code == "en" else "Femmina"}.get(value, value))
         submitted = st.form_submit_button(text["find"])
 
     if "catalog_filters" not in st.session_state:
-        st.session_state.catalog_filters = {"search": "", "species": "", "city": "", "gender": ""}
+        st.session_state.catalog_filters = {"search": "", "species": "", "city": "", "province": "", "min_age_years": "", "max_age_years": "", "gender": ""}
     if "catalog_page" not in st.session_state:
         st.session_state.catalog_page = 1
     if submitted:
@@ -125,6 +131,9 @@ def render_catalog():
             "search": search.strip(),
             "species": "" if species == text["all_species"] else species,
             "city": city.strip(),
+            "province": province.strip(),
+            "min_age_years": "" if min_age == text["any_age"] else min_age,
+            "max_age_years": "" if max_age == text["any_age"] else max_age,
             "gender": "" if gender == text["all_genders"] else gender,
         }
 
