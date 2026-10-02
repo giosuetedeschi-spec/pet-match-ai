@@ -329,7 +329,7 @@ from rest_framework.pagination import PageNumberPagination
 from django_filters.rest_framework import DjangoFilterBackend
 
 from apps.core.models import Animal, AnimalStatus
-from apps.core.filters import AnimalFilter
+from apps.core.filters import AnimalFilter, ComuneDistanceFilterBackend
 from apps.core.serializers import (
     PublicAnimalListSerializer,
     PublicAnimalDetailSerializer
@@ -350,7 +350,7 @@ class PublicAnimalCatalogAPIView(generics.ListAPIView):
     permission_classes = (permissions.AllowAny,)
     serializer_class = PublicAnimalListSerializer
     pagination_class = CatalogPagination
-    filter_backends = (DjangoFilterBackend, filters.OrderingFilter)
+    filter_backends = (DjangoFilterBackend, filters.OrderingFilter, ComuneDistanceFilterBackend)
     filterset_class = AnimalFilter
     ordering_fields = ['created_at', 'age_years', 'name']
     ordering = ['-created_at']
@@ -360,7 +360,7 @@ class PublicAnimalCatalogAPIView(generics.ListAPIView):
             status=AnimalStatus.AVAILABLE,
             shelter__is_verified=True,
         ).select_related(
-            'breed', 'shelter', 'shelter__user'
+            'breed', 'shelter', 'shelter__user', 'shelter__user__comune'
         ).prefetch_related('images')
 
 

@@ -4,6 +4,7 @@ from django.utils import timezone
 from django.db import transaction
 from apps.users.models import AdopterProfile, ShelterProfile
 from apps.audit.models import GDPRConsentLog, ConsentType
+from apps.core.models import Comune
 
 User = get_user_model()
 
@@ -23,12 +24,15 @@ class ShelterProfileSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     adopter_profile = AdopterProfileSerializer(read_only=True)
     shelter_profile = ShelterProfileSerializer(read_only=True)
+    comune = serializers.PrimaryKeyRelatedField(queryset=Comune.objects.all(), allow_null=True, required=False)
+    city = serializers.CharField(read_only=True)
+    province = serializers.CharField(read_only=True)
 
     class Meta:
         model = User
         fields = (
             'id', 'username', 'email', 'first_name', 'last_name',
-            'role', 'phone_number', 'address', 'city', 'province',
+            'role', 'phone_number', 'address', 'comune', 'city', 'province',
             'postal_code', 'avatar', 'gdpr_consent', 'gdpr_consent_date',
             'marketing_consent', 'adopter_profile', 'shelter_profile'
         )
@@ -43,6 +47,7 @@ class RegisterSerializer(serializers.ModelSerializer):
     tax_code_vat = serializers.CharField(required=False, max_length=30)
     official_email = serializers.EmailField(required=False)
     address = serializers.CharField(required=False, max_length=255)
+    comune = serializers.PrimaryKeyRelatedField(queryset=Comune.objects.all(), required=False)
     city = serializers.CharField(required=False, max_length=100)
     province = serializers.CharField(required=False, max_length=10)
     postal_code = serializers.CharField(required=False, max_length=10)
@@ -57,7 +62,7 @@ class RegisterSerializer(serializers.ModelSerializer):
             'username', 'email', 'password', 'password_confirm',
             'first_name', 'last_name', 'role', 'phone_number',
             'gdpr_consent', 'marketing_consent', 'shelter_name', 'legal_name',
-            'organization_type', 'tax_code_vat', 'official_email', 'address', 'city',
+            'organization_type', 'tax_code_vat', 'official_email', 'address', 'comune', 'city',
             'province', 'postal_code', 'description'
         )
 
@@ -71,9 +76,12 @@ class RegisterSerializer(serializers.ModelSerializer):
         if attrs.get('role') == User.Role.SHELTER:
             required = (
                 'shelter_name', 'legal_name', 'organization_type', 'tax_code_vat',
-                'official_email', 'address', 'city', 'province', 'postal_code', 'phone_number', 'description'
+                'official_email', 'address', 'comune', 'postal_code', 'phone_number', 'description'
             )
-            missing = [field for field in required if not str(attrs.get(field, '')).strip()]
+            missing = [
+                field for field in required
+                if not str(attrs.get(field, '')).strip()
+            ]
             if missing:
                 raise serializers.ValidationError({field: "Campo obbligatorio per registrare un rifugio." for field in missing})
         return attrs
@@ -84,6 +92,10 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     def _create_user(self, validated_data):
         validated_data.pop('password_confirm')
+        comune = validated_data.get('comune')
+        if comune:
+            validated_data['city'] = comune.name
+            validated_data['province'] = comune.province_abbreviation
         shelter_fields = {
             'shelter_name', 'legal_name', 'organization_type', 'tax_code_vat',
             'official_email', 'description'
