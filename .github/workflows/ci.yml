@@ -2,6 +2,7 @@ name: CI
 
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
@@ -166,11 +167,26 @@ jobs:
       - name: Start and verify all local services
         run: |
           set -euo pipefail
-          trap 'docker compose down --volumes --remove-orphans' EXIT
+          cleanup() {
+            result=$?
+            if [ "$result" -ne 0 ]; then
+              docker compose ps --all
+              docker compose logs --no-color
+            fi
+            docker compose down --volumes --remove-orphans
+            exit "$result"
+          }
+          trap cleanup EXIT
           docker compose up --build --detach --wait --wait-timeout 300
-          curl --fail --silent http://127.0.0.1:8501/_stcore/health >/dev/null
-          curl --fail --silent http://127.0.0.1:8000/geo/comuni/?q=Torino | python -c 'import json,sys; assert any(row["name"] == "Torino" for row in json.load(sys.stdin))'
-          curl --fail --silent http://127.0.0.1:8000/catalog/animals/ | python -c 'import json,sys; payload=json.load(sys.stdin); count=payload.get("count", len(payload)); assert count >= 100, count'
-          curl --fail --silent http://127.0.0.1:3000/api/health | python -c 'import json,sys; payload=json.load(sys.stdin); assert payload == {"status":"ok","database":"connected"}, payload'
-          curl --fail --silent http://127.0.0.1:8001/health | python -c 'import json,sys; payload=json.load(sys.stdin); assert payload["status"] == "ok", payload'
-          curl --fail --silent http://127.0.0.1:8025/api/v1/info >/dev/null
+          echo "Checking Streamlit health"
+          curl --fail --silent --show-error --retry 3 --retry-all-errors http://127.0.0.1:8501/_stcore/health >/dev/null
+          echo "Checking seeded comune lookup"
+          curl --fail --silent --show-error --retry 3 --retry-all-errors http://127.0.0.1:8000/geo/comuni/?q=Torino | python -c 'import json,sys; assert any(row["name"] == "Torino" for row in json.load(sys.stdin))'
+          echo "Checking seeded public catalog"
+          curl --fail --silent --show-error --retry 3 --retry-all-errors http://127.0.0.1:8000/catalog/animals/ | python -c 'import json,sys; payload=json.load(sys.stdin); count=payload.get("count", len(payload)); assert count >= 100, count'
+          echo "Checking Next.js and Prisma MySQL connection"
+          curl --fail --silent --show-error --retry 3 --retry-all-errors http://127.0.0.1:3000/api/health | python -c 'import json,sys; payload=json.load(sys.stdin); assert payload == {"status":"ok","database":"connected"}, payload'
+          echo "Checking ML placeholder"
+          curl --fail --silent --show-error --retry 3 --retry-all-errors http://127.0.0.1:8001/health | python -c 'import json,sys; payload=json.load(sys.stdin); assert payload["status"] == "ok", payload'
+          echo "Checking Mailpit API"
+          curl --fail --silent --show-error --retry 3 --retry-all-errors http://127.0.0.1:8025/api/v1/info >/dev/null
