@@ -82,15 +82,38 @@ def publish_animal(animal_id, token):
     )
 
 
+CATALOG_TEXT = {
+    "it": {
+        "title": "Animali in cerca di casa", "search": "Cerca per nome, razza o rifugio",
+        "species": "Specie", "all_species": "Tutte", "city": "Città", "gender": "Sesso",
+        "all_genders": "Tutti", "find": "Cerca", "empty": "Nessun animale corrisponde ai filtri. Prova a cambiarli.",
+        "age": "Età: {years} anni e {months} mesi", "details": "Dettagli", "page": "Pagina {page} di {total}",
+        "previous": "Precedenti", "next": "Successivi", "record": "Scheda animale", "shelter": "Rifugio",
+        "close": "Chiudi scheda", "fallback": "Testo originale in italiano",
+    },
+    "en": {
+        "title": "Animals looking for a home", "search": "Search by name, breed, or shelter",
+        "species": "Species", "all_species": "All", "city": "City", "gender": "Gender",
+        "all_genders": "All", "find": "Search", "empty": "No animals match these filters. Try changing them.",
+        "age": "Age: {years} years and {months} months", "details": "Details", "page": "Page {page} of {total}",
+        "previous": "Previous", "next": "Next", "record": "Animal profile", "shelter": "Shelter",
+        "close": "Close profile", "fallback": "Italian text (original)",
+    },
+}
+
+
 def render_catalog():
-    st.header("Animali in cerca di casa")
+    language = st.selectbox("Lingua / Language", ["Italiano", "English"], key="catalog_language")
+    language_code = "en" if language == "English" else "it"
+    text = CATALOG_TEXT[language_code]
+    st.header(text["title"])
     with st.form("catalog_filters"):
-        search = st.text_input("Cerca per nome, razza o rifugio")
+        search = st.text_input(text["search"])
         c1, c2, c3 = st.columns(3)
-        species = c1.selectbox("Specie", ["Tutte", "DOG", "CAT"])
-        city = c2.text_input("Città")
-        gender = c3.selectbox("Sesso", ["Tutti", "M", "F"])
-        submitted = st.form_submit_button("Cerca")
+        species = c1.selectbox(text["species"], [text["all_species"], "DOG", "CAT"], format_func=lambda value: {"DOG": "Dog" if language_code == "en" else "Cane", "CAT": "Cat" if language_code == "en" else "Gatto"}.get(value, value))
+        city = c2.text_input(text["city"])
+        gender = c3.selectbox(text["gender"], [text["all_genders"], "M", "F"], format_func=lambda value: {"M": "Male" if language_code == "en" else "Maschio", "F": "Female" if language_code == "en" else "Femmina"}.get(value, value))
+        submitted = st.form_submit_button(text["find"])
 
     if "catalog_filters" not in st.session_state:
         st.session_state.catalog_filters = {"search": "", "species": "", "city": "", "gender": ""}
@@ -100,9 +123,9 @@ def render_catalog():
         st.session_state.catalog_page = 1
         st.session_state.catalog_filters = {
             "search": search.strip(),
-            "species": "" if species == "Tutte" else species,
+            "species": "" if species == text["all_species"] else species,
             "city": city.strip(),
-            "gender": "" if gender == "Tutti" else gender,
+            "gender": "" if gender == text["all_genders"] else gender,
         }
 
     params = {key: value for key, value in st.session_state.catalog_filters.items() if value}
@@ -116,7 +139,7 @@ def render_catalog():
 
     animals = list_results(payload)
     if not animals:
-        st.info("Nessun animale corrisponde ai filtri. Prova a cambiarli.")
+        st.info(text["empty"])
         return
 
     for offset in range(0, len(animals), 3):
@@ -130,24 +153,25 @@ def render_catalog():
                         use_container_width=True,
                     )
                 st.subheader(animal.get("name", "Animale"))
+                species_labels = {"DOG": "Dog" if language_code == "en" else "Cane", "CAT": "Cat" if language_code == "en" else "Gatto"}
                 st.caption(
-                    f"{animal.get('species_display', animal.get('species', ''))} · "
-                    f"{animal.get('breed_name', 'Meticcio')} · "
+                    f"{species_labels.get(animal.get('species'), animal.get('species_display', ''))} · "
+                    f"{animal.get('breed_name') or ('Mixed breed' if language_code == 'en' else 'Meticcio')} · "
                     f"{animal.get('city', '')}"
                 )
-                st.write(f"Età: {animal.get('age_years', 0)} anni e {animal.get('age_months', 0)} mesi")
-                if st.button("Dettagli", key=f"animal-{animal['id']}"):
+                st.write(text["age"].format(years=animal.get('age_years', 0), months=animal.get('age_months', 0)))
+                if st.button(text["details"], key=f"animal-{animal['id']}"):
                     st.session_state.selected_animal_id = animal["id"]
 
     if isinstance(payload, dict) and (payload.get("previous") or payload.get("next")):
         previous, summary, following = st.columns([1, 4, 1])
         page = st.session_state.catalog_page
         total_pages = max(1, (payload.get("count", len(animals)) + 11) // 12)
-        summary.write(f"Pagina {page} di {total_pages}")
-        if payload.get("previous") and previous.button("Precedenti"):
+        summary.write(text["page"].format(page=page, total=total_pages))
+        if payload.get("previous") and previous.button(text["previous"]):
             st.session_state.catalog_page -= 1
             st.rerun()
-        if payload.get("next") and following.button("Successivi"):
+        if payload.get("next") and following.button(text["next"]):
             st.session_state.catalog_page += 1
             st.rerun()
 
@@ -156,17 +180,22 @@ def render_catalog():
         try:
             detail = api_request("GET", f"catalog/animals/{selected_id}/")
             st.divider()
-            st.subheader(detail.get("name", "Scheda animale"))
-            st.write(detail.get("description", ""))
+            st.subheader(detail.get("name", text["record"]))
+            description = detail.get("description_en") if language_code == "en" else detail.get("description")
+            if not description:
+                description = detail.get("description", "")
+                if language_code == "en" and description:
+                    st.caption(text["fallback"])
+            st.write(description)
             shelter = detail.get("shelter_info") or {}
             st.caption(
-                f"Rifugio: {shelter.get('shelter_name', '—')} · "
+                f"{text['shelter']}: {shelter.get('shelter_name', '—')} · "
                 f"{shelter.get('city', '')} ({shelter.get('province', '')})"
             )
             for image in detail.get("images", []):
                 if image.get("image"):
                     st.image(image["image"], caption=image.get("caption") or detail.get("name"), use_container_width=True)
-            if st.button("Chiudi scheda", key="close-animal-detail"):
+            if st.button(text["close"], key="close-animal-detail"):
                 del st.session_state.selected_animal_id
                 st.rerun()
         except ApiError as exc:
@@ -267,6 +296,7 @@ def render_shelter():
         age_months = c5.number_input("Età (mesi)", min_value=0, max_value=11, value=0)
         energy = c6.selectbox("Energia", ["LOW", "MEDIUM", "HIGH", "VERY_HIGH"], index=1)
         description = st.text_area("Descrizione *", max_chars=5000)
+        description_en = st.text_area("Descrizione in inglese (facoltativa)", max_chars=5000)
         intake_date = st.date_input("Ingresso in rifugio *")
         photos = st.file_uploader(
             "Foto * (almeno una, JPG/PNG/WebP, max 5 MB ciascuna)",
@@ -298,6 +328,7 @@ def render_shelter():
                 "age_years": int(age_years),
                 "age_months": int(age_months),
                 "description": description.strip(),
+                "description_en": description_en.strip(),
                 "date_entry_shelter": intake_date.isoformat(),
             }
             try:
