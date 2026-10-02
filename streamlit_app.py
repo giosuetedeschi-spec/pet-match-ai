@@ -109,7 +109,7 @@ def render_catalog():
     language_code = "en" if language == "English" else "it"
     text = CATALOG_TEXT[language_code]
     st.header(text["title"])
-    with st.form("catalog_filters"):
+    with st.form("catalog_filter_form"):
         search = st.text_input(text["search"])
         c1, c2, c3, c4, c5, c6 = st.columns([2, 1, 1, 1, 1, 1])
         species = c1.selectbox(text["species"], [text["all_species"], "DOG", "CAT"], format_func=lambda value: {"DOG": "Dog" if language_code == "en" else "Cane", "CAT": "Cat" if language_code == "en" else "Gatto"}.get(value, value))
@@ -121,13 +121,13 @@ def render_catalog():
         gender = c6.selectbox(text["gender"], [text["all_genders"], "M", "F"], format_func=lambda value: {"M": "Male" if language_code == "en" else "Maschio", "F": "Female" if language_code == "en" else "Femmina"}.get(value, value))
         submitted = st.form_submit_button(text["find"])
 
-    if "catalog_filters" not in st.session_state:
-        st.session_state.catalog_filters = {"search": "", "species": "", "city": "", "province": "", "min_age_years": "", "max_age_years": "", "gender": ""}
+    if "catalog_filter_values" not in st.session_state:
+        st.session_state.catalog_filter_values = {"search": "", "species": "", "city": "", "province": "", "min_age_years": "", "max_age_years": "", "gender": ""}
     if "catalog_page" not in st.session_state:
         st.session_state.catalog_page = 1
     if submitted:
         st.session_state.catalog_page = 1
-        st.session_state.catalog_filters = {
+        st.session_state.catalog_filter_values = {
             "search": search.strip(),
             "species": "" if species == text["all_species"] else species,
             "city": city.strip(),
@@ -137,7 +137,7 @@ def render_catalog():
             "gender": "" if gender == text["all_genders"] else gender,
         }
 
-    params = {key: value for key, value in st.session_state.catalog_filters.items() if value}
+    params = {key: value for key, value in st.session_state.catalog_filter_values.items() if value}
     params["page"] = st.session_state.catalog_page
     query = urlencode(params)
     try:
