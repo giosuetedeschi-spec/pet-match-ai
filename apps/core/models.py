@@ -25,6 +25,7 @@ class AnimalEnergy(models.TextChoices):
 
 
 class AnimalStatus(models.TextChoices):
+    DRAFT = 'DRAFT', _('Bozza')
     AVAILABLE = 'AVAILABLE', _('Disponibile per adozione')
     PENDING = 'PENDING', _('Richiesta in corso')
     ADOPTED = 'ADOPTED', _('Adottato')
@@ -98,7 +99,7 @@ class Animal(models.Model):
     status = models.CharField(
         max_length=15,
         choices=AnimalStatus.choices,
-        default=AnimalStatus.AVAILABLE,
+        default=AnimalStatus.DRAFT,
         verbose_name=_('Stato Adozione')
     )
 

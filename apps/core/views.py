@@ -124,7 +124,10 @@ class ShelterAnimalListCreateAPIView(generics.ListCreateAPIView):
         ).prefetch_related('images')
 
     def perform_create(self, serializer):
-        serializer.save(shelter=self.request.user.shelter_profile)
+        serializer.save(
+            shelter=self.request.user.shelter_profile,
+            status=AnimalStatus.DRAFT,
+        )
 
 
 class ShelterAnimalDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
@@ -140,6 +143,37 @@ class ShelterAnimalDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         return Animal.objects.filter(shelter=self.request.user.shelter_profile)
+
+
+class ShelterAnimalPublishAPIView(APIView):
+    permission_classes = (IsShelterUser,)
+
+    def post(self, request, pk):
+        animal = get_object_or_404(
+            Animal.objects.filter(shelter=request.user.shelter_profile),
+            pk=pk,
+        )
+        missing_fields = []
+        if not animal.name.strip():
+            missing_fields.append('name')
+        if not animal.description.strip():
+            missing_fields.append('description')
+        if not animal.images.exists():
+            missing_fields.append('images')
+
+        if missing_fields:
+            return Response(
+                {
+                    'detail': 'Completa i campi obbligatori e carica almeno una foto prima di pubblicare.',
+                    'missing_fields': missing_fields,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        animal.status = AnimalStatus.AVAILABLE
+        animal.save(update_fields=('status', 'updated_at'))
+        serializer = AnimalSerializer(animal, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class ShelterApplicationListAPIView(generics.ListAPIView):

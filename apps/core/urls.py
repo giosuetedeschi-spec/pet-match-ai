@@ -10,6 +10,7 @@ urlpatterns = [
     path('images/<int:pk>/', views.AnimalImageDetailView.as_view(), name='animal_image_detail'),
     path('images/<int:pk>/set-primary/', views.SetPrimaryImageView.as_view(), name='animal_image_set_primary'),
     path('shelter/animals/', views.ShelterAnimalListCreateAPIView.as_view(), name='shelter_animal_list_create'),
+    path('shelter/animals/<int:pk>/publish/', views.ShelterAnimalPublishAPIView.as_view(), name='shelter_animal_publish'),
     path('shelter/animals/<int:pk>/', views.ShelterAnimalDetailAPIView.as_view(), name='shelter_animal_detail'),
     path('shelter/applications/', views.ShelterApplicationListAPIView.as_view(), name='shelter_application_list'),
     path('shelter/applications/<int:pk>/', views.ShelterApplicationDetailAPIView.as_view(), name='shelter_application_detail'),

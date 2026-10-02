@@ -88,6 +88,7 @@ class AnimalCreateUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Animal
         exclude = ('shelter', 'created_at', 'updated_at')
+        read_only_fields = ('status',)
 
     def validate(self, attrs):
         # Se viene inserito il microchip, ne verifica l'unicità
