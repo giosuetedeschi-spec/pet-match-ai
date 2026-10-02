@@ -7,6 +7,7 @@ import streamlit as st
 
 API_BASE = os.getenv("PET_MATCH_API_URL", "http://127.0.0.1:8000").rstrip("/")
 TIMEOUT = 20
+MAX_IMAGE_SIZE = 5 * 1024 * 1024
 
 
 class ApiError(RuntimeError):
@@ -54,16 +55,22 @@ def list_results(payload):
     return []
 
 
-def upload_images(animal_id, uploaded_files, token):
+def upload_images(animal_id, uploaded_files, alt_texts, token):
+    if len(uploaded_files) != len(alt_texts) or any(not text.strip() for text in alt_texts):
+        raise ApiError("Aggiungi una descrizione accessibile per ogni foto.")
+    if any(file.size > MAX_IMAGE_SIZE for file in uploaded_files):
+        raise ApiError("Ogni foto deve essere al massimo di 5 MB.")
     files = [
         ("images", (file.name, file.getvalue(), file.type or "application/octet-stream"))
         for file in uploaded_files
     ]
+    data = [("alt_texts", text.strip()) for text in alt_texts]
     return api_request(
         "POST",
         f"animals/{animal_id}/images/upload/",
         token=token,
         files=files,
+        data=data,
     )
 
 
@@ -117,7 +124,11 @@ def render_catalog():
         for column, animal in zip(columns, animals[offset:offset + 3]):
             with column:
                 if animal.get("primary_image"):
-                    st.image(animal["primary_image"], use_container_width=True)
+                    st.image(
+                        animal["primary_image"],
+                        caption=animal.get("primary_image_caption") or animal.get("name", "Animale"),
+                        use_container_width=True,
+                    )
                 st.subheader(animal.get("name", "Animale"))
                 st.caption(
                     f"{animal.get('species_display', animal.get('species', ''))} · "
@@ -152,8 +163,9 @@ def render_catalog():
                 f"Rifugio: {shelter.get('shelter_name', '—')} · "
                 f"{shelter.get('city', '')} ({shelter.get('province', '')})"
             )
-            if detail.get("images"):
-                st.image([image["image"] for image in detail["images"] if image.get("image")], use_container_width=True)
+            for image in detail.get("images", []):
+                if image.get("image"):
+                    st.image(image["image"], caption=image.get("caption") or detail.get("name"), use_container_width=True)
             if st.button("Chiudi scheda", key="close-animal-detail"):
                 del st.session_state.selected_animal_id
                 st.rerun()
@@ -261,6 +273,10 @@ def render_shelter():
             type=["jpg", "jpeg", "png", "webp"],
             accept_multiple_files=True,
         )
+        photo_alt_texts = [
+            st.text_input(f"Descrizione accessibile: {photo.name} *", max_chars=150, key=f"new-animal-alt-{index}-{photo.name}")
+            for index, photo in enumerate(photos or [])
+        ]
         submitted = st.form_submit_button("Crea bozza e pubblica")
 
     if submitted:
@@ -268,6 +284,10 @@ def render_shelter():
             st.error("Nome e descrizione sono obbligatori.")
         elif not photos:
             st.error("Carica almeno una foto prima di pubblicare.")
+        elif any(not alt_text.strip() for alt_text in photo_alt_texts):
+            st.error("Aggiungi una descrizione accessibile per ogni foto.")
+        elif any(photo.size > MAX_IMAGE_SIZE for photo in photos):
+            st.error("Ogni foto deve essere al massimo di 5 MB.")
         else:
             animal = {
                 "name": name.strip(),
@@ -282,7 +302,7 @@ def render_shelter():
             }
             try:
                 draft = api_request("POST", "shelter/animals/", token=token, json=animal)
-                upload_images(draft["id"], photos, token)
+                upload_images(draft["id"], photos, photo_alt_texts, token)
                 publish_animal(draft["id"], token)
                 st.success(f"{name} è stato pubblicato nel catalogo.")
                 st.rerun()
@@ -303,18 +323,27 @@ def render_shelter():
         animal_id = animal["id"]
         title = f"{animal.get('name', 'Animale')} · {animal.get('status', '')}"
         with st.expander(title):
-            if animal.get("images"):
-                st.image([image["image"] for image in animal["images"] if image.get("image")], width=180)
+            for image in animal.get("images", []):
+                if image.get("image"):
+                    st.image(image["image"], caption=image.get("caption") or animal.get("name"), width=180)
             if animal.get("status") == "DRAFT":
                 photos = st.file_uploader(
-                    "Aggiungi foto alla bozza",
+                    "Aggiungi foto alla bozza (max 5 MB ciascuna)",
                     type=["jpg", "jpeg", "png", "webp"],
                     accept_multiple_files=True,
                     key=f"draft-photos-{animal_id}",
                 )
+                draft_alt_texts = [
+                    st.text_input(
+                        f"Descrizione accessibile: {photo.name} *",
+                        max_chars=150,
+                        key=f"draft-alt-{animal_id}-{index}-{photo.name}",
+                    )
+                    for index, photo in enumerate(photos or [])
+                ]
                 if photos and st.button("Carica foto", key=f"upload-{animal_id}"):
                     try:
-                        upload_images(animal_id, photos, token)
+                        upload_images(animal_id, photos, draft_alt_texts, token)
                         st.success("Foto caricate.")
                         st.rerun()
                     except ApiError as exc:
