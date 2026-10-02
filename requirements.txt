@@ -13,3 +13,4 @@ pandas>=2.1.0
 numpy>=1.26.0
 requests>=2.31,<3.0
 streamlit>=1.40,<2.0
+mysqlclient>=2.2.7,<3.0
