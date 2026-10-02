@@ -1,10 +1,19 @@
 from pathlib import Path
 
 from rest_framework import serializers
-from apps.core.models import AnimalImage, Animal
+from apps.core.models import AnimalImage, Animal, Comune
 
 MAX_IMAGE_SIZE = 5 * 1024 * 1024
 VALID_IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp'}
+
+
+class ComuneSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Comune
+        fields = (
+            'istat_code', 'name', 'province_code', 'province',
+            'province_abbreviation', 'region', 'latitude', 'longitude',
+        )
 
 
 class SafeAnimalImageField(serializers.ImageField):

@@ -6,6 +6,7 @@ app_name = 'core'
 
 urlpatterns = [
     path('', views.HomeView.as_view(), name='home'),
+    path('geo/comuni/', views.ComuneAutocompleteAPIView.as_view(), name='comune_autocomplete'),
     path('animals/<int:animal_id>/images/upload/', views.AnimalImageUploadView.as_view(), name='animal_image_upload'),
     path('images/<int:pk>/', views.AnimalImageDetailView.as_view(), name='animal_image_detail'),
     path('images/<int:pk>/set-primary/', views.SetPrimaryImageView.as_view(), name='animal_image_set_primary'),

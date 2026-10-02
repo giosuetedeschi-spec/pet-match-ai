@@ -9,9 +9,20 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
 
-from apps.core.models import Animal, AnimalImage
-from apps.core.serializers import AnimalImageSerializer, BulkImageUploadSerializer
+from apps.core.models import Animal, AnimalImage, Comune
+from apps.core.serializers import AnimalImageSerializer, BulkImageUploadSerializer, ComuneSerializer
 from apps.core.permissions import IsShelterOwnerOfAnimal, IsApprovedShelter
+
+
+class ComuneAutocompleteAPIView(generics.ListAPIView):
+    permission_classes = (permissions.AllowAny,)
+    serializer_class = ComuneSerializer
+
+    def get_queryset(self):
+        query = self.request.query_params.get('q', '').strip()
+        if len(query) < 2:
+            return Comune.objects.none()
+        return Comune.objects.filter(name__icontains=query).order_by('name', 'istat_code')[:20]
 
 
 class AnimalImageUploadView(APIView):
