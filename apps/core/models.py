@@ -96,6 +96,7 @@ class Animal(models.Model):
     health_notes = models.TextField(blank=True, verbose_name=_('Note Cliniche / Sanitarie'))
 
     description = models.TextField(verbose_name=_('Descrizione e Carattere'))
+    description_en = models.TextField(blank=True, verbose_name=_('Descrizione e Carattere (Inglese)'))
     status = models.CharField(
         max_length=15,
         choices=AnimalStatus.choices,
