@@ -196,6 +196,19 @@ def render_catalog():
                 if language_code == "en" and description:
                     st.caption(text["fallback"])
             st.write(description)
+            yes_no = {True: "Sì" if language_code == "it" else "Yes", False: "No", None: "Non valutato" if language_code == "it" else "Unknown"}
+            st.markdown("**Comportamento**" if language_code == "it" else "**Behaviour**")
+            st.write({
+                ("Con bambini" if language_code == "it" else "With children"): yes_no[detail.get("good_with_children")],
+                ("Con cani" if language_code == "it" else "With dogs"): yes_no[detail.get("good_with_dogs")],
+                ("Con gatti" if language_code == "it" else "With cats"): yes_no[detail.get("good_with_cats")],
+            })
+            st.caption(
+                f"{('Sterilizzato' if language_code == 'it' else 'Neutered')}: {yes_no[detail.get('is_spayed_neutered')]} · "
+                f"{('Vaccinato' if language_code == 'it' else 'Vaccinated')}: {yes_no[detail.get('is_vaccinated')]}"
+            )
+            if detail.get("special_needs_summary"):
+                st.info(detail["special_needs_summary"])
             shelter = detail.get("shelter_info") or {}
             st.caption(
                 f"{text['shelter']}: {shelter.get('shelter_name', '—')} · "
@@ -306,6 +319,18 @@ def render_shelter():
         energy = c6.selectbox("Energia", ["LOW", "MEDIUM", "HIGH", "VERY_HIGH"], index=1)
         description = st.text_area("Descrizione *", max_chars=5000)
         description_en = st.text_area("Descrizione in inglese (facoltativa)", max_chars=5000)
+        compatibility = {"Non valutato": None, "Sì": True, "No": False}
+        st.markdown("**Comportamento** — indica anche “Non valutato” se non conosci ancora la risposta.")
+        c7, c8, c9 = st.columns(3)
+        good_with_children = c7.selectbox("Compatibile con bambini *", list(compatibility))
+        good_with_dogs = c8.selectbox("Compatibile con cani *", list(compatibility))
+        good_with_cats = c9.selectbox("Compatibile con gatti *", list(compatibility))
+        c10, c11 = st.columns(2)
+        is_spayed_neutered = c10.selectbox("Sterilizzazione *", ["Seleziona", "Sì", "No"])
+        is_vaccinated = c11.selectbox("Vaccinazioni", ["Non noto", "Sì", "No"])
+        special_needs = st.checkbox("Ha bisogni speciali o cure continuative")
+        special_needs_summary = st.text_input("Sintesi pubblica dei bisogni speciali (se applicabile)", max_chars=255)
+        health_notes = st.text_area("Note sanitarie riservate al rifugio", max_chars=5000)
         intake_date = st.date_input("Ingresso in rifugio *")
         photos = st.file_uploader(
             "Foto * (almeno una, JPG/PNG/WebP, max 5 MB ciascuna)",
@@ -321,6 +346,10 @@ def render_shelter():
     if submitted:
         if not name.strip() or not description.strip():
             st.error("Nome e descrizione sono obbligatori.")
+        elif is_spayed_neutered == "Seleziona":
+            st.error("Indica lo stato di sterilizzazione prima di pubblicare.")
+        elif special_needs and not special_needs_summary.strip():
+            st.error("Aggiungi una breve sintesi pubblica dei bisogni speciali.")
         elif not photos:
             st.error("Carica almeno una foto prima di pubblicare.")
         elif any(not alt_text.strip() for alt_text in photo_alt_texts):
@@ -338,6 +367,15 @@ def render_shelter():
                 "age_months": int(age_months),
                 "description": description.strip(),
                 "description_en": description_en.strip(),
+                "good_with_children": compatibility[good_with_children],
+                "good_with_dogs": compatibility[good_with_dogs],
+                "good_with_cats": compatibility[good_with_cats],
+                "behavior_profile_completed": True,
+                "is_spayed_neutered": {"Sì": True, "No": False}[is_spayed_neutered],
+                "is_vaccinated": {"Non noto": None, "Sì": True, "No": False}[is_vaccinated],
+                "special_needs": special_needs,
+                "special_needs_summary": special_needs_summary.strip(),
+                "health_notes": health_notes.strip(),
                 "date_entry_shelter": intake_date.isoformat(),
             }
             try:

@@ -226,7 +226,7 @@ class PublicAnimalDetailSerializer(serializers.ModelSerializer):
             'size', 'size_display', 'energy_level', 'energy_level_display',
             'good_with_cats', 'good_with_dogs', 'good_with_children',
             'requires_garden', 'max_hours_alone_per_day', 'required_experience_level',
-            'is_spayed_neutered', 'is_vaccinated', 'special_needs',
+            'is_spayed_neutered', 'is_vaccinated', 'special_needs', 'special_needs_summary',
             'description', 'description_en', 'status', 'shelter_info', 'images', 'match_data',
             'created_at'
         )
