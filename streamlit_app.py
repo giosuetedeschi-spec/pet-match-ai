@@ -4,6 +4,7 @@ from urllib.parse import urlencode
 
 import requests
 import streamlit as st
+import pandas as pd
 
 API_BASE = os.getenv("PET_MATCH_API_URL", "http://127.0.0.1:8000").rstrip("/")
 TIMEOUT = 20
@@ -53,6 +54,16 @@ def list_results(payload):
     if isinstance(payload, dict):
         return payload.get("results", [])
     return []
+
+
+def comune_options(query):
+    if len(query.strip()) < 2:
+        return []
+    return list_results(api_request("GET", "geo/comuni/?" + urlencode({"q": query.strip()})))
+
+
+def reset_catalog_page():
+    st.session_state.catalog_page = 1
 
 
 def upload_images(animal_id, uploaded_files, alt_texts, token):
@@ -109,6 +120,33 @@ def render_catalog():
     language_code = "en" if language == "English" else "it"
     text = CATALOG_TEXT[language_code]
     st.header(text["title"])
+    origin_label = "Comune di partenza" if language_code == "it" else "Starting town"
+    origin_query = st.text_input(
+        "Cerca " + origin_label.lower() if language_code == "it" else "Search " + origin_label.lower(),
+        key="catalog_origin_query",
+    )
+    try:
+        origin_options = comune_options(origin_query)
+    except ApiError as exc:
+        st.error(str(exc))
+        origin_options = []
+    origin_labels = {item["istat_code"]: f'{item["name"]} ({item["province_abbreviation"]})' for item in origin_options}
+    origin_codes = [item["istat_code"] for item in origin_options]
+    if st.session_state.get("catalog_origin_comune") not in origin_codes:
+        st.session_state.catalog_origin_comune = ""
+    location_cols = st.columns([3, 1])
+    origin_comune = location_cols[0].selectbox(
+        origin_label,
+        ["", *origin_codes],
+        format_func=lambda code: origin_labels.get(code, "Qualsiasi comune" if language_code == "it" else "Any town"),
+        key="catalog_origin_comune",
+        on_change=reset_catalog_page,
+    )
+    radius = location_cols[1].selectbox(
+        "Raggio (km)" if language_code == "it" else "Radius (km)",
+        [25, 50, 100, 200, 500], index=1, key="catalog_radius_km",
+        on_change=reset_catalog_page,
+    )
     with st.form("catalog_filter_form"):
         search = st.text_input(text["search"])
         c1, c2, c3, c4, c5, c6 = st.columns([2, 1, 1, 1, 1, 1])
@@ -138,6 +176,8 @@ def render_catalog():
         }
 
     params = {key: value for key, value in st.session_state.catalog_filter_values.items() if value}
+    if origin_comune:
+        params.update(comune=origin_comune, radius_km=radius)
     params["page"] = st.session_state.catalog_page
     query = urlencode(params)
     try:
@@ -150,6 +190,13 @@ def render_catalog():
     if not animals:
         st.info(text["empty"])
         return
+
+    locations = [
+        {"lat": animal["latitude"], "lon": animal["longitude"], "name": animal.get("name", "")}
+        for animal in animals if animal.get("latitude") is not None and animal.get("longitude") is not None
+    ]
+    if locations:
+        st.map(pd.DataFrame(locations), latitude="lat", longitude="lon", size=12)
 
     for offset in range(0, len(animals), 3):
         columns = st.columns(3)
@@ -168,6 +215,9 @@ def render_catalog():
                     f"{animal.get('breed_name') or ('Mixed breed' if language_code == 'en' else 'Meticcio')} · "
                     f"{animal.get('city', '')}"
                 )
+                if animal.get("distance_km") is not None:
+                    unit = "km" if language_code == "it" else "km away"
+                    st.caption(f'{animal["distance_km"]} {unit}')
                 st.write(text["age"].format(years=animal.get('age_years', 0), months=animal.get('age_months', 0)))
                 if st.button(text["details"], key=f"animal-{animal['id']}"):
                     st.session_state.selected_animal_id = animal["id"]
@@ -249,6 +299,19 @@ def render_shelter():
                 st.error(str(exc) or "Credenziali non valide.")
 
         with st.expander("Registra un nuovo rifugio"):
+            comune_query = st.text_input("Cerca comune del rifugio *", key="registration-comune-query")
+            try:
+                registration_comuni = comune_options(comune_query)
+            except ApiError as exc:
+                st.error(str(exc))
+                registration_comuni = []
+            registration_labels = {
+                item["istat_code"]: f'{item["name"]} ({item["province_abbreviation"]})'
+                for item in registration_comuni
+            }
+            registration_codes = [item["istat_code"] for item in registration_comuni]
+            if st.session_state.get("registration-comune") not in registration_codes:
+                st.session_state["registration-comune"] = ""
             with st.form("shelter_registration", clear_on_submit=True):
                 username = st.text_input("Nome utente per accesso *", key="registration-username")
                 account_email = st.text_input("Email account *", key="registration-email")
@@ -268,8 +331,12 @@ def render_shelter():
                 official_email = st.text_input("Email di contatto *")
                 address = st.text_input("Indirizzo *")
                 c1, c2, c3 = st.columns(3)
-                city = c1.text_input("Comune *")
-                province = c2.text_input("Provincia *", max_chars=10)
+                comune = c1.selectbox(
+                    "Comune *", ["", *registration_codes],
+                    format_func=lambda code: registration_labels.get(code, "Seleziona un comune"),
+                    key="registration-comune",
+                )
+                c2.write("Provincia ricavata automaticamente")
                 postal_code = c3.text_input("CAP *", max_chars=10)
                 phone_number = st.text_input("Telefono *")
                 description = st.text_area("Descrizione pubblica *")
@@ -277,7 +344,9 @@ def render_shelter():
                 register = st.form_submit_button("Invia richiesta")
 
             if register:
-                if password != password_confirm:
+                if not comune:
+                    st.error("Seleziona il comune del rifugio.")
+                elif password != password_confirm:
                     st.error("Le password non coincidono.")
                 elif not gdpr_consent:
                     st.error("Il consenso privacy è obbligatorio.")
@@ -295,8 +364,7 @@ def render_shelter():
                         "tax_code_vat": tax_code_vat.strip(),
                         "official_email": official_email.strip(),
                         "address": address.strip(),
-                        "city": city.strip(),
-                        "province": province.strip(),
+                        "comune": comune,
                         "postal_code": postal_code.strip(),
                         "phone_number": phone_number.strip(),
                         "description": description.strip(),

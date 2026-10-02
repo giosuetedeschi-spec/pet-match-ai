@@ -198,6 +198,9 @@ class PublicAnimalListSerializer(serializers.ModelSerializer):
     primary_image = serializers.SerializerMethodField()
     primary_image_caption = serializers.SerializerMethodField()
     match_score = serializers.SerializerMethodField()
+    distance_km = serializers.SerializerMethodField()
+    latitude = serializers.SerializerMethodField()
+    longitude = serializers.SerializerMethodField()
 
     class Meta:
         model = Animal
@@ -205,7 +208,8 @@ class PublicAnimalListSerializer(serializers.ModelSerializer):
             'id', 'name', 'species', 'species_display', 'breed_name',
             'age_years', 'age_months', 'gender', 'gender_display',
             'size', 'size_display', 'energy_level', 'city', 'province',
-            'shelter_name', 'primary_image', 'primary_image_caption', 'match_score', 'created_at'
+            'shelter_name', 'primary_image', 'primary_image_caption', 'match_score',
+            'distance_km', 'latitude', 'longitude', 'created_at'
         )
 
     @staticmethod
@@ -227,6 +231,18 @@ class PublicAnimalListSerializer(serializers.ModelSerializer):
             match_res = MatchResult.objects.filter(adopter=request.user, animal=obj).first()
             return round(match_res.overall_score, 1) if match_res else None
         return None
+
+    def get_distance_km(self, obj):
+        distance = getattr(obj, 'distance_km', None)
+        return round(distance, 1) if distance is not None else None
+
+    def get_latitude(self, obj):
+        comune = getattr(obj.shelter.user, 'comune', None)
+        return float(comune.latitude) if comune else None
+
+    def get_longitude(self, obj):
+        comune = getattr(obj.shelter.user, 'comune', None)
+        return float(comune.longitude) if comune else None
 
 
 class PublicAnimalDetailSerializer(serializers.ModelSerializer):

@@ -6,7 +6,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils import timezone
 
-from apps.core.models import Animal, AnimalEnergy, AnimalImage, AnimalSize, AnimalStatus, Breed, Species
+from apps.core.models import Animal, AnimalEnergy, AnimalImage, AnimalSize, AnimalStatus, Breed, Comune, Species
 from apps.users.models import ShelterProfile
 
 User = get_user_model()
@@ -67,12 +67,14 @@ class Command(BaseCommand):
         return breeds
 
     def _seed_user(self, username, city, province, postal_code, address):
+        comune = Comune.objects.get(name=city, province_abbreviation=province)
         user, created = User.objects.get_or_create(
             username=username,
             defaults={
                 'email': f'{username}@example.test',
                 'role': User.Role.SHELTER,
                 'address': address,
+                'comune': comune,
                 'city': city,
                 'province': province,
                 'postal_code': postal_code,
@@ -86,6 +88,11 @@ class Command(BaseCommand):
             user.save(update_fields=('password',))
         if user.role != User.Role.SHELTER:
             raise CommandError(f'L’utente seed {username} esiste con ruolo incompatibile.')
+        if user.comune_id != comune.istat_code:
+            user.comune = comune
+            user.city = comune.name
+            user.province = comune.province_abbreviation
+            user.save(update_fields=('comune', 'city', 'province'))
         return user
 
     def _seed_shelter(self, index, data):

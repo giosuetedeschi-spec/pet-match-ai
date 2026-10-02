@@ -17,6 +17,10 @@ class User(AbstractUser):
     )
     phone_number = models.CharField(max_length=20, blank=True, verbose_name=_('Numero di Telefono'))
     address = models.CharField(max_length=255, blank=True, verbose_name=_('Indirizzo'))
+    comune = models.ForeignKey(
+        'core.Comune', null=True, blank=True, on_delete=models.SET_NULL,
+        related_name='users', verbose_name=_('Comune di riferimento'),
+    )
     city = models.CharField(max_length=100, blank=True, verbose_name=_('Città'))
     province = models.CharField(max_length=10, blank=True, verbose_name=_('Provincia'))
     postal_code = models.CharField(max_length=10, blank=True, verbose_name=_('CAP'))
