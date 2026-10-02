@@ -198,11 +198,19 @@ def render_catalog():
             st.write(description)
             yes_no = {True: "Sì" if language_code == "it" else "Yes", False: "No", None: "Non valutato" if language_code == "it" else "Unknown"}
             st.markdown("**Comportamento**" if language_code == "it" else "**Behaviour**")
-            st.write({
-                ("Con bambini" if language_code == "it" else "With children"): yes_no[detail.get("good_with_children")],
-                ("Con cani" if language_code == "it" else "With dogs"): yes_no[detail.get("good_with_dogs")],
-                ("Con gatti" if language_code == "it" else "With cats"): yes_no[detail.get("good_with_cats")],
-            })
+            behavior_columns = st.columns(3)
+            behavior_labels = (
+                "Con bambini" if language_code == "it" else "With children",
+                "Con cani" if language_code == "it" else "With dogs",
+                "Con gatti" if language_code == "it" else "With cats",
+            )
+            behavior_values = (
+                yes_no[detail.get("good_with_children")],
+                yes_no[detail.get("good_with_dogs")],
+                yes_no[detail.get("good_with_cats")],
+            )
+            for column, label, value in zip(behavior_columns, behavior_labels, behavior_values):
+                column.metric(label, value)
             st.caption(
                 f"{('Sterilizzato' if language_code == 'it' else 'Neutered')}: {yes_no[detail.get('is_spayed_neutered')]} · "
                 f"{('Vaccinato' if language_code == 'it' else 'Vaccinated')}: {yes_no[detail.get('is_vaccinated')]}"
