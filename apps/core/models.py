@@ -4,6 +4,26 @@ from apps.users.models import User, ShelterProfile, AdopterProfile
 from apps.core.utils import optimize_image
 
 
+class Comune(models.Model):
+    istat_code = models.CharField(max_length=6, primary_key=True, verbose_name=_('Codice ISTAT'))
+    name = models.CharField(max_length=100, verbose_name=_('Comune'))
+    province_code = models.CharField(max_length=3, verbose_name=_('Codice provincia ISTAT'))
+    province = models.CharField(max_length=100, verbose_name=_('Provincia'))
+    province_abbreviation = models.CharField(max_length=2, verbose_name=_('Sigla provincia'))
+    region = models.CharField(max_length=100, verbose_name=_('Regione'))
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, verbose_name=_('Latitudine'))
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, verbose_name=_('Longitudine'))
+    postal_codes = models.JSONField(default=list, blank=True, verbose_name=_('CAP'))
+
+    class Meta:
+        verbose_name = _('Comune')
+        verbose_name_plural = _('Comuni')
+        ordering = ['name', 'istat_code']
+
+    def __str__(self):
+        return f'{self.name} ({self.province_abbreviation})'
+
+
 class Species(models.TextChoices):
     DOG = 'DOG', _('Cane')
     CAT = 'CAT', _('Gatto')
