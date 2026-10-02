@@ -1,6 +1,7 @@
 # Local Graphify artifacts (rebuildable, keep graph/report available in this clone)
 graphify-out/
 node_modules/
+.next/
 *.log
 
 # Python

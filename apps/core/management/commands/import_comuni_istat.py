@@ -4,7 +4,7 @@ from pathlib import Path
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
-from django.db import transaction
+from django.db import connection, transaction
 
 from apps.core.models import Comune
 
@@ -42,16 +42,17 @@ class Command(BaseCommand):
             raise CommandError(f'{source} must contain municipalities with unique ISTAT codes.')
 
         with transaction.atomic():
-            Comune.objects.bulk_create(
-                rows,
-                batch_size=500,
-                update_conflicts=True,
-                update_fields=(
+            upsert_options = {
+                'batch_size': 500,
+                'update_conflicts': True,
+                'update_fields': (
                     'name', 'province_code', 'province', 'province_abbreviation',
                     'region', 'latitude', 'longitude',
                 ),
-                unique_fields=('istat_code',),
-            )
+            }
+            if connection.features.supports_update_conflicts_with_target:
+                upsert_options['unique_fields'] = ('istat_code',)
+            Comune.objects.bulk_create(rows, **upsert_options)
             incoming = set(codes)
             existing = Comune.objects.values_list('istat_code', flat=True)
             stale = [code for code in existing if code not in incoming]
