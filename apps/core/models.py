@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from apps.users.models import User, ShelterProfile, AdopterProfile
+from apps.core.utils import optimize_image
 
 
 class Species(models.TextChoices):
@@ -120,27 +121,6 @@ class Animal(models.Model):
         return (self.age_years * 12) + self.age_months
 
 
-class AnimalImage(models.Model):
-    animal = models.ForeignKey(
-        Animal,
-        on_delete=models.CASCADE,
-        related_name='images',
-        verbose_name=_('Animale')
-    )
-    image = models.ImageField(upload_to='animals/', verbose_name=_('File Immagine'))
-    caption = models.CharField(max_length=150, blank=True, verbose_name=_('Didascalia'))
-    is_primary = models.BooleanField(default=False, verbose_name=_('Foto Copertina'))
-    order = models.PositiveIntegerField(default=0, verbose_name=_('Ordine Ordinamento'))
-
-    class Meta:
-        verbose_name = _('Immagine Animale')
-        verbose_name_plural = _('Immagini Animali')
-        ordering = ['order', '-is_primary', 'id']
-
-    def __str__(self):
-        return f"Immagine {self.animal.name}"
-
-
 class ApplicationStatus(models.TextChoices):
     SUBMITTED = 'SUBMITTED', _('Inviata')
     IN_REVIEW = 'IN_REVIEW', _('In Valutazione dal Rifugio')
@@ -219,9 +199,6 @@ class HomeVisit(models.Model):
     def __str__(self):
         return f"Visita per {self.application.animal.name} - {self.get_outcome_display()}"
 
-# Aggiungi questa logica all'interno di apps/core/models.py nel modello AnimalImage
-
-from apps.core.utils import optimize_image
 
 class AnimalImage(models.Model):
     animal = models.ForeignKey(

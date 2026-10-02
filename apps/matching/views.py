@@ -14,8 +14,7 @@ class MatchResultSerializer(serializers.ModelSerializer):
         model = MatchResult
         fields = (
             'animal', 'animal_name', 'animal_species', 'shelter_name',
-            'overall_score', 'score_breakdown',
-            'predicted_adoption_time_days', 'survival_probability_30d'
+            'overall_score', 'score_breakdown'
         )
 
 

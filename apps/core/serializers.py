@@ -224,8 +224,7 @@ class PublicAnimalDetailSerializer(serializers.ModelSerializer):
             if match_res:
                 return {
                     'overall_score': round(match_res.overall_score, 1),
-                    'score_breakdown': match_res.score_breakdown,
-                    'predicted_adoption_time_days': match_res.predicted_adoption_time_days
+                    'score_breakdown': match_res.score_breakdown
                 }
         return None
 
@@ -287,73 +286,6 @@ class AdopterApplicationDetailSerializer(serializers.ModelSerializer):
             'id', 'animal', 'animal_detail', 'shelter_contact', 'status',
             'status_display', 'motivational_notes', 'compatibility_score_at_submission',
             'shelter_notes', 'home_visit', 'submitted_at', 'updated_at'
-        )
-
-    def get_shelter_contact(self, obj):
-        shelter = obj.animal.shelter
-        return {
-            'shelter_name': shelter.shelter_name,
-            'official_email': shelter.official_email,
-            'city': shelter.user.city,
-            'province': shelter.user.province,
-            'phone_number': shelter.user.phone_number
-        }
-
-
-
-from rest_framework import serializers
-from apps.core.models import AdoptionApplication, ApplicationStatus, HomeVisit
-from apps.core.serializers import PublicAnimalListSerializer, HomeVisitSerializer
-
-
-class AdopterApplicationListSerializer(serializers.ModelSerializer):
-    """
-    Serializzatore sintetico per l'elenco delle domande inviate dall'adottante.
-    """
-    animal_detail = PublicAnimalListSerializer(source='animal', read_only=True)
-    status_display = serializers.CharField(source='get_status_display', read_only=True)
-    shelter_name = serializers.CharField(source='animal.shelter.shelter_name', read_only=True)
-
-    class Meta:
-        model = AdoptionApplication
-        fields = (
-            'id', 
-            'animal', 
-            'animal_detail', 
-            'shelter_name', 
-            'status',
-            'status_display', 
-            'compatibility_score_at_submission',
-            'submitted_at', 
-            'updated_at'
-        )
-
-
-class AdopterApplicationDetailSerializer(serializers.ModelSerializer):
-    """
-    Serializzatore dettagliato della domanda con informazioni di contatto del rifugio
-    e dettagli sulla visita pre-affido (se programmata).
-    """
-    animal_detail = PublicAnimalListSerializer(source='animal', read_only=True)
-    status_display = serializers.CharField(source='get_status_display', read_only=True)
-    home_visit = HomeVisitSerializer(read_only=True)
-    shelter_contact = serializers.SerializerMethodField()
-
-    class Meta:
-        model = AdoptionApplication
-        fields = (
-            'id', 
-            'animal', 
-            'animal_detail', 
-            'shelter_contact', 
-            'status',
-            'status_display', 
-            'motivational_notes', 
-            'compatibility_score_at_submission',
-            'shelter_notes', 
-            'home_visit', 
-            'submitted_at', 
-            'updated_at'
         )
 
     def get_shelter_contact(self, obj):
