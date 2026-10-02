@@ -3,14 +3,19 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.contrib.auth import get_user_model
 from django.utils import timezone
+from django.shortcuts import get_object_or_404
+from django.db import transaction
 from apps.users.serializers import (
     UserSerializer,
     RegisterSerializer,
     AdopterProfileSerializer,
     ShelterProfileSerializer,
-    GDPRConsentUpdateSerializer
+    GDPRConsentUpdateSerializer,
+    ShelterRegistrationQueueSerializer,
+    ShelterRejectionSerializer,
 )
-from apps.audit.models import GDPRConsentLog
+from apps.audit.models import GDPRConsentLog, ShelterVerificationLog
+from apps.users.models import ShelterProfile
 
 User = get_user_model()
 
@@ -19,6 +24,58 @@ class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     permission_classes = (permissions.AllowAny,)
     serializer_class = RegisterSerializer
+
+
+class PendingShelterListView(generics.ListAPIView):
+    permission_classes = (permissions.IsAdminUser,)
+    serializer_class = ShelterRegistrationQueueSerializer
+
+    def get_queryset(self):
+        return ShelterProfile.objects.filter(
+            verification_status=ShelterProfile.VerificationStatus.PENDING
+        ).select_related('user').order_by('user__date_joined', 'pk')
+
+
+class ShelterDecisionView(APIView):
+    permission_classes = (permissions.IsAdminUser,)
+
+    def post(self, request, pk, decision):
+        if decision not in ('approve', 'reject'):
+            return Response({'detail': 'Azione non valida.'}, status=status.HTTP_404_NOT_FOUND)
+
+        reason = ''
+        if decision == 'reject':
+            serializer = ShelterRejectionSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            reason = serializer.validated_data['reason']
+
+        with transaction.atomic():
+            shelter = get_object_or_404(ShelterProfile.objects.select_for_update(), pk=pk)
+            if shelter.verification_status != ShelterProfile.VerificationStatus.PENDING:
+                return Response(
+                    {'code': 'invalid_state_transition', 'detail': 'Il rifugio non è in attesa di revisione.'},
+                    status=status.HTTP_409_CONFLICT,
+                )
+            if decision == 'approve':
+                shelter.verification_status = ShelterProfile.VerificationStatus.APPROVED
+                shelter.is_verified = True
+                shelter.verification_date = timezone.now()
+                shelter.rejection_reason = ''
+                action = ShelterVerificationLog.Action.APPROVED
+            else:
+                shelter.verification_status = ShelterProfile.VerificationStatus.REJECTED
+                shelter.is_verified = False
+                shelter.verification_date = None
+                shelter.rejection_reason = reason
+                action = ShelterVerificationLog.Action.REJECTED
+            shelter.save(update_fields=(
+                'verification_status', 'is_verified', 'verification_date', 'rejection_reason'
+            ))
+            ShelterVerificationLog.objects.create(
+                shelter=shelter, actor=request.user, action=action, reason=reason
+            )
+
+        return Response(ShelterRegistrationQueueSerializer(shelter).data, status=status.HTTP_200_OK)
 
 
 class UserProfileView(generics.RetrieveUpdateAPIView):

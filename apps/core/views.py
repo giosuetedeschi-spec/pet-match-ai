@@ -11,7 +11,7 @@ from django.shortcuts import get_object_or_404
 
 from apps.core.models import Animal, AnimalImage
 from apps.core.serializers import AnimalImageSerializer, BulkImageUploadSerializer
-from apps.core.permissions import IsShelterOwnerOfAnimal
+from apps.core.permissions import IsShelterOwnerOfAnimal, IsApprovedShelter
 
 
 class AnimalImageUploadView(APIView):
@@ -146,7 +146,7 @@ class ShelterAnimalDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class ShelterAnimalPublishAPIView(APIView):
-    permission_classes = (IsShelterUser,)
+    permission_classes = (IsApprovedShelter,)
 
     def post(self, request, pk):
         animal = get_object_or_404(
@@ -338,7 +338,8 @@ class PublicAnimalCatalogAPIView(generics.ListAPIView):
 
     def get_queryset(self):
         return Animal.objects.filter(
-            status=AnimalStatus.AVAILABLE
+            status=AnimalStatus.AVAILABLE,
+            shelter__is_verified=True,
         ).select_related(
             'breed', 'shelter', 'shelter__user'
         ).prefetch_related('images')
@@ -353,7 +354,8 @@ class PublicAnimalDetailAPIView(generics.RetrieveAPIView):
 
     def get_queryset(self):
         return Animal.objects.filter(
-            status=AnimalStatus.AVAILABLE
+            status=AnimalStatus.AVAILABLE,
+            shelter__is_verified=True,
         ).select_related(
             'breed', 'shelter', 'shelter__user'
         ).prefetch_related('images')
