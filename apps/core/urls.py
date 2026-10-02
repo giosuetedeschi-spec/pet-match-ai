@@ -1,125 +1,24 @@
 from django.urls import path
-from . import views
+
+from apps.core import views
 
 app_name = 'core'
 
 urlpatterns = [
     path('', views.HomeView.as_view(), name='home'),
-]
-
-from django.urls import path
-from apps.core.views import (
-    AnimalImageUploadView,
-    AnimalImageDetailView,
-    SetPrimaryImageView
-)
-
-app_name = 'core'
-
-urlpatterns = [
-    path('animals/<int:animal_id>/images/upload/', AnimalImageUploadView.as_view(), name='animal_image_upload'),
-    path('images/<int:pk>/', AnimalImageDetailView.as_view(), name='animal_image_detail'),
-    path('images/<int:pk>/set-primary/', SetPrimaryImageView.as_view(), name='animal_image_set_primary'),
-]
-
-from django.urls import path
-from apps.core.views import (
-    AnimalImageUploadView,
-    AnimalImageDetailView,
-    SetPrimaryImageView,
-    ShelterAnimalListCreateAPIView,
-    ShelterAnimalDetailAPIView,
-    ShelterApplicationListAPIView,
-    ShelterApplicationDetailAPIView,
-    ScheduleHomeVisitAPIView,
-    ShelterDashboardStatsAPIView
-)
-
-app_name = 'core'
-
-urlpatterns = [
-    # Rotte Gestione Immagini Media
-    path('animals/<int:animal_id>/images/upload/', AnimalImageUploadView.as_view(), name='animal_image_upload'),
-    path('images/<int:pk>/', AnimalImageDetailView.as_view(), name='animal_image_detail'),
-    path('images/<int:pk>/set-primary/', SetPrimaryImageView.as_view(), name='animal_image_set_primary'),
-
-    # Rotte Dashboard Rifugio - Schede Animali (CRUD)
-    path('shelter/animals/', ShelterAnimalListCreateAPIView.as_view(), name='shelter_animal_list_create'),
-    path('shelter/animals/<int:pk>/', ShelterAnimalDetailAPIView.as_view(), name='shelter_animal_detail'),
-
-    # Rotte Dashboard Rifugio - Candidature e Visite Pre-Affido
-    path('shelter/applications/', ShelterApplicationListAPIView.as_view(), name='shelter_application_list'),
-    path('shelter/applications/<int:pk>/', ShelterApplicationDetailAPIView.as_view(), name='shelter_application_detail'),
-    path('shelter/applications/<int:application_id>/schedule-visit/', ScheduleHomeVisitAPIView.as_view(), name='shelter_schedule_visit'),
-
-    # Rotte Dashboard Rifugio - Analytics e Statistiche
-    path('shelter/dashboard/stats/', ShelterDashboardStatsAPIView.as_view(), name='shelter_dashboard_stats'),
-]
-
-from django.urls import path
-from apps.core.views import (
-    PublicAnimalCatalogAPIView,
-    PublicAnimalDetailAPIView,
-    # ... le altre viste già presenti ...
-)
-
-app_name = 'core'
-
-urlpatterns = [
-    # Catalogo Pubblico Animali
-    path('catalog/animals/', PublicAnimalCatalogAPIView.as_view(), name='public_animal_catalog'),
-    path('catalog/animals/<int:pk>/', PublicAnimalDetailAPIView.as_view(), name='public_animal_detail'),
-
-    # ... rotte media e dashboard rifugio ...
-]
-
-from django.urls import path
-from apps.core.views import (
-    AdoptionApplicationCreateAPIView,
-    # ... le altre viste ...
-)
-
-app_name = 'core'
-
-urlpatterns = [
-    # Invio Candidatura Adozione
-    path('animals/<int:animal_id>/apply/', AdoptionApplicationCreateAPIView.as_view(), name='animal_apply'),
-
-    # ... altre rotte ...
-]
-
-from django.urls import path
-from apps.core.views import (
-    AdopterApplicationListAPIView,
-    AdopterApplicationDetailAPIView,
-    AdopterApplicationWithdrawAPIView,
-    # ... le altre viste ...
-)
-
-app_name = 'core'
-
-urlpatterns = [
-    # Tracking Candidature Adottante
-    path('user/applications/', AdopterApplicationListAPIView.as_view(), name='adopter_application_list'),
-    path('user/applications/<int:pk>/', AdopterApplicationDetailAPIView.as_view(), name='adopter_application_detail'),
-    path('user/applications/<int:pk>/withdraw/', AdopterApplicationWithdrawAPIView.as_view(), name='adopter_application_withdraw'),
-
-    # ... altre rotte ...
-]
-
-
-from django.urls import path
-from apps.core.views import (
-    AdopterApplicationListAPIView,
-    AdopterApplicationDetailAPIView,
-    AdopterApplicationWithdrawAPIView,
-)
-
-app_name = 'core'
-
-urlpatterns = [
-    # Tracking Candidature Adottante
-    path('user/applications/', AdopterApplicationListAPIView.as_view(), name='adopter_application_list'),
-    path('user/applications/<int:pk>/', AdopterApplicationDetailAPIView.as_view(), name='adopter_application_detail'),
-    path('user/applications/<int:pk>/withdraw/', AdopterApplicationWithdrawAPIView.as_view(), name='adopter_application_withdraw'),
+    path('animals/<int:animal_id>/images/upload/', views.AnimalImageUploadView.as_view(), name='animal_image_upload'),
+    path('images/<int:pk>/', views.AnimalImageDetailView.as_view(), name='animal_image_detail'),
+    path('images/<int:pk>/set-primary/', views.SetPrimaryImageView.as_view(), name='animal_image_set_primary'),
+    path('shelter/animals/', views.ShelterAnimalListCreateAPIView.as_view(), name='shelter_animal_list_create'),
+    path('shelter/animals/<int:pk>/', views.ShelterAnimalDetailAPIView.as_view(), name='shelter_animal_detail'),
+    path('shelter/applications/', views.ShelterApplicationListAPIView.as_view(), name='shelter_application_list'),
+    path('shelter/applications/<int:pk>/', views.ShelterApplicationDetailAPIView.as_view(), name='shelter_application_detail'),
+    path('shelter/applications/<int:application_id>/schedule-visit/', views.ScheduleHomeVisitAPIView.as_view(), name='shelter_schedule_visit'),
+    path('shelter/dashboard/stats/', views.ShelterDashboardStatsAPIView.as_view(), name='shelter_dashboard_stats'),
+    path('catalog/animals/', views.PublicAnimalCatalogAPIView.as_view(), name='public_animal_catalog'),
+    path('catalog/animals/<int:pk>/', views.PublicAnimalDetailAPIView.as_view(), name='public_animal_detail'),
+    path('animals/<int:animal_id>/apply/', views.AdoptionApplicationCreateAPIView.as_view(), name='animal_apply'),
+    path('user/applications/', views.AdopterApplicationListAPIView.as_view(), name='adopter_application_list'),
+    path('user/applications/<int:pk>/', views.AdopterApplicationDetailAPIView.as_view(), name='adopter_application_detail'),
+    path('user/applications/<int:pk>/withdraw/', views.AdopterApplicationWithdrawAPIView.as_view(), name='adopter_application_withdraw'),
 ]
