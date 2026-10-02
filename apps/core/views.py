@@ -162,6 +162,12 @@ class ShelterAnimalPublishAPIView(APIView):
             missing_fields.append('description')
         if not animal.images.exists():
             missing_fields.append('images')
+        if not animal.behavior_profile_completed:
+            missing_fields.append('behavior_profile')
+        if animal.is_spayed_neutered is None:
+            missing_fields.append('is_spayed_neutered')
+        if animal.special_needs and not animal.special_needs_summary.strip():
+            missing_fields.append('special_needs_summary')
 
         if missing_fields:
             return Response(
