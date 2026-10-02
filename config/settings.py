@@ -19,14 +19,17 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    
-    # Custom Apps
+    'rest_framework',
+    'rest_framework_simplejwt',
+    'corsheaders',
     'apps.users',
     'apps.core',
     'apps.matching',
+    'apps.audit',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -86,40 +89,6 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
-# PART 2
-# Inserisci in INSTALLED_APPS
-INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    
-    # Third Party Apps
-    'rest_framework',
-    'rest_framework_simplejwt',
-    'corsheaders',
-    
-    # Custom Apps
-    'apps.users',
-    'apps.core',
-    'apps.matching',
-    'apps.audit',
-]
-
-# Inserisci CorsMiddleware in cima a MIDDLEWARE
-MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-]
 
 # Configurazione Django REST Framework
 REST_FRAMEWORK = {
