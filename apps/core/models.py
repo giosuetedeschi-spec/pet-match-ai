@@ -211,7 +211,10 @@ class AnimalImage(models.Model):
         related_name='images',
         verbose_name=_('Animale')
     )
-    image = models.ImageField(upload_to='animals/', verbose_name=_('File Immagine'))
+    image = models.ImageField(upload_to='animals/', blank=True, verbose_name=_('File Immagine'))
+    source_url = models.URLField(blank=True, verbose_name=_('URL Immagine Esterna'))
+    source_page = models.URLField(blank=True, verbose_name=_('Fonte Immagine'))
+    license_label = models.CharField(max_length=50, blank=True, verbose_name=_('Licenza Immagine'))
     caption = models.CharField(max_length=150, blank=True, verbose_name=_('Didascalia'))
     is_primary = models.BooleanField(default=False, verbose_name=_('Foto Copertina'))
     order = models.PositiveIntegerField(default=0, verbose_name=_('Ordine Ordinamento'))

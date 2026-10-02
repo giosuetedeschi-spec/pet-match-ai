@@ -66,9 +66,14 @@ class BreedSerializer(serializers.ModelSerializer):
 
 
 class AnimalImageDetailSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+
     class Meta:
         model = AnimalImage
-        fields = ('id', 'image', 'caption', 'is_primary', 'order')
+        fields = ('id', 'image', 'caption', 'is_primary', 'order', 'source_url', 'source_page', 'license_label')
+
+    def get_image(self, obj):
+        return _animal_image_url(obj, self.context.get('request'))
 
 
 class AnimalSerializer(serializers.ModelSerializer):
@@ -151,9 +156,23 @@ from apps.matching.models import MatchResult
 
 
 class PublicAnimalImageSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+
     class Meta:
         model = AnimalImage
-        fields = ('id', 'image', 'caption', 'is_primary', 'order')
+        fields = ('id', 'image', 'caption', 'is_primary', 'order', 'source_url', 'source_page', 'license_label')
+
+    def get_image(self, obj):
+        return _animal_image_url(obj, self.context.get('request'))
+
+
+def _animal_image_url(image, request=None):
+    if image.source_url:
+        return image.source_url
+    if image.image:
+        url = image.image.url
+        return request.build_absolute_uri(url) if request else url
+    return None
 
 
 class PublicAnimalListSerializer(serializers.ModelSerializer):
@@ -187,10 +206,7 @@ class PublicAnimalListSerializer(serializers.ModelSerializer):
 
     def get_primary_image(self, obj):
         primary = self._primary_image(obj)
-        if primary and primary.image:
-            request = self.context.get('request')
-            return request.build_absolute_uri(primary.image.url) if request else primary.image.url
-        return None
+        return _animal_image_url(primary, self.context.get('request')) if primary else None
 
     def get_primary_image_caption(self, obj):
         primary = self._primary_image(obj)

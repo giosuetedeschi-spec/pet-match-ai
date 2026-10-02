@@ -1,14 +1,10 @@
 from datetime import timedelta
-from io import BytesIO
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.core.files.base import ContentFile
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils import timezone
-from django.utils.text import slugify
-from PIL import Image, ImageDraw
 
 from apps.core.models import Animal, AnimalEnergy, AnimalImage, AnimalSize, AnimalStatus, Breed, Species
 from apps.users.models import ShelterProfile
@@ -27,6 +23,20 @@ SHELTERS = (
 DOG_BREEDS = ('Meticcio', 'Labrador Retriever', 'Pastore Tedesco', 'Jack Russell Terrier', 'Golden Retriever')
 CAT_BREEDS = ('Europeo', 'Siamese', 'Maine Coon')
 NAMES = ('Luna', 'Milo', 'Nina', 'Leo', 'Maya', 'Tito', 'Stella', 'Argo', 'Mia', 'Brio', 'Oliva', 'Pippo')
+STOCK_IMAGES = {
+    Species.DOG: (
+        ('https://commons.wikimedia.org/wiki/Special:FilePath/Sleeping_Brown_Dog.jpg?width=1000', 'https://commons.wikimedia.org/wiki/File:Sleeping_Brown_Dog.jpg'),
+        ('https://commons.wikimedia.org/wiki/Special:FilePath/Yawning_Dog.jpg?width=1000', 'https://commons.wikimedia.org/wiki/File:Yawning_Dog.jpg'),
+        ('https://commons.wikimedia.org/wiki/Special:FilePath/Cachorro-perro.jpg?width=1000', 'https://commons.wikimedia.org/wiki/File:Cachorro-perro.jpg'),
+        ('https://commons.wikimedia.org/wiki/Special:FilePath/Dog_on_dirt_road.jpg?width=1000', 'https://commons.wikimedia.org/wiki/File:Dog_on_dirt_road.jpg'),
+    ),
+    Species.CAT: (
+        ('https://commons.wikimedia.org/wiki/Special:FilePath/Picture_of_cat.jpg?width=1000', 'https://commons.wikimedia.org/wiki/File:Picture_of_cat.jpg'),
+        ('https://commons.wikimedia.org/wiki/Special:FilePath/Cat_looking.jpg?width=1000', 'https://commons.wikimedia.org/wiki/File:Cat_looking.jpg'),
+        ('https://commons.wikimedia.org/wiki/Special:FilePath/Cat-on-couch.jpg?width=1000', 'https://commons.wikimedia.org/wiki/File:Cat-on-couch.jpg'),
+        ('https://commons.wikimedia.org/wiki/Special:FilePath/Tortoiseshell_cat_photo.jpg?width=1000', 'https://commons.wikimedia.org/wiki/File:Tortoiseshell_cat_photo.jpg'),
+    ),
+}
 
 
 class Command(BaseCommand):
@@ -151,8 +161,13 @@ class Command(BaseCommand):
             )
             if created:
                 created_count += 1
-            if not animal.images.exists():
-                self._add_placeholder_image(animal)
+            images = animal.images.all()
+            if not images.exists():
+                self._add_demo_image(animal)
+            else:
+                for image in images.filter(caption__startswith='Immagine segnaposto locale:'):
+                    self._set_demo_source(image)
+                    image.save(update_fields=('source_url', 'source_page', 'license_label', 'caption'))
         return created_count
 
     @staticmethod
@@ -172,26 +187,17 @@ class Command(BaseCommand):
         return f'{name} è un {animal_type} {traits[index % len(traits)]}, seguito dal rifugio e pronto a conoscere una famiglia.'
 
     @staticmethod
-    def _add_placeholder_image(animal):
-        background = '#E8F1ED' if animal.species == Species.DOG else '#F4E9DC'
-        accent = '#315C4B' if animal.species == Species.DOG else '#8A5A36'
-        image = Image.new('RGB', (800, 560), background)
-        draw = ImageDraw.Draw(image)
-        draw.rounded_rectangle((48, 48, 752, 512), radius=36, fill='#FFFFFF')
-        draw.ellipse((290, 135, 510, 355), fill=accent)
-        draw.polygon(((320, 175), (305, 95), (380, 155)), fill=accent)
-        draw.polygon(((420, 155), (495, 95), (475, 180)), fill=accent)
-        label = 'CANE' if animal.species == Species.DOG else 'GATTO'
-        draw.text((350, 400), label, fill=accent, anchor='mm')
-        buffer = BytesIO()
-        image.save(buffer, format='PNG')
-        image_name = f'demo/{animal.pk}-{slugify(animal.name)}.png'
-        AnimalImage.objects.create(
-            animal=animal,
-            image=ContentFile(buffer.getvalue(), name=image_name),
-            caption=f'Immagine segnaposto locale: {animal.name}',
-            is_primary=True,
-        )
+    def _add_demo_image(animal):
+        image = AnimalImage(animal=animal, is_primary=True)
+        Command._set_demo_source(image)
+        image.save()
+
+    @staticmethod
+    def _set_demo_source(image):
+        sources = STOCK_IMAGES[image.animal.species]
+        image.source_url, image.source_page = sources[(image.animal_id - 1) % len(sources)]
+        image.license_label = 'CC0 1.0'
+        image.caption = 'Foto stock dimostrativa: non ritrae questo animale.'
 
     @staticmethod
     def _disable_legacy_seed_admin():
