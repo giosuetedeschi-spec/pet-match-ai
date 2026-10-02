@@ -102,6 +102,19 @@ class AdopterProfile(models.Model):
 
 
 class ShelterProfile(models.Model):
+    class OrganizationType(models.TextChoices):
+        MUNICIPAL_SHELTER = 'MUNICIPAL_SHELTER', _('Canile comunale')
+        PRIVATE_SHELTER = 'PRIVATE_SHELTER', _('Canile privato')
+        CATTERY = 'CATTERY', _('Gattile')
+        ASSOCIATION = 'ASSOCIATION', _('Associazione')
+        RESCUE = 'RESCUE', _('Rifugio')
+        OTHER = 'OTHER', _('Altro')
+
+    class VerificationStatus(models.TextChoices):
+        PENDING = 'PENDING', _('In attesa')
+        APPROVED = 'APPROVED', _('Approvato')
+        REJECTED = 'REJECTED', _('Rifiutato')
+
     user = models.OneToOneField(
         User,
         on_delete=models.CASCADE,
@@ -109,12 +122,22 @@ class ShelterProfile(models.Model):
         verbose_name=_('Utente Gestore')
     )
     shelter_name = models.CharField(max_length=255, verbose_name=_('Nome Struttura / Rifugio'))
+    legal_name = models.CharField(max_length=255, blank=True, default='', verbose_name=_('Ragione Sociale'))
+    organization_type = models.CharField(
+        max_length=30, choices=OrganizationType.choices, default=OrganizationType.OTHER,
+        verbose_name=_('Tipo Struttura')
+    )
     tax_code_vat = models.CharField(max_length=30, verbose_name=_('Codice Fiscale / Partita IVA'))
     official_email = models.EmailField(verbose_name=_('Email Ufficiale Struttura'))
     website_url = models.URLField(blank=True, verbose_name=_('Sito Web'))
     description = models.TextField(blank=True, verbose_name=_('Descrizione Rifugio'))
     capacity_total = models.PositiveIntegerField(default=50, verbose_name=_('Capienza Totale Ospiti'))
     is_verified = models.BooleanField(default=False, verbose_name=_('Struttura Verificata'))
+    verification_status = models.CharField(
+        max_length=10, choices=VerificationStatus.choices, default=VerificationStatus.PENDING,
+        verbose_name=_('Stato Verifica')
+    )
+    rejection_reason = models.TextField(blank=True, verbose_name=_('Motivo Rifiuto'))
     verification_date = models.DateTimeField(null=True, blank=True, verbose_name=_('Data Verifica Approval'))
 
     class Meta:

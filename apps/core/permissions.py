@@ -1,5 +1,18 @@
 from rest_framework import permissions
 
+class IsApprovedShelter(permissions.BasePermission):
+    message = 'Il rifugio deve essere approvato prima di pubblicare animali.'
+
+    def has_permission(self, request, view):
+        user = request.user
+        return (
+            user.is_authenticated
+            and user.role == 'SHELTER'
+            and hasattr(user, 'shelter_profile')
+            and user.shelter_profile.is_verified
+        )
+
+
 class IsShelterOwnerOfAnimal(permissions.BasePermission):
     """
     Permesso personalizzato: concede accesso di modifica soltanto se l'utente

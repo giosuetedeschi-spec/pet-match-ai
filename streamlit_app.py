@@ -176,6 +176,65 @@ def render_shelter():
                 st.rerun()
             except (ApiError, KeyError) as exc:
                 st.error(str(exc) or "Credenziali non valide.")
+
+        with st.expander("Registra un nuovo rifugio"):
+            with st.form("shelter_registration", clear_on_submit=True):
+                username = st.text_input("Nome utente per accesso *", key="registration-username")
+                account_email = st.text_input("Email account *", key="registration-email")
+                password = st.text_input("Password *", type="password", key="registration-password")
+                password_confirm = st.text_input("Conferma password *", type="password", key="registration-password-confirm")
+                shelter_name = st.text_input("Nome pubblico rifugio *")
+                legal_name = st.text_input("Ragione sociale *")
+                organization_types = {
+                    "Canile comunale": "MUNICIPAL_SHELTER",
+                    "Canile privato": "PRIVATE_SHELTER",
+                    "Gattile": "CATTERY",
+                    "Associazione": "ASSOCIATION",
+                    "Rifugio": "RESCUE",
+                }
+                organization_label = st.selectbox("Tipo struttura *", list(organization_types))
+                tax_code_vat = st.text_input("Codice fiscale / Partita IVA *")
+                official_email = st.text_input("Email di contatto *")
+                address = st.text_input("Indirizzo *")
+                c1, c2, c3 = st.columns(3)
+                city = c1.text_input("Comune *")
+                province = c2.text_input("Provincia *", max_chars=10)
+                postal_code = c3.text_input("CAP *", max_chars=10)
+                phone_number = st.text_input("Telefono *")
+                description = st.text_area("Descrizione pubblica *")
+                gdpr_consent = st.checkbox("Accetto l'informativa privacy *")
+                register = st.form_submit_button("Invia richiesta")
+
+            if register:
+                if password != password_confirm:
+                    st.error("Le password non coincidono.")
+                elif not gdpr_consent:
+                    st.error("Il consenso privacy è obbligatorio.")
+                else:
+                    payload = {
+                        "username": username.strip(),
+                        "email": account_email.strip(),
+                        "password": password,
+                        "password_confirm": password_confirm,
+                        "role": "SHELTER",
+                        "gdpr_consent": True,
+                        "shelter_name": shelter_name.strip(),
+                        "legal_name": legal_name.strip(),
+                        "organization_type": organization_types[organization_label],
+                        "tax_code_vat": tax_code_vat.strip(),
+                        "official_email": official_email.strip(),
+                        "address": address.strip(),
+                        "city": city.strip(),
+                        "province": province.strip(),
+                        "postal_code": postal_code.strip(),
+                        "phone_number": phone_number.strip(),
+                        "description": description.strip(),
+                    }
+                    try:
+                        api_request("POST", "users/auth/register/", json=payload)
+                        st.success("Richiesta inviata. Puoi accedere e creare bozze; la pubblicazione si attiva dopo l'approvazione.")
+                    except ApiError as exc:
+                        st.error(f"Registrazione non completata: {exc}")
         return
 
     top = st.columns([5, 1])

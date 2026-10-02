@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from apps.users.models import User
@@ -8,6 +9,25 @@ class ConsentType(models.TextChoices):
     PRIVACY = 'PRIVACY', _('Informativa Privacy GDPR')
     MARKETING = 'MARKETING', _('Comunicazioni Marketing')
     PROFILING = 'PROFILING', _('Profilazione e Algoritmi ML')
+
+
+class ShelterVerificationLog(models.Model):
+    class Action(models.TextChoices):
+        APPROVED = 'APPROVED', _('Approvato')
+        REJECTED = 'REJECTED', _('Rifiutato')
+
+    shelter = models.ForeignKey(
+        'users.ShelterProfile', on_delete=models.PROTECT, related_name='verification_logs'
+    )
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='shelter_verification_actions'
+    )
+    action = models.CharField(max_length=10, choices=Action.choices)
+    reason = models.TextField(blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-timestamp']
 
 
 class GDPRConsentLog(models.Model):
