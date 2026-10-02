@@ -1,25 +1,28 @@
+from pathlib import Path
+
 from rest_framework import serializers
 from apps.core.models import AnimalImage, Animal
 
+MAX_IMAGE_SIZE = 5 * 1024 * 1024
+VALID_IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp'}
+
+
+class SafeAnimalImageField(serializers.ImageField):
+    def to_internal_value(self, data):
+        image = super().to_internal_value(data)
+        if image.size > MAX_IMAGE_SIZE:
+            raise serializers.ValidationError("La dimensione dell'immagine non può superare i 5MB.")
+        if Path(image.name).suffix.lower() not in VALID_IMAGE_EXTENSIONS:
+            raise serializers.ValidationError('Formato file non supportato. Usa JPG, PNG o WebP.')
+        return image
+
+
 class AnimalImageSerializer(serializers.ModelSerializer):
+    image = SafeAnimalImageField()
     class Meta:
         model = AnimalImage
         fields = ('id', 'animal', 'image', 'caption', 'is_primary', 'order')
         read_only_fields = ('id',)
-
-    def validate_image(self, value):
-        # 1. Controllo dimensione massima (es. Max 5MB)
-        max_size = 5 * 1024 * 1024  # 5 Megabyte
-        if value.size > max_size:
-            raise serializers.ValidationError("La dimensione dell'immagine non può superare i 5MB.")
-
-        # 2. Controllo estensione
-        valid_extensions = ['.jpg', '.jpeg', '.png', '.webp']
-        ext = os.path.splitext(value.name)[1].lower()
-        if ext not in valid_extensions:
-            raise serializers.ValidationError("Formato file non supportato. Usa JPG, PNG o WebP.")
-
-        return value
 
     def validate(self, attrs):
         animal = attrs.get('animal')
@@ -32,11 +35,22 @@ class AnimalImageSerializer(serializers.ModelSerializer):
 
 class BulkImageUploadSerializer(serializers.Serializer):
     images = serializers.ListField(
-        child=serializers.ImageField(max_length=100000, allow_empty_file=False, use_url=False),
+        child=SafeAnimalImageField(max_length=100000, allow_empty_file=False, use_url=False),
         write_only=True
     )
+    alt_texts = serializers.ListField(
+        child=serializers.CharField(max_length=150, trim_whitespace=True, allow_blank=False),
+        write_only=True,
+    )
 
-import os
+    def validate(self, attrs):
+        if len(attrs['images']) != len(attrs['alt_texts']):
+            raise serializers.ValidationError({'alt_texts': 'Inserisci una descrizione per ogni immagine.'})
+        animal = self.context.get('animal')
+        if animal and animal.images.count() + len(attrs['images']) > 10:
+            raise serializers.ValidationError({'images': 'Ogni animale può avere al massimo 10 foto.'})
+        return attrs
+
 from rest_framework import serializers
 from apps.core.models import (
     Animal, Breed, AnimalImage, AdoptionApplication,
@@ -154,6 +168,7 @@ class PublicAnimalListSerializer(serializers.ModelSerializer):
     city = serializers.CharField(source='shelter.user.city', read_only=True)
     province = serializers.CharField(source='shelter.user.province', read_only=True)
     primary_image = serializers.SerializerMethodField()
+    primary_image_caption = serializers.SerializerMethodField()
     match_score = serializers.SerializerMethodField()
 
     class Meta:
@@ -162,15 +177,24 @@ class PublicAnimalListSerializer(serializers.ModelSerializer):
             'id', 'name', 'species', 'species_display', 'breed_name',
             'age_years', 'age_months', 'gender', 'gender_display',
             'size', 'size_display', 'energy_level', 'city', 'province',
-            'shelter_name', 'primary_image', 'match_score', 'created_at'
+            'shelter_name', 'primary_image', 'primary_image_caption', 'match_score', 'created_at'
         )
 
+    @staticmethod
+    def _primary_image(obj):
+        images = list(obj.images.all())
+        return next((image for image in images if image.is_primary), images[0] if images else None)
+
     def get_primary_image(self, obj):
-        primary = obj.images.filter(is_primary=True).first() or obj.images.first()
+        primary = self._primary_image(obj)
         if primary and primary.image:
             request = self.context.get('request')
             return request.build_absolute_uri(primary.image.url) if request else primary.image.url
         return None
+
+    def get_primary_image_caption(self, obj):
+        primary = self._primary_image(obj)
+        return primary.caption if primary else ''
 
     def get_match_score(self, obj):
         request = self.context.get('request')

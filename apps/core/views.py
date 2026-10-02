@@ -26,9 +26,10 @@ class AnimalImageUploadView(APIView):
         animal = get_object_or_404(Animal, id=animal_id)
         self.check_object_permissions(request, animal)
 
-        serializer = BulkImageUploadSerializer(data=request.data)
+        serializer = BulkImageUploadSerializer(data=request.data, context={'animal': animal})
         if serializer.is_valid():
             uploaded_images = serializer.validated_data['images']
+            alt_texts = serializer.validated_data['alt_texts']
             created_instances = []
 
             for index, img_file in enumerate(uploaded_images):
@@ -38,6 +39,7 @@ class AnimalImageUploadView(APIView):
                 img_instance = AnimalImage.objects.create(
                     animal=animal,
                     image=img_file,
+                    caption=alt_texts[index],
                     is_primary=is_first,
                     order=animal.images.count() + 1
                 )
