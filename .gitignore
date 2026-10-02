@@ -1,0 +1,19 @@
+# Local Graphify artifacts (rebuildable, keep graph/report available in this clone)
+graphify-out/
+
+# Python
+env/
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Django
+*.sqlite3
+media/
+staticfiles/
+
+# Local environment and editor files
+.env
+.vscode/
+.idea/
