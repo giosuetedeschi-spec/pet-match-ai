@@ -18,7 +18,7 @@ Unit: Establish the Phase 1 Prisma catalogue data foundation in the separate `pe
 - [x] Full Compose stack reached healthy state; Streamlit, seeded Django catalog (100 animals), ML placeholder, Mailpit, and Prisma DB health responded successfully.
 - [x] Reviewed final diff and confirmed the original `docs/` files are unchanged.
 - [x] Opened PR [#22](https://github.com/giosuetedeschi-spec/pet-match-ai/pull/22).
-- [ ] Wait for all CI checks to pass.
+- [x] PR #22 CI passed all checks: Django/Streamlit, secret scan and Compose stack smoke.
 - [ ] Merge with a merge commit and delete the feature branch.
 
 ## Scope and constraints
