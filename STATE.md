@@ -17,7 +17,8 @@ Unit: Establish the Phase 1 Prisma catalogue data foundation in the separate `pe
 - [x] Validated Compose configuration and whitespace; refreshed ignored `graphify-out/` incrementally.
 - [x] Full Compose stack reached healthy state; Streamlit, seeded Django catalog (100 animals), ML placeholder, Mailpit, and Prisma DB health responded successfully.
 - [x] Reviewed final diff and confirmed the original `docs/` files are unchanged.
-- [ ] Open PR; wait for all CI checks to pass.
+- [x] Opened PR [#22](https://github.com/giosuetedeschi-spec/pet-match-ai/pull/22).
+- [ ] Wait for all CI checks to pass.
 - [ ] Merge with a merge commit and delete the feature branch.
 
 ## Scope and constraints
@@ -30,4 +31,4 @@ Unit: Establish the Phase 1 Prisma catalogue data foundation in the separate `pe
 
 ## Next action
 
-Commit the reviewed unit and open the CI-gated PR. Merge only after every check is green, then delete the branch.
+Wait for PR #22 CI. Merge only after every check is green, then delete the branch.
