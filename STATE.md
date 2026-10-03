@@ -1,34 +1,36 @@
 # PetMatch AI — Operational State
 
 Updated: 2026-10-03
-Branch: `codex/phase1-prisma-catalog-foundation`
-Unit: Establish the Phase 1 Prisma catalogue data foundation in the separate `petmatch_web` database.
+Base: `main` at `631ff394ea0b0aa507b3632682ee0e6c9e595e64`
+Branch: `codex/phase1-next-public-catalog`
+Unit: Add the first public Next.js catalogue backed by published Prisma animals.
 
-## Progress
+## Previous unit
 
-- [x] Confirmed the correct clone, `main`, `origin` and current GitHub identity (`giosuetedeschi-spec`).
-- [x] Confirmed local `main` matches `origin/main` at `12e191fe866edb90135990040030d52ddb7fe862`.
-- [x] Updated local `graphify-out/` incrementally; it remains ignored by Git.
-- [x] Added Prisma models for the Phase 1 catalogue entities and generated a schema migration.
-- [x] Added an isolated Compose migration target and database-backed web health check.
-- [x] Pinned Bun 1.4.2 for local scripts and the Next.js container runtime; kept `package-lock.json` as the dependency lock.
-- [x] Docker build generated Prisma Client and completed the Next.js build and TypeScript checks.
-- [x] Applied the initial Prisma migration to `petmatch_web`; `/api/health` returned `{"status":"ok","database":"connected"}`.
-- [x] Validated Compose configuration and whitespace; refreshed ignored `graphify-out/` incrementally.
-- [x] Full Compose stack reached healthy state; Streamlit, seeded Django catalog (100 animals), ML placeholder, Mailpit, and Prisma DB health responded successfully.
-- [x] Reviewed final diff and confirmed the original `docs/` files are unchanged.
-- [x] Opened PR [#22](https://github.com/giosuetedeschi-spec/pet-match-ai/pull/22).
-- [x] PR #22 CI passed all checks: Django/Streamlit, secret scan and Compose stack smoke.
-- [ ] Merge with a merge commit and delete the feature branch.
+- PR #22 merged with all checks green at `631ff394ea0b0aa507b3632682ee0e6c9e595e64`.
+- Feature branch deleted; local `main` was clean and synced before this unit.
+- Bun 1.4.2 is installed at `C:\Users\gioma\.bun\bin\bun.exe`.
+- `graphify-out/` is local, current, and ignored by Git.
 
 ## Scope and constraints
 
-- Django/Streamlit MVP and `petmatch_mvp` database remain unchanged.
-- The Next.js/Prisma database remains the separate `petmatch_web` logical database on the shared MySQL service.
-- Media files continue to use the Django Docker volume; no object-storage service is added.
-- Original product specification under `docs/` is read-only and must not be edited.
-- `graphify-out/` is local reusable data, ignored and never committed.
+- Read public animal records from `petmatch_web`; include only available animals from active shelters.
+- Support base filters for species, size and text search, with pagination.
+- Keep Django + Streamlit MVP as the product priority; this is the parallel Next.js release.
+- Do not change original product documentation under `docs/`.
+- Do not add object storage; photo delivery is a separate integration decision.
+
+## Progress
+
+- [x] Confirmed current main and created a dedicated feature branch.
+- [x] Implement `/it/animali` per the product specification, with public-status/shelter filters, text/species/size filters, pagination and responsive layout.
+- [x] Link the home page to the catalogue and update the operational roadmap.
+- [x] Docker build passes; temporary MySQL fixture confirmed card rendering, search and species filtering, then was removed.
+- [x] Refresh Graphify incrementally; ignored output remains local.
+- [x] Review final diff; original `docs/` files remain unchanged.
+- [x] Open PR [#23](https://github.com/giosuetedeschi-spec/pet-match-ai/pull/23).
+- [ ] Wait for green CI, merge with merge commit, delete branch.
 
 ## Next action
 
-Wait for PR #22 CI. Merge only after every check is green, then delete the branch.
+Open a PR for this reviewed unit, wait for green CI, merge with a merge commit, then delete the branch.
