@@ -12,7 +12,7 @@ Aggiornata: 2026-10-03. La specifica prodotto in `docs/` resta la fonte di requi
 
 - [x] Fondazione Prisma per comuni, utenti, rifugi, membri, animali, media e profilo comportamentale; database `petmatch_web` separato su MySQL condiviso.
 - [x] Migration applicata all’avvio Compose e health check collegato alla tabella `comuni`.
-- [ ] Catalogo pubblico Next.js che legge animali pubblicati con filtri di base.
+- [x] Catalogo pubblico Next.js con ricerca testo, specie, taglia e paginazione; include solo animali pubblicati di rifugi attivi.
 - [ ] Flusso rifugio per creare e pubblicare animali con validazione.
 - [ ] Foto salvate nel volume media Django per l’MVP; definire integrazione media della release Next senza introdurre object storage in questa fase.
 
@@ -25,4 +25,4 @@ Aggiornata: 2026-10-03. La specifica prodotto in `docs/` resta la fonte di requi
 
 ## Stato unità corrente
 
-Branch: `codex/phase1-prisma-catalog-foundation`. Modelli e migration Prisma, runtime Bun 1.4.2, migration Compose e health check DB sono implementati. Resta lo smoke test completo, la PR e la procedura CI/merge; dettagli in `STATE.md`.
+PR #22 merged con CI verde in `631ff394ea0b0aa507b3632682ee0e6c9e595e64`; il branch è stato eliminato. Unità corrente: `codex/phase1-next-public-catalog`, per il catalogo pubblico Next.js. Le foto attendono l’integrazione media; dettagli in `STATE.md`.
