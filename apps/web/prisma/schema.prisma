@@ -7,7 +7,364 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Temporary runtime probe; replace with the documented product schema as Phase 1 advances.
-model RuntimeProbe {
-  id Int @id @default(autoincrement())
+enum UserLocale {
+  it
+  en
+
+  @@map("user_locale")
+}
+
+enum UserRole {
+  adopter
+  shelter_staff
+  platform_admin
+
+  @@map("user_role")
+}
+
+enum UserStatus {
+  active
+  suspended
+  deleted
+
+  @@map("user_status")
+}
+
+enum ShelterType {
+  canile_comunale
+  canile_privato
+  gattile
+  associazione
+  rifugio
+
+  @@map("shelter_type")
+}
+
+enum ShelterStatus {
+  pending
+  active
+  suspended
+  archived
+
+  @@map("shelter_status")
+}
+
+enum ShelterPlan {
+  free
+  base
+  pro
+
+  @@map("shelter_plan")
+}
+
+enum AnimalSpecies {
+  dog
+  cat
+
+  @@map("animal_species")
+}
+
+enum AnimalSex {
+  male
+  female
+  unknown
+
+  @@map("animal_sex")
+}
+
+enum AnimalSize {
+  small
+  medium
+  large
+  xlarge
+
+  @@map("animal_size")
+}
+
+enum AnimalCoatLength {
+  short
+  medium
+  long
+
+  @@map("animal_coat_length")
+}
+
+enum AnimalStatus {
+  draft
+  available
+  reserved
+  adopted
+  unavailable
+  transferred
+  deceased
+
+  @@map("animal_status")
+}
+
+enum AnimalUnavailableReason {
+  medical_hold
+  quarantine
+  behavioral_rehab
+  foster
+  other
+
+  @@map("animal_unavailable_reason")
+}
+
+enum AnimalMediaKind {
+  photo
+  video
+
+  @@map("animal_media_kind")
+}
+
+enum ProcessingStatus {
+  pending
+  ready
+  failed
+
+  @@map("processing_status")
+}
+
+enum ChildCompatibility {
+  yes
+  older_only
+  no
+  unknown
+
+  @@map("child_compatibility")
+}
+
+enum AnimalCompatibility {
+  yes
+  selective
+  no
+  unknown
+
+  @@map("animal_compatibility")
+}
+
+enum TrainingProgress {
+  yes
+  partially
+  no
+  unknown
+
+  @@map("training_progress")
+}
+
+enum Suitability {
+  yes
+  no
+  unknown
+
+  @@map("suitability")
+}
+
+enum NeedsGarden {
+  yes
+  preferred
+  no
+  unknown
+
+  @@map("needs_garden")
+}
+
+model Comune {
+  id                   Int       @id @default(autoincrement()) @db.UnsignedSmallInt
+  istatCode            String    @unique(map: "uq_comuni_istat") @map("istat_code") @db.Char(6)
+  name                 String    @db.VarChar(120)
+  provinceCode         String    @map("province_code") @db.Char(2)
+  region               String    @db.VarChar(40)
+  postalCodes          Json      @map("postal_codes")
+  latitude             Decimal   @db.Decimal(9, 6)
+  longitude            Decimal   @db.Decimal(9, 6)
+  shelters             Shelter[]
+
+  @@index([name], map: "idx_comuni_name")
+  @@index([provinceCode], map: "idx_comuni_province")
+  @@index([latitude, longitude], map: "idx_comuni_coords")
+  @@map("comuni")
+}
+
+model User {
+  id              String      @id @db.Char(26)
+  email           String      @unique(map: "uq_users_email") @db.VarChar(255)
+  emailVerifiedAt DateTime?   @map("email_verified_at") @db.DateTime(3)
+  passwordHash    String?     @map("password_hash") @db.VarChar(255)
+  fullName        String      @map("full_name") @db.VarChar(160)
+  phone           String?     @db.VarChar(32)
+  locale          UserLocale  @default(it)
+  role            UserRole    @default(adopter)
+  status          UserStatus  @default(active)
+  marketingOptIn  Boolean     @default(false) @map("marketing_opt_in")
+  lastLoginAt     DateTime?   @map("last_login_at") @db.DateTime(3)
+  createdAt       DateTime    @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt       DateTime    @default(now()) @updatedAt @map("updated_at") @db.DateTime(3)
+  deletedAt       DateTime?   @map("deleted_at") @db.DateTime(3)
+  memberships     ShelterMember[]
+
+  @@index([role, status], map: "idx_users_role_status")
+  @@map("users")
+}
+
+model Shelter {
+  id                 String        @id @db.Char(26)
+  slug               String        @unique(map: "uq_shelters_slug") @db.VarChar(140)
+  name               String        @db.VarChar(160)
+  legalName          String?       @map("legal_name") @db.VarChar(200)
+  type               ShelterType
+  taxId              String?       @map("tax_id") @db.VarChar(20)
+  email              String        @db.VarChar(255)
+  phone              String?       @db.VarChar(32)
+  whatsappPhone      String?       @map("whatsapp_phone") @db.VarChar(32)
+  website            String?       @db.VarChar(255)
+  socialLinks        Json?         @map("social_links")
+  addressLine        String        @map("address_line") @db.VarChar(255)
+  comuneId           Int           @map("comune_id") @db.UnsignedSmallInt
+  postalCode         String        @map("postal_code") @db.Char(5)
+  latitude           Decimal?      @db.Decimal(9, 6)
+  longitude          Decimal?      @db.Decimal(9, 6)
+  descriptionIt      String?       @map("description_it") @db.Text
+  descriptionEn      String?       @map("description_en") @db.Text
+  openingHours       Json?         @map("opening_hours")
+  logoKey            String?       @map("logo_key") @db.VarChar(255)
+  coverKey           String?       @map("cover_key") @db.VarChar(255)
+  capacityDogs       Int?          @map("capacity_dogs") @db.UnsignedSmallInt
+  capacityCats       Int?          @map("capacity_cats") @db.UnsignedSmallInt
+  status             ShelterStatus @default(pending)
+  plan               ShelterPlan   @default(free)
+  bookingCutoffHours Int           @default(24) @map("booking_cutoff_hours") @db.UnsignedSmallInt
+  acceptsDonations   Boolean       @default(false) @map("accepts_donations")
+  approvedAt         DateTime?     @map("approved_at") @db.DateTime(3)
+  approvedBy         String?       @map("approved_by") @db.Char(26)
+  rejectionReason    String?       @map("rejection_reason") @db.Text
+  createdAt          DateTime      @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt          DateTime      @default(now()) @updatedAt @map("updated_at") @db.DateTime(3)
+  deletedAt          DateTime?     @map("deleted_at") @db.DateTime(3)
+  comune             Comune        @relation(fields: [comuneId], references: [id])
+  members            ShelterMember[]
+  animals            Animal[]
+
+  @@index([status], map: "idx_shelters_status")
+  @@index([latitude, longitude], map: "idx_shelters_coords")
+  @@index([comuneId], map: "idx_shelters_comune")
+  @@map("shelters")
+}
+
+model ShelterMember {
+  id                String   @id @db.Char(26)
+  shelterId         String   @map("shelter_id") @db.Char(26)
+  userId            String   @map("user_id") @db.Char(26)
+  isBillingContact  Boolean  @default(false) @map("is_billing_contact")
+  invitedBy         String?  @map("invited_by") @db.Char(26)
+  joinedAt          DateTime @default(now()) @map("joined_at") @db.DateTime(3)
+  shelter           Shelter  @relation(fields: [shelterId], references: [id], onDelete: Cascade)
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([shelterId, userId], map: "uq_member")
+  @@index([userId], map: "idx_member_user")
+  @@map("shelter_members")
+}
+
+model Animal {
+  id                    String                    @id @db.Char(26)
+  shelterId             String                    @map("shelter_id") @db.Char(26)
+  slug                  String                    @unique(map: "uq_animals_slug") @db.VarChar(160)
+  internalCode          String?                   @map("internal_code") @db.VarChar(40)
+  name                  String                    @db.VarChar(80)
+  species               AnimalSpecies
+  sex                   AnimalSex                 @default(unknown)
+  size                  AnimalSize?
+  breedPrimary          String?                   @map("breed_primary") @db.VarChar(80)
+  breedSecondary        String?                   @map("breed_secondary") @db.VarChar(80)
+  isMixed               Boolean                   @default(true) @map("is_mixed")
+  coatColor             String?                   @map("coat_color") @db.VarChar(60)
+  coatLength            AnimalCoatLength?         @map("coat_length")
+  birthDate             DateTime?                 @map("birth_date") @db.Date
+  birthDateEstimated    Boolean                   @default(true) @map("birth_date_estimated")
+  weightKg              Decimal?                  @map("weight_kg") @db.Decimal(5, 2)
+  microchipNumber       String?                   @unique(map: "uq_animals_microchip") @map("microchip_number") @db.Char(15)
+  microchipRegisteredOn DateTime?                 @map("microchip_registered_on") @db.Date
+  anagrafeRegion        String?                   @map("anagrafe_region") @db.VarChar(40)
+  isSterilized          Boolean?                  @map("is_sterilized")
+  sterilizedOn          DateTime?                 @map("sterilized_on") @db.Date
+  hasSpecialNeeds       Boolean                   @default(false) @map("has_special_needs")
+  specialNeedsSummary   String?                   @map("special_needs_summary") @db.VarChar(255)
+  isVaccinatedSummary   Boolean?                  @map("is_vaccinated_summary")
+  headlineIt            String?                   @map("headline_it") @db.VarChar(140)
+  headlineEn            String?                   @map("headline_en") @db.VarChar(140)
+  storyIt               String?                   @map("story_it") @db.Text
+  storyEn               String?                   @map("story_en") @db.Text
+  adoptionFeeCents      Int?                      @map("adoption_fee_cents") @db.UnsignedInt
+  status                AnimalStatus              @default(draft)
+  unavailableReason     AnimalUnavailableReason?  @map("unavailable_reason")
+  intakeDate            DateTime                  @map("intake_date") @db.Date
+  publishedAt           DateTime?                 @map("published_at") @db.DateTime(3)
+  adoptedAt             DateTime?                 @map("adopted_at") @db.DateTime(3)
+  createdBy             String?                   @map("created_by") @db.Char(26)
+  createdAt             DateTime                  @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt             DateTime                  @default(now()) @updatedAt @map("updated_at") @db.DateTime(3)
+  deletedAt             DateTime?                 @map("deleted_at") @db.DateTime(3)
+  shelter               Shelter                  @relation(fields: [shelterId], references: [id])
+  media                 AnimalMedia[]
+  behaviorProfile       AnimalBehaviorProfile?
+
+  @@index([shelterId, status], map: "idx_animals_shelter_status")
+  @@index([status, species, publishedAt], map: "idx_animals_public")
+  @@index([intakeDate], map: "idx_animals_intake")
+  @@fulltext([name, breedPrimary, storyIt, storyEn], map: "ft_animals_text")
+  @@map("animals")
+}
+
+model AnimalMedia {
+  id                String           @id @db.Char(26)
+  animalId          String           @map("animal_id") @db.Char(26)
+  kind              AnimalMediaKind
+  storageKey        String           @map("storage_key") @db.VarChar(255)
+  derivatives       Json?
+  placeholder       String?          @db.VarChar(512)
+  mimeType          String           @map("mime_type") @db.VarChar(80)
+  width             Int?             @db.UnsignedSmallInt
+  height            Int?             @db.UnsignedSmallInt
+  durationSeconds   Int?             @map("duration_seconds") @db.UnsignedSmallInt
+  byteSize          Int              @map("byte_size") @db.UnsignedInt
+  altTextIt         String?          @map("alt_text_it") @db.VarChar(255)
+  altTextEn         String?          @map("alt_text_en") @db.VarChar(255)
+  isPrimary         Boolean          @default(false) @map("is_primary")
+  sortOrder         Int              @default(0) @map("sort_order") @db.UnsignedSmallInt
+  processingStatus  ProcessingStatus @default(pending) @map("processing_status")
+  createdAt         DateTime         @default(now()) @map("created_at") @db.DateTime(3)
+  deletedAt         DateTime?        @map("deleted_at") @db.DateTime(3)
+  animal            Animal           @relation(fields: [animalId], references: [id], onDelete: Cascade)
+
+  @@index([animalId, sortOrder], map: "idx_media_animal")
+  @@map("animal_media")
+}
+
+model AnimalBehaviorProfile {
+  animalId             String        @id @map("animal_id") @db.Char(26)
+  energyLevel          Int?          @map("energy_level") @db.UnsignedTinyInt
+  sociabilityPeople    Int?          @map("sociability_people") @db.UnsignedTinyInt
+  goodWithChildren     ChildCompatibility @default(unknown) @map("good_with_children")
+  goodWithDogs         AnimalCompatibility @default(unknown) @map("good_with_dogs")
+  goodWithCats         AnimalCompatibility @default(unknown) @map("good_with_cats")
+  houseTrained         TrainingProgress @default(unknown) @map("house_trained")
+  leashTrained         TrainingProgress @default(unknown) @map("leash_trained")
+  noiseTolerance       Int?          @map("noise_tolerance") @db.UnsignedTinyInt
+  aloneToleranceHours  Int?          @map("alone_tolerance_hours") @db.UnsignedTinyInt
+  trainingNeeds        Int?          @map("training_needs") @db.UnsignedTinyInt
+  groomingNeeds        Int?          @map("grooming_needs") @db.UnsignedTinyInt
+  exerciseMinPerDay    Int?          @map("exercise_min_per_day") @db.UnsignedSmallInt
+  suitableForFirstTime Suitability @default(unknown) @map("suitable_for_first_time")
+  needsGarden          NeedsGarden   @default(unknown) @map("needs_garden")
+  temperamentTags      Json?         @map("temperament_tags")
+  notesIt              String?       @map("notes_it") @db.Text
+  notesEn              String?       @map("notes_en") @db.Text
+  assessedBy           String?       @map("assessed_by") @db.Char(26)
+  assessedAt           DateTime?     @map("assessed_at") @db.DateTime(3)
+  updatedAt            DateTime      @default(now()) @updatedAt @map("updated_at") @db.DateTime(3)
+  animal               Animal        @relation(fields: [animalId], references: [id], onDelete: Cascade)
+
+  @@map("animal_behavior_profiles")
 }
