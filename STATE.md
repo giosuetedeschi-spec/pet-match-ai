@@ -28,7 +28,8 @@ Unit: Add the first public Next.js catalogue backed by published Prisma animals.
 - [x] Docker build passes; temporary MySQL fixture confirmed card rendering, search and species filtering, then was removed.
 - [x] Refresh Graphify incrementally; ignored output remains local.
 - [x] Review final diff; original `docs/` files remain unchanged.
-- [ ] Open PR, wait for green CI, merge with merge commit, delete branch.
+- [x] Open PR [#23](https://github.com/giosuetedeschi-spec/pet-match-ai/pull/23).
+- [ ] Wait for green CI, merge with merge commit, delete branch.
 
 ## Next action
 
