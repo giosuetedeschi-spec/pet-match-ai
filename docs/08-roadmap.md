@@ -79,7 +79,7 @@ Sequencing rationale: the catalogue is the substrate everything else operates on
 - [x] Scoring 10,000 animals against one profile completes in under 300 ms in the local unit test
 - [x] Digest policy enforces at most one send per 48 hours; one-click unsubscribe is implemented without login
 
-The matching code and automated gates are implemented. The usability study still needs three first-time participants. A live database and SMTP run is also pending because Docker/MySQL is not available in the current environment.
+The matching code and automated gates are implemented. GitHub CI started the full Compose stack and verified the Next.js-to-MySQL connection. The usability study still needs three first-time participants, and email delivery/unsubscribe still need an end-to-end run through Mailpit.
 
 **Risks**
 - Weights are judgement, not evidence (acknowledged in [06](./06-matching-algorithm.md) §8) — mitigate by having two shelter operators review the worked examples before the phase closes.
