@@ -1,10 +1,10 @@
 # PetMatch AI — Operational State
 
 Updated: 2026-10-08
-Base: `main` at `10ad3ff` (merge PR #23)
-Branch: `chore/clean-modules-types-docs`, matching implementation and completion work in progress
-Working tree: matching digest, account carry-over, notification and animal-detail work is in progress
-Merge status: direct push to protected `main` was rejected by GitHub (PR required, 3 status checks expected). The local GitHub CLI reports its keyring token as invalid; GitHub CLI API calls also fail through the configured local proxy.
+Base: `main` at `cb82556` (merge PR #24)
+Branch: `chore/clean-modules-types-docs`, matching implementation merged to `main`
+Working tree: post-merge checkpoint update
+Merge status: PR #24 merged after all three required CI checks passed.
 
 ## Completed unit
 
@@ -29,7 +29,7 @@ Commit `26d8cc9` also updated the project documentation, cleaned existing module
 
 The Next.js matching scope now includes the resumable quiz, saved anonymous/account profiles, score breakdowns, favorites, browse integration, animal details, cache invalidation, optional Claude explanations with deterministic fallback, verified account carry-over, notifications, unsubscribe, and a scheduled digest worker.
 
-Verification on 2026-10-08: Prisma schema validation, TypeScript typecheck, production build, Compose config, and automated scoring/digest tests passed. The test suite covers both documented examples (91 and 46), weight total, exclusions, unknown data, the 48-hour policy, and 10,000 animals (<300 ms). A three-person usability run and live MySQL/SMTP smoke test remain outstanding because Docker/MySQL and `DATABASE_URL` are unavailable here.
+Verification on 2026-10-08: Prisma schema validation, TypeScript typecheck, production build, Compose config, 10 automated scoring/digest tests, local page smoke checks, and all three required GitHub CI checks passed. The test suite covers both documented examples (91 and 46), weight total, exclusions, unknown data, the 48-hour policy, and 10,000 animals (<300 ms). GitHub CI started the full Compose stack and verified Next.js-to-MySQL connectivity. A three-person usability run and end-to-end email delivery/unsubscribe test remain outstanding.
 
 ## Next planned unit
 
