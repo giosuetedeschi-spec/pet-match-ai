@@ -1,7 +1,8 @@
-from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.db import transaction
+from rest_framework import serializers
+
 from apps.users.models import AdopterProfile, ShelterProfile
 from apps.audit.models import GDPRConsentLog, ConsentType
 from apps.core.models import Comune
@@ -72,7 +73,12 @@ class RegisterSerializer(serializers.ModelSerializer):
         if not attrs.get('gdpr_consent'):
             raise serializers.ValidationError({"gdpr_consent": "Il consenso GDPR è obbligatorio per registrarsi."})
         if attrs.get('role') == User.Role.ADMIN:
-            raise serializers.ValidationError({"role": "Il ruolo amministratore non è disponibile tramite registrazione pubblica."})
+            raise serializers.ValidationError({
+                "role": (
+                    "Il ruolo amministratore non è disponibile tramite "
+                    "registrazione pubblica."
+                )
+            })
         if attrs.get('role') == User.Role.SHELTER:
             required = (
                 'shelter_name', 'legal_name', 'organization_type', 'tax_code_vat',
@@ -83,7 +89,10 @@ class RegisterSerializer(serializers.ModelSerializer):
                 if not str(attrs.get(field, '')).strip()
             ]
             if missing:
-                raise serializers.ValidationError({field: "Campo obbligatorio per registrare un rifugio." for field in missing})
+                raise serializers.ValidationError({
+                    field: "Campo obbligatorio per registrare un rifugio."
+                    for field in missing
+                })
         return attrs
 
     def create(self, validated_data):
@@ -102,7 +111,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         }
         shelter_data = {field: validated_data.pop(field) for field in shelter_fields if field in validated_data}
         gdpr_granted = validated_data.get('gdpr_consent')
-        
+
         if gdpr_granted:
             validated_data['gdpr_consent_date'] = timezone.now()
 
@@ -165,10 +174,6 @@ class ShelterRejectionSerializer(serializers.Serializer):
 class GDPRConsentUpdateSerializer(serializers.Serializer):
     consent_type = serializers.ChoiceField(choices=ConsentType.choices)
     granted = serializers.BooleanField()
-
-
-
-from rest_framework import serializers
 
 
 class AccountDeletionSerializer(serializers.Serializer):

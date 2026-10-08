@@ -1,5 +1,6 @@
 from rest_framework import permissions
 
+
 class IsApprovedShelter(permissions.BasePermission):
     message = 'Il rifugio deve essere approvato prima di pubblicare animali.'
 
@@ -28,9 +29,6 @@ class IsShelterOwnerOfAnimal(permissions.BasePermission):
             return obj.animal.shelter.user == request.user
         # Se l'oggetto è direttamente Animal
         return obj.shelter.user == request.user
-
-
-from rest_framework import permissions
 
 
 class IsAdopterUser(permissions.BasePermission):

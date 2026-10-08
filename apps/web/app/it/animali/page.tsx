@@ -9,7 +9,12 @@ import { prisma } from "@/lib/prisma";
 
 const pageSize = 24;
 const speciesOptions = [AnimalSpecies.dog, AnimalSpecies.cat];
-const sizeOptions = [AnimalSize.small, AnimalSize.medium, AnimalSize.large, AnimalSize.xlarge];
+const sizeOptions = [
+  AnimalSize.small,
+  AnimalSize.medium,
+  AnimalSize.large,
+  AnimalSize.xlarge,
+];
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -18,20 +23,34 @@ function first(value: string | string[] | undefined) {
 }
 
 function label(value: string) {
-  return value === "dog" ? "Cane" : value === "cat" ? "Gatto" : value;
+  if (value === "dog") return "Cane";
+  if (value === "cat") return "Gatto";
+  return value;
 }
 
 function sexLabel(value: string) {
-  return value === "male" ? "Maschio" : value === "female" ? "Femmina" : "Sesso non indicato";
+  if (value === "male") return "Maschio";
+  if (value === "female") return "Femmina";
+  return "Sesso non indicato";
 }
 
 function sizeLabel(value: string) {
-  return { small: "Piccola", medium: "Media", large: "Grande", xlarge: "Molto grande" }[value] ?? value;
+  const labels: Record<string, string> = {
+    small: "Piccola",
+    medium: "Media",
+    large: "Grande",
+    xlarge: "Molto grande",
+  };
+  return labels[value] ?? value;
 }
 
 export const dynamic = "force-dynamic";
 
-export default async function CatalogPage({ searchParams }: { searchParams: SearchParams }) {
+export default async function CatalogPage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
   const params = await searchParams;
   const speciesValue = first(params.species);
   const sizeValue = first(params.size);
@@ -102,23 +121,39 @@ export default async function CatalogPage({ searchParams }: { searchParams: Sear
       <form className="catalog-filters" action="/it/animali">
         <label>
           Cerca
-          <input name="q" type="search" maxLength={80} defaultValue={query} placeholder="Nome o razza" />
+          <input
+            name="q"
+            type="search"
+            maxLength={80}
+            defaultValue={query}
+            placeholder="Nome o razza"
+          />
         </label>
         <label>
           Specie
           <select name="species" defaultValue={species ?? ""}>
             <option value="">Tutte</option>
-            {speciesOptions.map((value) => <option key={value} value={value}>{label(value)}</option>)}
+            {speciesOptions.map((value) => (
+              <option key={value} value={value}>
+                {label(value)}
+              </option>
+            ))}
           </select>
         </label>
         <label>
           Taglia
           <select name="size" defaultValue={size ?? ""}>
             <option value="">Tutte</option>
-            {sizeOptions.map((value) => <option key={value} value={value}>{sizeLabel(value)}</option>)}
+            {sizeOptions.map((value) => (
+              <option key={value} value={value}>
+                {sizeLabel(value)}
+              </option>
+            ))}
           </select>
         </label>
-        <button className="button" type="submit">Filtra</button>
+        <button className="button" type="submit">
+          Filtra
+        </button>
         <a className="clear-filters" href="/it/animali">Rimuovi filtri</a>
       </form>
 
@@ -131,25 +166,43 @@ export default async function CatalogPage({ searchParams }: { searchParams: Sear
           <section className="animal-grid" aria-label="Animali disponibili">
             {animals.map((animal) => (
               <article className="animal-card" key={animal.slug}>
-                <div className="animal-mark" aria-hidden="true">{animal.species === "dog" ? "🐕" : "🐈"}</div>
+                <div className="animal-mark" aria-hidden="true">
+                  {animal.species === "dog" ? "🐕" : "🐈"}
+                </div>
                 <div className="animal-card-body">
                   <p className="animal-meta">
                     {label(animal.species)} · {sexLabel(animal.sex)}
                     {animal.size ? ` · ${sizeLabel(animal.size)}` : ""}
                   </p>
                   <h2>{animal.name}</h2>
-                  {animal.breedPrimary && <p className="animal-breed">{animal.breedPrimary}</p>}
-                  {animal.headlineIt && <p className="animal-headline">{animal.headlineIt}</p>}
-                  {animal.storyIt && <p className="animal-story">{animal.storyIt}</p>}
-                  <p className="animal-shelter">{animal.shelter.name} · {animal.shelter.comune.name}</p>
+                  {animal.breedPrimary && (
+                    <p className="animal-breed">{animal.breedPrimary}</p>
+                  )}
+                  {animal.headlineIt && (
+                    <p className="animal-headline">{animal.headlineIt}</p>
+                  )}
+                  {animal.storyIt && (
+                    <p className="animal-story">{animal.storyIt}</p>
+                  )}
+                  <p className="animal-shelter">
+                    {animal.shelter.name} · {animal.shelter.comune.name}
+                  </p>
                 </div>
               </article>
             ))}
           </section>
           <nav className="catalog-pagination" aria-label="Paginazione catalogo">
-            {currentPage > 1 && <a className="button secondary" href={pageHref(currentPage - 1)}>Precedenti</a>}
+            {currentPage > 1 && (
+              <a className="button secondary" href={pageHref(currentPage - 1)}>
+                Precedenti
+              </a>
+            )}
             <span>Pagina {currentPage}</span>
-            {currentPage * pageSize < total && <a className="button" href={pageHref(currentPage + 1)}>Successivi</a>}
+            {currentPage * pageSize < total && (
+              <a className="button" href={pageHref(currentPage + 1)}>
+                Successivi
+              </a>
+            )}
           </nav>
         </>
       ) : (

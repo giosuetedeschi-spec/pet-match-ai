@@ -2,6 +2,12 @@
 
 **Purpose of this file:** the documentation set is ~42,000 words. This index exists so you do not have to read it. It carries the product in one paragraph, a routing table from question to document, every normative constant in one place, and the hard rules that must never be broken. Read the full document only when you are about to build the thing it describes.
 
+## Implementation status — 8 October 2026
+
+This index and the documents below specify the **target product**; they are not a checklist of features already delivered. The repository currently has a Django + Streamlit MVP and a parallel Next.js + Prisma release. The Next.js release has a database foundation and an Italian public catalogue with text, species, and size filters and pagination. Its shelter animal creation and publishing flow is still planned. The FastAPI ML service is present but its model is not configured for live predictions.
+
+For the component-by-component status, see the [operational roadmap](../ROADMAP-OPERATIVA.md). For the latest branch and commit checkpoint, see [STATE.md](../STATE.md).
+
 ---
 
 ## The product in one paragraph

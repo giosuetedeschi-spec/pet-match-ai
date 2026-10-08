@@ -91,14 +91,27 @@ class Animal(models.Model):
         choices=[('M', _('Maschio')), ('F', _('Femmina'))],
         verbose_name=_('Sesso')
     )
-    size = models.CharField(max_length=10, choices=AnimalSize.choices, default=AnimalSize.MEDIUM, verbose_name=_('Taglia'))
-    energy_level = models.CharField(max_length=15, choices=AnimalEnergy.choices, default=AnimalEnergy.MEDIUM, verbose_name=_('Livello Energia'))
+    size = models.CharField(
+        max_length=10,
+        choices=AnimalSize.choices,
+        default=AnimalSize.MEDIUM,
+        verbose_name=_('Taglia'),
+    )
+    energy_level = models.CharField(
+        max_length=15,
+        choices=AnimalEnergy.choices,
+        default=AnimalEnergy.MEDIUM,
+        verbose_name=_('Livello Energia'),
+    )
 
     # Requisiti e Compatibilità
     good_with_cats = models.BooleanField(null=True, blank=True, verbose_name=_('Compatibile con Gatti'))
     good_with_dogs = models.BooleanField(null=True, blank=True, verbose_name=_('Compatibile con Cani'))
     good_with_children = models.BooleanField(null=True, blank=True, verbose_name=_('Compatibile con Bambini'))
-    behavior_profile_completed = models.BooleanField(default=False, verbose_name=_('Profilo comportamentale completato'))
+    behavior_profile_completed = models.BooleanField(
+        default=False,
+        verbose_name=_('Profilo comportamentale completato'),
+    )
     requires_garden = models.BooleanField(default=False, verbose_name=_('Giardino Obbligatorio'))
     max_hours_alone_per_day = models.PositiveIntegerField(default=6, verbose_name=_('Ore Max Solitudine al Giorno'))
     required_experience_level = models.CharField(
@@ -114,7 +127,11 @@ class Animal(models.Model):
     is_microchipped = models.BooleanField(default=True, verbose_name=_('Microchippato'))
     microchip_code = models.CharField(max_length=50, blank=True, verbose_name=_('Codice Microchip'))
     special_needs = models.BooleanField(default=False, verbose_name=_('Bisogni Speciali / Cure Continuative'))
-    special_needs_summary = models.CharField(max_length=255, blank=True, verbose_name=_('Sintesi pubblica bisogni speciali'))
+    special_needs_summary = models.CharField(
+        max_length=255,
+        blank=True,
+        verbose_name=_('Sintesi pubblica bisogni speciali'),
+    )
     health_notes = models.TextField(blank=True, verbose_name=_('Note Cliniche / Sanitarie'))
 
     description = models.TextField(verbose_name=_('Descrizione e Carattere'))
@@ -252,8 +269,11 @@ class AnimalImage(models.Model):
 
         # Gestione foto copertina univoca per animale
         if self.is_primary:
-            AnimalImage.objects.filter(animal=self.animal, is_primary=True).exclude(pk=self.pk).update(is_primary=False)
-            
+            AnimalImage.objects.filter(
+                animal=self.animal,
+                is_primary=True,
+            ).exclude(pk=self.pk).update(is_primary=False)
+
         super().save(*args, **kwargs)
 
     def __str__(self):

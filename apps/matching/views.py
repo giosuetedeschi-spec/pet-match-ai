@@ -1,8 +1,8 @@
-from rest_framework import views, permissions, status
+from rest_framework import permissions, serializers, status, views
 from rest_framework.response import Response
+
 from apps.matching.services import MatchingService
 from apps.matching.models import MatchResult
-from rest_framework import serializers
 
 
 class MatchResultSerializer(serializers.ModelSerializer):
@@ -31,5 +31,5 @@ class AdopterRecommendationsAPIView(views.APIView):
         limit = int(request.query_params.get('limit', 10))
         top_matches = MatchingService.get_top_matches_for_adopter(request.user, limit=limit)
         serializer = MatchResultSerializer(top_matches, many=True)
-        
+
         return Response(serializer.data, status=status.HTTP_200_OK)

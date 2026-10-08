@@ -1,20 +1,24 @@
-from rest_framework import generics, status, permissions
+from django.contrib.auth import get_user_model
+from django.db import transaction
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
+from django.utils import timezone
+from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django.contrib.auth import get_user_model
-from django.utils import timezone
-from django.shortcuts import get_object_or_404
-from django.db import transaction
+
+from apps.audit.models import GDPRConsentLog, ShelterVerificationLog
 from apps.users.serializers import (
-    UserSerializer,
-    RegisterSerializer,
+    AccountDeletionSerializer,
     AdopterProfileSerializer,
-    ShelterProfileSerializer,
     GDPRConsentUpdateSerializer,
+    RegisterSerializer,
+    ShelterProfileSerializer,
     ShelterRegistrationQueueSerializer,
     ShelterRejectionSerializer,
+    UserSerializer,
 )
-from apps.audit.models import GDPRConsentLog, ShelterVerificationLog
+from apps.users.services import GDPRAnonymizationService, GDPRExportService
 from apps.users.models import ShelterProfile
 
 User = get_user_model()
@@ -117,7 +121,7 @@ class GDPRConsentView(APIView):
                 user.gdpr_consent_date = timezone.now() if granted else None
             elif consent_type == 'MARKETING':
                 user.marketing_consent = granted
-            
+
             user.save()
 
             # Tracciamento Audit GDPR
@@ -141,12 +145,6 @@ class GDPRConsentView(APIView):
 
 
 
-from django.http import HttpResponse
-from rest_framework.views import APIView
-from rest_framework import permissions, status
-from apps.users.services import GDPRExportService
-
-
 class GDPRExportDataAPIView(APIView):
     """
     API (Art. 20 GDPR): Genera ed eroga il file ZIP scaricabile contenente
@@ -156,26 +154,18 @@ class GDPRExportDataAPIView(APIView):
 
     def get(self, request):
         user = request.user
-        
+
         # Generazione archivio ZIP in memoria
         zip_content = GDPRExportService.generate_zip_export(user)
-        
+
         filename = f"gdpr_export_{user.username}.zip"
-        
+
         response = HttpResponse(zip_content, content_type='application/zip')
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
         response['Content-Length'] = len(zip_content)
-        
+
         return response
 
-
-
-from rest_framework import status, permissions
-from rest_framework.views import APIView
-from rest_framework.response import Response
-
-from apps.users.serializers import AccountDeletionSerializer
-from apps.users.services import GDPRAnonymizationService
 
 
 class GDPRDeleteAccountAPIView(APIView):
@@ -190,9 +180,14 @@ class GDPRDeleteAccountAPIView(APIView):
         if serializer.is_valid():
             user = request.user
             GDPRAnonymizationService.anonymize_and_delete_user(user, request=request)
-            
+
             return Response(
-                {"detail": "Il tuo account e i tuoi dati personali sono stati anonimizzati ed eliminati con successo in conformità al GDPR."},
+                {
+                    "detail": (
+                        "Il tuo account e i tuoi dati personali sono stati "
+                        "anonimizzati ed eliminati con successo in conformità al GDPR."
+                    )
+                },
                 status=status.HTTP_200_OK
             )
 

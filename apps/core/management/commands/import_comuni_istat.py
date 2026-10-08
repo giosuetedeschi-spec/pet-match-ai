@@ -59,7 +59,11 @@ class Command(BaseCommand):
             for start in range(0, len(stale), 500):
                 Comune.objects.filter(istat_code__in=stale[start:start + 500]).delete()
 
-        self.stdout.write(self.style.SUCCESS(f'Imported {len(rows)} municipalities; removed {len(stale)} obsolete records.'))
+        message = (
+            f'Imported {len(rows)} municipalities; '
+            f'removed {len(stale)} obsolete records.'
+        )
+        self.stdout.write(self.style.SUCCESS(message))
 
     @staticmethod
     def _make_comune(row, source):

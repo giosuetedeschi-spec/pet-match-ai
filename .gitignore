@@ -2,6 +2,7 @@
 graphify-out/
 node_modules/
 .next/
+*.tsbuildinfo
 *.log
 
 # Python

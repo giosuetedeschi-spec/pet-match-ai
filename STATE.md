@@ -1,36 +1,27 @@
 # PetMatch AI — Operational State
 
-Updated: 2026-10-03
-Base: `main` at `631ff394ea0b0aa507b3632682ee0e6c9e595e64`
-Branch: `codex/phase1-next-public-catalog`
-Unit: Add the first public Next.js catalogue backed by published Prisma animals.
+Updated: 2026-10-08
+Base: `main` at `10ad3ff` (merge PR #23)
+Branch: none; local `main` is synced with `origin/main`
+Working tree: documentation updates pending review
 
-## Previous unit
+## Completed unit
 
-- PR #22 merged with all checks green at `631ff394ea0b0aa507b3632682ee0e6c9e595e64`.
-- Feature branch deleted; local `main` was clean and synced before this unit.
-- Bun 1.4.2 is installed at `C:\Users\gioma\.bun\bin\bun.exe`.
-- `graphify-out/` is local, current, and ignored by Git.
+PR #23 added the first public Next.js catalogue backed by published Prisma animal records.
 
-## Scope and constraints
+- `/it/animali` shows available animals from active shelters.
+- Search supports text, species, size, and pagination.
+- The home page links to the Next.js catalogue and the Streamlit MVP.
+- The operational roadmap records the current status in `ROADMAP-OPERATIVA.md`.
 
-- Read public animal records from `petmatch_web`; include only available animals from active shelters.
-- Support base filters for species, size and text search, with pagination.
-- Keep Django + Streamlit MVP as the product priority; this is the parallel Next.js release.
-- Do not change original product documentation under `docs/`.
-- Do not add object storage; photo delivery is a separate integration decision.
+## Current scope and constraints
 
-## Progress
+- Django + Streamlit remains the MVP priority; Next.js + Prisma is a parallel release.
+- Next.js shelter animal creation and publication are not implemented yet.
+- Photo delivery to the Next.js release remains an open integration task; Django MVP media uses its local volume.
+- The FastAPI ML service is scaffolded, but `/health` reports `model: not-configured`.
+- Product requirements and intended architecture are in `docs/`; implementation status is in `ROADMAP-OPERATIVA.md`.
 
-- [x] Confirmed current main and created a dedicated feature branch.
-- [x] Implement `/it/animali` per the product specification, with public-status/shelter filters, text/species/size filters, pagination and responsive layout.
-- [x] Link the home page to the catalogue and update the operational roadmap.
-- [x] Docker build passes; temporary MySQL fixture confirmed card rendering, search and species filtering, then was removed.
-- [x] Refresh Graphify incrementally; ignored output remains local.
-- [x] Review final diff; original `docs/` files remain unchanged.
-- [x] Open PR [#23](https://github.com/giosuetedeschi-spec/pet-match-ai/pull/23).
-- [ ] Wait for green CI, merge with merge commit, delete branch.
+## Next planned unit
 
-## Next action
-
-Open a PR for this reviewed unit, wait for green CI, merge with a merge commit, then delete the branch.
+Implement the shelter flow to create and publish animals in the Next.js release, with validation. Keep photo integration separate until its storage and delivery path is decided.
