@@ -2,9 +2,9 @@
 
 Updated: 2026-10-08
 Base: `main` at `10ad3ff` (merge PR #23)
-Branch: `chore/clean-modules-types-docs` at `3e9177a`, pushed to `origin`
-Working tree: complete anonymous adopter matching slice implemented locally; changes are not committed
-Merge status: direct push to protected `main` was rejected; a pull request and three required status checks are needed. The branch is published, but no PR had been opened when last checked because the local GitHub CLI authentication was invalid.
+Branch: `chore/clean-modules-types-docs`, matching feature committed and pushed to `origin`
+Working tree: matching implementation committed; checkpoint update in progress
+Merge status: push to protected `main` was rejected by GitHub (PR required, 3 status checks expected). PR creation is currently unavailable because the GitHub CLI token is invalid and the configured local proxy refuses API connections.
 
 ## Completed unit
 
