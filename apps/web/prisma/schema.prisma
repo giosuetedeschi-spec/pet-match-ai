@@ -72,6 +72,31 @@ enum AnimalSex {
   @@map("animal_sex")
 }
 
+enum PreferredSpecies {
+  dog
+  cat
+  either
+
+  @@map("preferred_species")
+}
+
+enum PreferredSex {
+  male
+  female
+  any
+
+  @@map("preferred_sex")
+}
+
+enum HousingType {
+  apartment
+  house_no_garden
+  house_with_garden
+  farm
+
+  @@map("housing_type")
+}
+
 enum AnimalSize {
   small
   medium
@@ -180,6 +205,7 @@ model Comune {
   latitude             Decimal   @db.Decimal(9, 6)
   longitude            Decimal   @db.Decimal(9, 6)
   shelters             Shelter[]
+  adopterProfiles      AdopterProfile[]
 
   @@index([name], map: "idx_comuni_name")
   @@index([provinceCode], map: "idx_comuni_province")
@@ -203,6 +229,7 @@ model User {
   updatedAt       DateTime    @default(now()) @updatedAt @map("updated_at") @db.DateTime(3)
   deletedAt       DateTime?   @map("deleted_at") @db.DateTime(3)
   memberships     ShelterMember[]
+  adopterProfile  AdopterProfile?
 
   @@index([role, status], map: "idx_users_role_status")
   @@map("users")
@@ -309,6 +336,8 @@ model Animal {
   shelter               Shelter                  @relation(fields: [shelterId], references: [id])
   media                 AnimalMedia[]
   behaviorProfile       AnimalBehaviorProfile?
+  matchResults          MatchResult[]
+  favorites             Favorite[]
 
   @@index([shelterId, status], map: "idx_animals_shelter_status")
   @@index([status, species, publishedAt], map: "idx_animals_public")
@@ -367,4 +396,79 @@ model AnimalBehaviorProfile {
   animal               Animal        @relation(fields: [animalId], references: [id], onDelete: Cascade)
 
   @@map("animal_behavior_profiles")
+}
+
+model AdopterProfile {
+  id                 String           @id @db.Char(26)
+  userId             String?          @unique(map: "uq_profile_user") @map("user_id") @db.Char(26)
+  anonymousToken     String?          @unique(map: "uq_profile_anon") @map("anonymous_token") @db.Char(32)
+  housingType        HousingType?     @map("housing_type")
+  housingSizeSqm     Int?             @map("housing_size_sqm") @db.UnsignedSmallInt
+  hasOutdoorSpace    Boolean?         @map("has_outdoor_space")
+  outdoorSpaceSqm    Int?             @map("outdoor_space_sqm") @db.UnsignedSmallInt
+  householdAdults    Int?             @map("household_adults") @db.UnsignedTinyInt
+  childrenAges       Json?            @map("children_ages")
+  existingDogs       Int              @default(0) @map("existing_dogs") @db.UnsignedTinyInt
+  existingCats       Int              @default(0) @map("existing_cats") @db.UnsignedTinyInt
+  hoursAlonePerDay   Int?             @map("hours_alone_per_day") @db.UnsignedTinyInt
+  activityLevel      Int?             @map("activity_level") @db.UnsignedTinyInt
+  experienceLevel    String?          @map("experience_level") @db.VarChar(20)
+  groomingCapacity   Int?             @map("grooming_capacity") @db.UnsignedTinyInt
+  trainingCapacity   Int?             @map("training_capacity") @db.UnsignedTinyInt
+  monthlyBudgetEur   Int?             @map("monthly_budget_eur") @db.UnsignedSmallInt
+  hasAllergies       Boolean          @default(false) @map("has_allergies")
+  preferredSpecies   PreferredSpecies @default(either) @map("preferred_species")
+  preferredSizes     Json?            @map("preferred_sizes")
+  preferredAgeBands  Json?            @map("preferred_age_bands")
+  preferredSex       PreferredSex     @default(any) @map("preferred_sex")
+  dealbreakers       Json?
+  searchComuneId     Int?             @map("search_comune_id") @db.UnsignedSmallInt
+  searchRadiusKm     Int              @default(50) @map("search_radius_km") @db.UnsignedSmallInt
+  notifyNewMatches   Boolean          @default(false) @map("notify_new_matches")
+  minNotifyScore     Int              @default(70) @map("min_notify_score") @db.UnsignedTinyInt
+  isActive           Boolean          @default(true) @map("is_active")
+  currentStep        Int              @default(0) @map("current_step") @db.UnsignedTinyInt
+  completedAt        DateTime?        @map("completed_at") @db.DateTime(3)
+  createdAt          DateTime         @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt          DateTime         @default(now()) @updatedAt @map("updated_at") @db.DateTime(3)
+  user               User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  searchComune       Comune?          @relation(fields: [searchComuneId], references: [id], onDelete: SetNull)
+  matchResults       MatchResult[]
+  favorites          Favorite[]
+
+  @@index([isActive, notifyNewMatches], map: "idx_profile_active_notify")
+  @@map("adopter_profiles")
+}
+
+model MatchResult {
+  id             BigInt         @id @default(autoincrement()) @db.UnsignedBigInt
+  profileId      String         @map("adopter_profile_id") @db.Char(26)
+  animalId       String         @map("animal_id") @db.Char(26)
+  score          Int            @db.UnsignedTinyInt
+  breakdown      Json
+  reasons        Json
+  considerations Json?
+  engineVersion  String         @map("engine_version") @db.VarChar(20)
+  computedAt     DateTime       @default(now()) @map("computed_at") @db.DateTime(3)
+  notifiedAt     DateTime?      @map("notified_at") @db.DateTime(3)
+  profile        AdopterProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  animal         Animal         @relation(fields: [animalId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, animalId], map: "uq_match")
+  @@index([profileId, score(sort: Desc)], map: "idx_match_score")
+  @@index([notifiedAt, score], map: "idx_match_notify")
+  @@map("match_results")
+}
+
+model Favorite {
+  id        BigInt         @id @default(autoincrement()) @db.UnsignedBigInt
+  profileId String         @map("adopter_profile_id") @db.Char(26)
+  animalId  String         @map("animal_id") @db.Char(26)
+  createdAt DateTime       @default(now()) @map("created_at") @db.DateTime(3)
+  profile   AdopterProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  animal    Animal         @relation(fields: [animalId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, animalId], map: "uq_favorite")
+  @@index([animalId], map: "idx_favorite_animal")
+  @@map("favorites")
 }

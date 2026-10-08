@@ -2,8 +2,8 @@
 
 Updated: 2026-10-08
 Base: `main` at `10ad3ff` (merge PR #23)
-Branch: `chore/clean-modules-types-docs` at `26d8cc9`, pushed to `origin`
-Working tree: clean at the time of this checkpoint
+Branch: `chore/clean-modules-types-docs` at `3e9177a`, pushed to `origin`
+Working tree: complete anonymous adopter matching slice implemented locally; changes are not committed
 Merge status: direct push to protected `main` was rejected; a pull request and three required status checks are needed. The branch is published, but no PR had been opened when last checked because the local GitHub CLI authentication was invalid.
 
 ## Completed unit
@@ -27,4 +27,8 @@ Commit `26d8cc9` also updated the project documentation, cleaned existing module
 
 ## Next planned unit
 
-Implement the shelter flow to create and publish animals in the Next.js release, with validation. Keep photo integration separate until its storage and delivery path is decided.
+Matching adopter: 14-step resumable quiz, anonymous profile, explained ranking, exclusions, age and distance preferences, radius expansion, favorites, and catalog ordering by compatibility.
+
+Verification: `bun run typecheck` and `bun run build` passed. Production pages `/`, `/it/abbinamento`, `/it/abbinamento/risultati`, and `/it/preferiti` returned 200. Database-backed catalog/API routes could not be live-verified because Docker/MySQL is stopped and `DATABASE_URL` is unset. Automatic new-match notifications remain pending verified adopter accounts/email and a scheduled worker.
+
+Next planned unit: implement the shelter flow to create and publish animals in Next.js with validation; keep photo integration separate until its storage and delivery path is decided.

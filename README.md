@@ -7,7 +7,7 @@ PetMatch AI is a platform in development for responsible dog and cat adoption in
 The repository contains a working Django + Streamlit MVP and a parallel Next.js release under active development. The product described in [`docs/`](./docs) is the target specification; several features in it are still planned.
 
 - **Django + Streamlit MVP:** shelter animal management and publication, public catalogue, basic municipality search, applications, and visit scheduling.
-- **Next.js + Prisma:** database foundation and an Italian public catalogue at `/it/animali`, with text, species, and size filters and pagination. Shelter animal creation and publication are still pending in this release.
+- **Next.js + Prisma:** Italian public catalogue at `/it/animali`; the adopter flow at `/it/abbinamento` saves an anonymous, resumable profile, ranks animals with explained compatibility scores, supports radius expansion and favorites, and can sort the catalogue by match. This matching release has not yet been live-verified against a running database.
 - **ML service:** the FastAPI service currently reports `not-configured`; the documented forecasting model is not available as a live feature yet.
 
 See [`ROADMAP-OPERATIVA.md`](./ROADMAP-OPERATIVA.md) for the work tracker and [`STATE.md`](./STATE.md) for the latest repository checkpoint.

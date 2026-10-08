@@ -33,6 +33,10 @@ Question 5's children question is asked with care: the ages matter for compatibi
 
 ## 2. Scoring dimensions
 
+### Age bands used by the current Next.js implementation
+
+Age is derived from the animal's birth date in whole calendar months: puppy is under 12 months, young is 12–23 months, adult is 24–95 months, and senior is 96 months or older. These thresholds make the existing examples (Luna at 38 months and Thor at 18 months) adult and young respectively. They are implementation defaults and should be reviewed with shelter operators before being treated as a clinical or universal standard. If the birth date is missing, age preference is neutral and the result asks the adopter to verify the age with the shelter.
+
 Eight dimensions, weights summing to 1.00. Each dimension scores 0–100; the final score is the weighted sum, rounded.
 
 | Dimension | Weight | What it compares |

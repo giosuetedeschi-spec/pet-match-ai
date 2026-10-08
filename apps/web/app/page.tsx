@@ -11,6 +11,9 @@ export default function Home() {
         <a className="button" href="/it/animali">
           Esplora gli animali
         </a>
+        <a className="button secondary" href="/it/abbinamento">
+          Trova un abbinamento
+        </a>
         <a className="button secondary" href="http://localhost:8501">
           Catalogo MVP
         </a>
