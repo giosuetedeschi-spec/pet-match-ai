@@ -1,6 +1,6 @@
 # PetMatch AI — Documentation
 
-Everything below describes a product that has **not been built yet**. These documents are the specification the build will follow. They are written to be implementation-ready: real SQL, real payload shapes, real numbers.
+These documents describe the **target product and architecture**. Implementation is in progress: a Django + Streamlit MVP is in use, and a parallel Next.js + Prisma release is being built. Some specified features are not implemented yet. See the repository's [operational roadmap](../ROADMAP-OPERATIVA.md) for current progress.
 
 ## Start here
 
@@ -28,7 +28,7 @@ If you only read three: **01** (what), **03** (data), **08** (order).
 
 ## Decisions already locked in
 
-These were settled during the requirements interview and are treated as fixed by every document here. Changing one means revisiting the documents that depend on it.
+These are product and architecture decisions recorded in the specification. They describe the intended product; they do not imply that each feature or technology is already implemented. Changes should be reflected in the documents that depend on them.
 
 | Area | Decision |
 |---|---|

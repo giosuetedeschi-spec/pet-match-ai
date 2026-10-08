@@ -1,14 +1,15 @@
 import os
 import logging
-import joblib
-import pandas as pd
-import numpy as np
 from typing import Dict, Any, Tuple, Optional
+
+import joblib
+import numpy as np
+import pandas as pd
 from django.conf import settings
 from django.utils import timezone
 
 from apps.users.models import User, AdopterProfile
-from apps.core.models import Animal, AnimalSize, AnimalEnergy, Species
+from apps.core.models import Animal, AnimalEnergy, Species
 from apps.matching.models import MatchResult
 
 logger = logging.getLogger(__name__)
@@ -137,7 +138,10 @@ class MatchingService:
             diff = adopter_profile.hours_away_from_home - animal.max_hours_alone_per_day
             penalty = diff * 4.0
             lifestyle_score -= penalty
-            breakdown['penalties'].append(f"Le ore di assenza ({adopter_profile.hours_away_from_home}h) superano la soglia consigliata ({animal.max_hours_alone_per_day}h).")
+            breakdown['penalties'].append(
+                f"Le ore di assenza ({adopter_profile.hours_away_from_home}h) "
+                f"superano la soglia consigliata ({animal.max_hours_alone_per_day}h)."
+            )
 
         # Livello di energia
         energy_map = {
@@ -151,14 +155,17 @@ class MatchingService:
             AdopterProfile.ActivityLevel.MODERATE: 2,
             AdopterProfile.ActivityLevel.ACTIVE: 4
         }
-        
+
         e_val = energy_map.get(animal.energy_level, 2)
         a_val = activity_map.get(adopter_profile.activity_level, 2)
         energy_diff = abs(e_val - a_val)
 
         if energy_diff > 1:
             lifestyle_score -= (energy_diff * 5.0)
-            breakdown['penalties'].append("Discrepanza tra il livello di energia dell'animale e lo stile di vita dell'adottante.")
+            breakdown['penalties'].append(
+                "Discrepanza tra il livello di energia dell'animale e lo stile "
+                "di vita dell'adottante."
+            )
 
         breakdown['lifestyle_score'] = max(0.0, lifestyle_score)
 

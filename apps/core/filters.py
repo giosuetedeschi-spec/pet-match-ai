@@ -1,12 +1,12 @@
-import django_filters
 from math import cos, radians
 
+import django_filters
 from django.db.models import ExpressionWrapper, F, FloatField, Q, Value
 from django.db.models.functions import ASin, Cast, Cos, Least, Power, Radians, Sin, Sqrt
 from rest_framework.exceptions import ValidationError
 from rest_framework.filters import BaseFilterBackend
 
-from apps.core.models import Animal, AnimalEnergy, AnimalSize, AnimalStatus, Comune, Species
+from apps.core.models import Animal, AnimalEnergy, AnimalSize, Comune, Species
 
 
 class AnimalFilter(django_filters.FilterSet):
@@ -84,7 +84,12 @@ class ComuneDistanceFilterBackend(BaseFilterBackend):
         except (TypeError, ValueError) as exc:
             raise ValidationError({'radius_km': 'Inserisci un raggio numerico valido.'}) from exc
         if not 0 < radius_km <= self.max_radius_km:
-            raise ValidationError({'radius_km': f'Il raggio deve essere maggiore di 0 e non superiore a {self.max_radius_km:g} km.'})
+            raise ValidationError({
+                'radius_km': (
+                    'Il raggio deve essere maggiore di 0 e non superiore a '
+                    f'{self.max_radius_km:g} km.'
+                )
+            })
 
         latitude = float(origin.latitude)
         longitude = float(origin.longitude)

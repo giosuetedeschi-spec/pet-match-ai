@@ -33,6 +33,10 @@ Question 5's children question is asked with care: the ages matter for compatibi
 
 ## 2. Scoring dimensions
 
+### Age bands used by the current Next.js implementation
+
+Age is derived from the animal's birth date in whole calendar months: puppy is under 12 months, young is 12–23 months, adult is 24–95 months, and senior is 96 months or older. These thresholds make the existing examples (Luna at 38 months and Thor at 18 months) adult and young respectively. They are implementation defaults and should be reviewed with shelter operators before being treated as a clinical or universal standard. If the birth date is missing, age preference is neutral and the result asks the adopter to verify the age with the shelter.
+
 Eight dimensions, weights summing to 1.00. Each dimension scores 0–100; the final score is the weighted sum, rounded.
 
 | Dimension | Weight | What it compares |
@@ -60,7 +64,7 @@ Deal-breakers remove an animal from the results entirely. They are never a score
 |---|---|
 | `must_be_house_trained` | `house_trained` is `no` |
 | `no_special_needs` | `has_special_needs` is true |
-| `no_dogs_over_25kg` | `size` is `large` or `xlarge` |
+| `no_dogs_over_25kg` | Dogs over 25 kg are excluded; when weight is missing, `large`/`xlarge` is used as a cautious estimate and shown in the exclusion reason. |
 | `must_be_good_with_children` | `good_with_children` is `no` (`older_only` is kept if the youngest child is 12+) |
 | `must_be_good_with_cats` | `good_with_cats` is `no` |
 | `must_be_good_with_dogs` | `good_with_dogs` is `no` |
@@ -93,7 +97,7 @@ if a.energy_level > p.activity_level:  base −= 10 × (a.energy_level − p.act
 if a.exercise_min_per_day is known:
     required = a.exercise_min_per_day
     offered  = { 1: 20, 2: 40, 3: 60, 4: 90, 5: 120 }[p.activity_level]
-    if offered < required:  base −= min(25, (required − offered) / 4)
+    if offered < required:  base -= min(25, (required - offered) / 2)
 
 score = clamp(base, 0, 100)
 ```

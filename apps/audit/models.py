@@ -55,4 +55,8 @@ class GDPRConsentLog(models.Model):
 
     def __str__(self):
         action = "CONCESSO" if self.granted else "REVOCATO"
-        return f"{self.user.username} - {self.get_consent_type_display()} [{action}] il {self.timestamp.strftime('%Y-%m-%d %H:%M')}"
+        timestamp = self.timestamp.strftime('%Y-%m-%d %H:%M')
+        return (
+            f"{self.user.username} - {self.get_consent_type_display()} "
+            f"[{action}] il {timestamp}"
+        )

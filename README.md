@@ -1,43 +1,36 @@
 # PetMatch AI
 
-A web platform for responsible animal adoption in Italy, built for **both** sides of the process:
+PetMatch AI is a platform in development for responsible dog and cat adoption in Italy. It serves adopters and shelters, with a public animal catalogue and tools for shelters to manage animals and adoption applications.
 
-- **Adopters** — browse dogs and cats from shelters across the country, take a guided lifestyle quiz, get explained, ranked matches, ask an AI assistant anything about adoption and care, apply, and book a visit.
-- **Shelters** — manage animal records (identity, behaviour, full medical history), see which animals are predicted to wait the longest and act before they do, review applications, schedule visits, and stop answering the same five questions by email.
+## Current status
 
-## Status
+The repository contains a working Django + Streamlit MVP and a parallel Next.js release under active development. The product described in [`docs/`](./docs) is the target specification; several features in it are still planned.
 
-> **This repository currently contains planning documentation only.**
-> No application code, no scaffold. The design and technical decisions are settled and written down in [`docs/`](./docs); the build starts once those documents are approved.
+- **Django + Streamlit MVP:** shelter animal management and publication, public catalogue, basic municipality search, applications, and visit scheduling.
+- **Next.js + Prisma:** Italian public catalogue at `/it/animali`; the adopter flow at `/it/abbinamento` supports resumable anonymous profiles, verified accounts, explained match results, favorites, match sorting, optional Claude explanations, and scheduled in-app/email digests with one-click unsubscribe. Automated matching checks and production build pass; database and email delivery still need live verification.
+- **ML service:** the FastAPI service currently reports `not-configured`; the documented forecasting model is not available as a live feature yet.
 
-## At a glance
+See [`ROADMAP-OPERATIVA.md`](./ROADMAP-OPERATIVA.md) for the work tracker and [`STATE.md`](./STATE.md) for the latest repository checkpoint.
 
-| | |
+## Product direction
+
+The target product covers a bilingual catalogue, explained adopter-to-animal matches, a guided lifestyle quiz, applications and visit scheduling, shelter management, and shelter-facing forecasts to help identify animals that may wait longer for adoption. The full scope and its safeguards are specified in [`docs/INDEX.md`](./docs/INDEX.md).
+
+The forecasting design uses shelter intake and outcome data for relative ranking. It must not drive adopter decisions or determine whether an animal is accepted, transferred, or euthanised. The data and model limitations are described in [`docs/05-ml-spec.md`](./docs/05-ml-spec.md).
+
+## Technology in the repository
+
+| Component | Current implementation |
 |---|---|
-| **Web app** | Next.js (TypeScript, App Router), Tailwind + shadcn/ui, Prisma |
-| **Database** | MySQL |
-| **ML service** | Python + FastAPI, scikit-learn (Random Forest baseline) |
-| **AI assistant** | Claude API with retrieval over a curated knowledge base and live database tools |
-| **Languages** | Italian and English, from day one |
-| **Scope** | Dogs and cats, many shelters, one platform |
-| **Local dev** | Docker Compose — MySQL, ML service, web app; no third-party credentials required |
-
-## Machine learning
-
-A **competing-risks survival model**, trained offline on the [Austin Animal Center Shelter Intakes and Outcomes](https://www.kaggle.com/datasets/aaronschlegel/austin-animal-center-shelter-intakes-and-outcomes) dataset (~80,000 real records). One fitted curve per animal answers both questions a shelter has:
-
-1. **Adoption probability** — how likely is this animal to be adopted?
-2. **Length of stay** — how likely is it to still be waiting at 7, 30, 90 days?
-
-Survival analysis rather than a classifier plus a regressor because animals still in care have no outcome yet — and they are disproportionately the long stays this feature exists to find. A survival model treats them as training signal instead of discarding them, keeps adoption distinct from transfer and reclaim, and cannot contradict itself the way two separate models can.
-
-The Kaggle data is a *training source only*. The live catalogue is always real animals entered by real shelters. The limits of transferring an Austin, Texas model to the Italian context are documented honestly in [`docs/05-ml-spec.md`](./docs/05-ml-spec.md), along with the decisions these predictions must never be used for.
-
-Matching adopters to animals is deliberately **not** machine learning: it is a transparent weighted scoring system, so every match can explain itself. See [`docs/06-matching-algorithm.md`](./docs/06-matching-algorithm.md).
+| MVP | Django REST API + Streamlit |
+| Parallel web release | Next.js, TypeScript, Prisma |
+| Databases | MySQL; separate `petmatch_mvp` and `petmatch_web` databases |
+| ML service | Python + FastAPI scaffold; model endpoint is not configured |
+| Local services | Docker Compose, including MySQL and Mailpit |
 
 ## Documentation
 
-**Start at [`docs/INDEX.md`](./docs/INDEX.md)** — a routing table, every normative constant, and the hard rules, so you do not have to read 42,000 words to make a change. [`docs/README.md`](./docs/README.md) has the full contents and a suggested reading order.
+Start with [`docs/INDEX.md`](./docs/INDEX.md) for the product specification and its safety rules. [`docs/README.md`](./docs/README.md) lists all 12 documents and their intended use. These documents define the target product and architecture; the operational roadmap records what is implemented now.
 
 ## Licence
 

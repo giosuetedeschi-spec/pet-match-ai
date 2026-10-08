@@ -1,8 +1,12 @@
-import json
 import io
+import json
+import uuid
 import zipfile
 from typing import Dict, Any
+
 from django.contrib.auth import get_user_model
+
+from apps.audit.models import GDPRConsentLog, ConsentType
 
 User = get_user_model()
 
@@ -131,13 +135,6 @@ class GDPRExportService:
                     pass
 
         return zip_buffer.getvalue()
-
-
-import uuid
-from django.contrib.auth import get_user_model
-from apps.audit.models import GDPRConsentLog, ConsentType
-
-User = get_user_model()
 
 
 class GDPRAnonymizationService:

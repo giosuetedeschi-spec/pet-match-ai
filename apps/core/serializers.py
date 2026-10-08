@@ -1,7 +1,16 @@
 from pathlib import Path
 
 from rest_framework import serializers
-from apps.core.models import AnimalImage, Animal, Comune
+from apps.core.models import (
+    AdoptionApplication,
+    Animal,
+    AnimalImage,
+    Breed,
+    Comune,
+    HomeVisit,
+)
+from apps.matching.models import MatchResult
+from apps.users.serializers import UserSerializer
 
 MAX_IMAGE_SIZE = 5 * 1024 * 1024
 VALID_IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp'}
@@ -28,6 +37,7 @@ class SafeAnimalImageField(serializers.ImageField):
 
 class AnimalImageSerializer(serializers.ModelSerializer):
     image = SafeAnimalImageField()
+
     class Meta:
         model = AnimalImage
         fields = ('id', 'animal', 'image', 'caption', 'is_primary', 'order')
@@ -38,7 +48,9 @@ class AnimalImageSerializer(serializers.ModelSerializer):
         # Controllo limite massimo 10 immagini per animale
         if self.instance is None and animal:
             if animal.images.count() >= 10:
-                raise serializers.ValidationError({"image": "È stato raggiunto il limite massimo di 10 foto per scheda."})
+                raise serializers.ValidationError({
+                    "image": "È stato raggiunto il limite massimo di 10 foto per scheda."
+                })
         return attrs
 
 
@@ -59,13 +71,6 @@ class BulkImageUploadSerializer(serializers.Serializer):
         if animal and animal.images.count() + len(attrs['images']) > 10:
             raise serializers.ValidationError({'images': 'Ogni animale può avere al massimo 10 foto.'})
         return attrs
-
-from rest_framework import serializers
-from apps.core.models import (
-    Animal, Breed, AnimalImage, AdoptionApplication,
-    ApplicationStatus, HomeVisit, Species
-)
-from apps.users.serializers import UserSerializer
 
 
 class BreedSerializer(serializers.ModelSerializer):
@@ -121,8 +126,16 @@ class AnimalCreateUpdateSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         # Se viene inserito il microchip, ne verifica l'unicità
         microchip = attrs.get('microchip_code')
-        if microchip and Animal.objects.filter(microchip_code=microchip).exclude(pk=getattr(self.instance, 'pk', None)).exists():
-            raise serializers.ValidationError({"microchip_code": "Questo codice microchip risulta già registrato nel sistema."})
+        if microchip:
+            duplicate = Animal.objects.filter(microchip_code=microchip).exclude(
+                pk=getattr(self.instance, 'pk', None)
+            ).exists()
+            if duplicate:
+                raise serializers.ValidationError({
+                    "microchip_code": (
+                        "Questo codice microchip risulta già registrato nel sistema."
+                    )
+                })
         return attrs
 
 
@@ -157,11 +170,6 @@ class ApplicationStatusUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = AdoptionApplication
         fields = ('status', 'shelter_notes')
-
-
-from rest_framework import serializers
-from apps.core.models import Animal, AnimalImage
-from apps.matching.models import MatchResult
 
 
 class PublicAnimalImageSerializer(serializers.ModelSerializer):
@@ -255,7 +263,7 @@ class PublicAnimalDetailSerializer(serializers.ModelSerializer):
     gender_display = serializers.CharField(source='get_gender_display', read_only=True)
     breed_name = serializers.CharField(source='breed.name', read_only=True, default="Meticcio")
     images = PublicAnimalImageSerializer(many=True, read_only=True)
-    
+
     shelter_info = serializers.SerializerMethodField()
     match_data = serializers.SerializerMethodField()
 
@@ -295,10 +303,6 @@ class PublicAnimalDetailSerializer(serializers.ModelSerializer):
         return None
 
 
-from rest_framework import serializers
-from apps.core.models import AdoptionApplication, ApplicationStatus
-
-
 class AdoptionApplicationCreateSerializer(serializers.ModelSerializer):
     """
     Serializzatore per l'invio di una nuova candidatura di adozione da parte dell'adottante.
@@ -311,13 +315,11 @@ class AdoptionApplicationCreateSerializer(serializers.ModelSerializer):
     def validate_motivational_notes(self, value):
         text = value.strip()
         if len(text) < 50:
-            raise serializers.ValidationError("La lettera motivazionale deve contenere almeno 50 caratteri spiegando le tue motivazioni.")
+            raise serializers.ValidationError(
+                "La lettera motivazionale deve contenere almeno 50 caratteri "
+                "spiegando le tue motivazioni."
+            )
         return text
-
-
-from rest_framework import serializers
-from apps.core.models import AdoptionApplication, ApplicationStatus, HomeVisit
-from apps.core.serializers import PublicAnimalListSerializer, HomeVisitSerializer
 
 
 class AdopterApplicationListSerializer(serializers.ModelSerializer):

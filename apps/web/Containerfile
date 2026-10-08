@@ -2,11 +2,10 @@ FROM oven/bun:1.4.2 AS build
 
 WORKDIR /app
 ENV DATABASE_URL=mysql://petmatch:petmatch-local@mysql:3306/petmatch_web
-ENV BUN_CONFIG_SKIP_SAVE_LOCKFILE=true
 ENV NEXT_TELEMETRY_DISABLED=1
 
-COPY package.json package-lock.json ./
-RUN bun install --no-save
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile
 
 COPY . .
 RUN bunx --bun prisma generate && bun --bun run build
@@ -15,7 +14,7 @@ FROM build AS migrator
 CMD ["bunx", "--bun", "prisma", "migrate", "deploy"]
 
 FROM build AS production
-RUN bun install --no-save --production
+RUN bun install --frozen-lockfile --production
 
 FROM oven/bun:1.4.2 AS runtime
 WORKDIR /app

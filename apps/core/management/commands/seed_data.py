@@ -25,16 +25,40 @@ CAT_BREEDS = ('Europeo', 'Siamese', 'Maine Coon')
 NAMES = ('Luna', 'Milo', 'Nina', 'Leo', 'Maya', 'Tito', 'Stella', 'Argo', 'Mia', 'Brio', 'Oliva', 'Pippo')
 STOCK_IMAGES = {
     Species.DOG: (
-        ('https://commons.wikimedia.org/wiki/Special:FilePath/Sleeping_Brown_Dog.jpg?width=1000', 'https://commons.wikimedia.org/wiki/File:Sleeping_Brown_Dog.jpg'),
-        ('https://commons.wikimedia.org/wiki/Special:FilePath/Yawning_Dog.jpg?width=1000', 'https://commons.wikimedia.org/wiki/File:Yawning_Dog.jpg'),
-        ('https://commons.wikimedia.org/wiki/Special:FilePath/Cachorro-perro.jpg?width=1000', 'https://commons.wikimedia.org/wiki/File:Cachorro-perro.jpg'),
-        ('https://commons.wikimedia.org/wiki/Special:FilePath/Dog_on_dirt_road.jpg?width=1000', 'https://commons.wikimedia.org/wiki/File:Dog_on_dirt_road.jpg'),
+        (
+            'https://commons.wikimedia.org/wiki/Special:FilePath/Sleeping_Brown_Dog.jpg?width=1000',
+            'https://commons.wikimedia.org/wiki/File:Sleeping_Brown_Dog.jpg',
+        ),
+        (
+            'https://commons.wikimedia.org/wiki/Special:FilePath/Yawning_Dog.jpg?width=1000',
+            'https://commons.wikimedia.org/wiki/File:Yawning_Dog.jpg',
+        ),
+        (
+            'https://commons.wikimedia.org/wiki/Special:FilePath/Cachorro-perro.jpg?width=1000',
+            'https://commons.wikimedia.org/wiki/File:Cachorro-perro.jpg',
+        ),
+        (
+            'https://commons.wikimedia.org/wiki/Special:FilePath/Dog_on_dirt_road.jpg?width=1000',
+            'https://commons.wikimedia.org/wiki/File:Dog_on_dirt_road.jpg',
+        ),
     ),
     Species.CAT: (
-        ('https://commons.wikimedia.org/wiki/Special:FilePath/Picture_of_cat.jpg?width=1000', 'https://commons.wikimedia.org/wiki/File:Picture_of_cat.jpg'),
-        ('https://commons.wikimedia.org/wiki/Special:FilePath/Cat_looking.jpg?width=1000', 'https://commons.wikimedia.org/wiki/File:Cat_looking.jpg'),
-        ('https://commons.wikimedia.org/wiki/Special:FilePath/Cat-on-couch.jpg?width=1000', 'https://commons.wikimedia.org/wiki/File:Cat-on-couch.jpg'),
-        ('https://commons.wikimedia.org/wiki/Special:FilePath/Tortoiseshell_cat_photo.jpg?width=1000', 'https://commons.wikimedia.org/wiki/File:Tortoiseshell_cat_photo.jpg'),
+        (
+            'https://commons.wikimedia.org/wiki/Special:FilePath/Picture_of_cat.jpg?width=1000',
+            'https://commons.wikimedia.org/wiki/File:Picture_of_cat.jpg',
+        ),
+        (
+            'https://commons.wikimedia.org/wiki/Special:FilePath/Cat_looking.jpg?width=1000',
+            'https://commons.wikimedia.org/wiki/File:Cat_looking.jpg',
+        ),
+        (
+            'https://commons.wikimedia.org/wiki/Special:FilePath/Cat-on-couch.jpg?width=1000',
+            'https://commons.wikimedia.org/wiki/File:Cat-on-couch.jpg',
+        ),
+        (
+            'https://commons.wikimedia.org/wiki/Special:FilePath/Tortoiseshell_cat_photo.jpg?width=1000',
+            'https://commons.wikimedia.org/wiki/File:Tortoiseshell_cat_photo.jpg',
+        ),
     ),
 }
 
@@ -142,12 +166,14 @@ class Command(BaseCommand):
             name = f'{NAMES[index % len(NAMES)]} {index + 1:03d}'
             status = self._status_for(index)
             days_in_care = 180 if 20 <= index < 35 else 30 + (index % 150)
+            breed_names = DOG_BREEDS if species == Species.DOG else CAT_BREEDS
+            breed_name = breed_names[index % len(breed_names)]
             animal, created = Animal.objects.get_or_create(
                 shelter=shelter,
                 name=name,
                 defaults={
                     'species': species,
-                    'breed': breeds[(species, (DOG_BREEDS if species == Species.DOG else CAT_BREEDS)[index % (len(DOG_BREEDS) if species == Species.DOG else len(CAT_BREEDS))])],
+                    'breed': breeds[(species, breed_name)],
                     'age_years': index % 12,
                     'age_months': (index * 3) % 12,
                     'gender': 'F' if index % 2 else 'M',
@@ -163,7 +189,11 @@ class Command(BaseCommand):
                     'description': self._description(name, species, index),
                     'status': status,
                     'date_entry_shelter': today - timedelta(days=days_in_care),
-                    'date_adopted': today - timedelta(days=10 + index % 120) if status == AnimalStatus.ADOPTED else None,
+                    'date_adopted': (
+                        today - timedelta(days=10 + index % 120)
+                        if status == AnimalStatus.ADOPTED
+                        else None
+                    ),
                 },
             )
             if created:
@@ -191,7 +221,10 @@ class Command(BaseCommand):
     def _description(name, species, index):
         animal_type = 'cane' if species == Species.DOG else 'gatto'
         traits = ('curioso', 'affettuoso', 'tranquillo', 'giocherellone')
-        return f'{name} è un {animal_type} {traits[index % len(traits)]}, seguito dal rifugio e pronto a conoscere una famiglia.'
+        return (
+            f'{name} è un {animal_type} {traits[index % len(traits)]}, '
+            'seguito dal rifugio e pronto a conoscere una famiglia.'
+        )
 
     @staticmethod
     def _add_demo_image(animal):

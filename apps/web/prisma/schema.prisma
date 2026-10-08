@@ -72,6 +72,47 @@ enum AnimalSex {
   @@map("animal_sex")
 }
 
+enum PreferredSpecies {
+  dog
+  cat
+  either
+
+  @@map("preferred_species")
+}
+
+enum PreferredSex {
+  male
+  female
+  any
+
+  @@map("preferred_sex")
+}
+
+enum HousingType {
+  apartment
+  house_no_garden
+  house_with_garden
+  farm
+
+  @@map("housing_type")
+}
+
+enum VerificationPurpose {
+  email_verification
+  password_reset
+
+  @@map("verification_purpose")
+}
+
+enum BackgroundJobStatus {
+  queued
+  running
+  completed
+  failed
+
+  @@map("background_job_status")
+}
+
 enum AnimalSize {
   small
   medium
@@ -171,15 +212,16 @@ enum NeedsGarden {
 }
 
 model Comune {
-  id                   Int       @id @default(autoincrement()) @db.UnsignedSmallInt
-  istatCode            String    @unique(map: "uq_comuni_istat") @map("istat_code") @db.Char(6)
-  name                 String    @db.VarChar(120)
-  provinceCode         String    @map("province_code") @db.Char(2)
-  region               String    @db.VarChar(40)
-  postalCodes          Json      @map("postal_codes")
-  latitude             Decimal   @db.Decimal(9, 6)
-  longitude            Decimal   @db.Decimal(9, 6)
-  shelters             Shelter[]
+  id              Int              @id @default(autoincrement()) @db.UnsignedSmallInt
+  istatCode       String           @unique(map: "uq_comuni_istat") @map("istat_code") @db.Char(6)
+  name            String           @db.VarChar(120)
+  provinceCode    String           @map("province_code") @db.Char(2)
+  region          String           @db.VarChar(40)
+  postalCodes     Json             @map("postal_codes")
+  latitude        Decimal          @db.Decimal(9, 6)
+  longitude       Decimal          @db.Decimal(9, 6)
+  shelters        Shelter[]
+  adopterProfiles AdopterProfile[]
 
   @@index([name], map: "idx_comuni_name")
   @@index([provinceCode], map: "idx_comuni_province")
@@ -188,61 +230,65 @@ model Comune {
 }
 
 model User {
-  id              String      @id @db.Char(26)
-  email           String      @unique(map: "uq_users_email") @db.VarChar(255)
-  emailVerifiedAt DateTime?   @map("email_verified_at") @db.DateTime(3)
-  passwordHash    String?     @map("password_hash") @db.VarChar(255)
-  fullName        String      @map("full_name") @db.VarChar(160)
-  phone           String?     @db.VarChar(32)
-  locale          UserLocale  @default(it)
-  role            UserRole    @default(adopter)
-  status          UserStatus  @default(active)
-  marketingOptIn  Boolean     @default(false) @map("marketing_opt_in")
-  lastLoginAt     DateTime?   @map("last_login_at") @db.DateTime(3)
-  createdAt       DateTime    @default(now()) @map("created_at") @db.DateTime(3)
-  updatedAt       DateTime    @default(now()) @updatedAt @map("updated_at") @db.DateTime(3)
-  deletedAt       DateTime?   @map("deleted_at") @db.DateTime(3)
-  memberships     ShelterMember[]
+  id                 String              @id @db.Char(26)
+  email              String              @unique(map: "uq_users_email") @db.VarChar(255)
+  emailVerifiedAt    DateTime?           @map("email_verified_at") @db.DateTime(3)
+  passwordHash       String?             @map("password_hash") @db.VarChar(255)
+  fullName           String              @map("full_name") @db.VarChar(160)
+  phone              String?             @db.VarChar(32)
+  locale             UserLocale          @default(it)
+  role               UserRole            @default(adopter)
+  status             UserStatus          @default(active)
+  marketingOptIn     Boolean             @default(false) @map("marketing_opt_in")
+  lastLoginAt        DateTime?           @map("last_login_at") @db.DateTime(3)
+  createdAt          DateTime            @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt          DateTime            @default(now()) @updatedAt @map("updated_at") @db.DateTime(3)
+  deletedAt          DateTime?           @map("deleted_at") @db.DateTime(3)
+  memberships        ShelterMember[]
+  adopterProfile     AdopterProfile?
+  sessions           Session[]
+  verificationTokens VerificationToken[]
+  notifications      Notification[]
 
   @@index([role, status], map: "idx_users_role_status")
   @@map("users")
 }
 
 model Shelter {
-  id                 String        @id @db.Char(26)
-  slug               String        @unique(map: "uq_shelters_slug") @db.VarChar(140)
-  name               String        @db.VarChar(160)
-  legalName          String?       @map("legal_name") @db.VarChar(200)
+  id                 String          @id @db.Char(26)
+  slug               String          @unique(map: "uq_shelters_slug") @db.VarChar(140)
+  name               String          @db.VarChar(160)
+  legalName          String?         @map("legal_name") @db.VarChar(200)
   type               ShelterType
-  taxId              String?       @map("tax_id") @db.VarChar(20)
-  email              String        @db.VarChar(255)
-  phone              String?       @db.VarChar(32)
-  whatsappPhone      String?       @map("whatsapp_phone") @db.VarChar(32)
-  website            String?       @db.VarChar(255)
-  socialLinks        Json?         @map("social_links")
-  addressLine        String        @map("address_line") @db.VarChar(255)
-  comuneId           Int           @map("comune_id") @db.UnsignedSmallInt
-  postalCode         String        @map("postal_code") @db.Char(5)
-  latitude           Decimal?      @db.Decimal(9, 6)
-  longitude          Decimal?      @db.Decimal(9, 6)
-  descriptionIt      String?       @map("description_it") @db.Text
-  descriptionEn      String?       @map("description_en") @db.Text
-  openingHours       Json?         @map("opening_hours")
-  logoKey            String?       @map("logo_key") @db.VarChar(255)
-  coverKey           String?       @map("cover_key") @db.VarChar(255)
-  capacityDogs       Int?          @map("capacity_dogs") @db.UnsignedSmallInt
-  capacityCats       Int?          @map("capacity_cats") @db.UnsignedSmallInt
-  status             ShelterStatus @default(pending)
-  plan               ShelterPlan   @default(free)
-  bookingCutoffHours Int           @default(24) @map("booking_cutoff_hours") @db.UnsignedSmallInt
-  acceptsDonations   Boolean       @default(false) @map("accepts_donations")
-  approvedAt         DateTime?     @map("approved_at") @db.DateTime(3)
-  approvedBy         String?       @map("approved_by") @db.Char(26)
-  rejectionReason    String?       @map("rejection_reason") @db.Text
-  createdAt          DateTime      @default(now()) @map("created_at") @db.DateTime(3)
-  updatedAt          DateTime      @default(now()) @updatedAt @map("updated_at") @db.DateTime(3)
-  deletedAt          DateTime?     @map("deleted_at") @db.DateTime(3)
-  comune             Comune        @relation(fields: [comuneId], references: [id])
+  taxId              String?         @map("tax_id") @db.VarChar(20)
+  email              String          @db.VarChar(255)
+  phone              String?         @db.VarChar(32)
+  whatsappPhone      String?         @map("whatsapp_phone") @db.VarChar(32)
+  website            String?         @db.VarChar(255)
+  socialLinks        Json?           @map("social_links")
+  addressLine        String          @map("address_line") @db.VarChar(255)
+  comuneId           Int             @map("comune_id") @db.UnsignedSmallInt
+  postalCode         String          @map("postal_code") @db.Char(5)
+  latitude           Decimal?        @db.Decimal(9, 6)
+  longitude          Decimal?        @db.Decimal(9, 6)
+  descriptionIt      String?         @map("description_it") @db.Text
+  descriptionEn      String?         @map("description_en") @db.Text
+  openingHours       Json?           @map("opening_hours")
+  logoKey            String?         @map("logo_key") @db.VarChar(255)
+  coverKey           String?         @map("cover_key") @db.VarChar(255)
+  capacityDogs       Int?            @map("capacity_dogs") @db.UnsignedSmallInt
+  capacityCats       Int?            @map("capacity_cats") @db.UnsignedSmallInt
+  status             ShelterStatus   @default(pending)
+  plan               ShelterPlan     @default(free)
+  bookingCutoffHours Int             @default(24) @map("booking_cutoff_hours") @db.UnsignedSmallInt
+  acceptsDonations   Boolean         @default(false) @map("accepts_donations")
+  approvedAt         DateTime?       @map("approved_at") @db.DateTime(3)
+  approvedBy         String?         @map("approved_by") @db.Char(26)
+  rejectionReason    String?         @map("rejection_reason") @db.Text
+  createdAt          DateTime        @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt          DateTime        @default(now()) @updatedAt @map("updated_at") @db.DateTime(3)
+  deletedAt          DateTime?       @map("deleted_at") @db.DateTime(3)
+  comune             Comune          @relation(fields: [comuneId], references: [id])
   members            ShelterMember[]
   animals            Animal[]
 
@@ -253,14 +299,14 @@ model Shelter {
 }
 
 model ShelterMember {
-  id                String   @id @db.Char(26)
-  shelterId         String   @map("shelter_id") @db.Char(26)
-  userId            String   @map("user_id") @db.Char(26)
-  isBillingContact  Boolean  @default(false) @map("is_billing_contact")
-  invitedBy         String?  @map("invited_by") @db.Char(26)
-  joinedAt          DateTime @default(now()) @map("joined_at") @db.DateTime(3)
-  shelter           Shelter  @relation(fields: [shelterId], references: [id], onDelete: Cascade)
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id               String   @id @db.Char(26)
+  shelterId        String   @map("shelter_id") @db.Char(26)
+  userId           String   @map("user_id") @db.Char(26)
+  isBillingContact Boolean  @default(false) @map("is_billing_contact")
+  invitedBy        String?  @map("invited_by") @db.Char(26)
+  joinedAt         DateTime @default(now()) @map("joined_at") @db.DateTime(3)
+  shelter          Shelter  @relation(fields: [shelterId], references: [id], onDelete: Cascade)
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([shelterId, userId], map: "uq_member")
   @@index([userId], map: "idx_member_user")
@@ -268,47 +314,49 @@ model ShelterMember {
 }
 
 model Animal {
-  id                    String                    @id @db.Char(26)
-  shelterId             String                    @map("shelter_id") @db.Char(26)
-  slug                  String                    @unique(map: "uq_animals_slug") @db.VarChar(160)
-  internalCode          String?                   @map("internal_code") @db.VarChar(40)
-  name                  String                    @db.VarChar(80)
+  id                    String                   @id @db.Char(26)
+  shelterId             String                   @map("shelter_id") @db.Char(26)
+  slug                  String                   @unique(map: "uq_animals_slug") @db.VarChar(160)
+  internalCode          String?                  @map("internal_code") @db.VarChar(40)
+  name                  String                   @db.VarChar(80)
   species               AnimalSpecies
-  sex                   AnimalSex                 @default(unknown)
+  sex                   AnimalSex                @default(unknown)
   size                  AnimalSize?
-  breedPrimary          String?                   @map("breed_primary") @db.VarChar(80)
-  breedSecondary        String?                   @map("breed_secondary") @db.VarChar(80)
-  isMixed               Boolean                   @default(true) @map("is_mixed")
-  coatColor             String?                   @map("coat_color") @db.VarChar(60)
-  coatLength            AnimalCoatLength?         @map("coat_length")
-  birthDate             DateTime?                 @map("birth_date") @db.Date
-  birthDateEstimated    Boolean                   @default(true) @map("birth_date_estimated")
-  weightKg              Decimal?                  @map("weight_kg") @db.Decimal(5, 2)
-  microchipNumber       String?                   @unique(map: "uq_animals_microchip") @map("microchip_number") @db.Char(15)
-  microchipRegisteredOn DateTime?                 @map("microchip_registered_on") @db.Date
-  anagrafeRegion        String?                   @map("anagrafe_region") @db.VarChar(40)
-  isSterilized          Boolean?                  @map("is_sterilized")
-  sterilizedOn          DateTime?                 @map("sterilized_on") @db.Date
-  hasSpecialNeeds       Boolean                   @default(false) @map("has_special_needs")
-  specialNeedsSummary   String?                   @map("special_needs_summary") @db.VarChar(255)
-  isVaccinatedSummary   Boolean?                  @map("is_vaccinated_summary")
-  headlineIt            String?                   @map("headline_it") @db.VarChar(140)
-  headlineEn            String?                   @map("headline_en") @db.VarChar(140)
-  storyIt               String?                   @map("story_it") @db.Text
-  storyEn               String?                   @map("story_en") @db.Text
-  adoptionFeeCents      Int?                      @map("adoption_fee_cents") @db.UnsignedInt
-  status                AnimalStatus              @default(draft)
-  unavailableReason     AnimalUnavailableReason?  @map("unavailable_reason")
-  intakeDate            DateTime                  @map("intake_date") @db.Date
-  publishedAt           DateTime?                 @map("published_at") @db.DateTime(3)
-  adoptedAt             DateTime?                 @map("adopted_at") @db.DateTime(3)
-  createdBy             String?                   @map("created_by") @db.Char(26)
-  createdAt             DateTime                  @default(now()) @map("created_at") @db.DateTime(3)
-  updatedAt             DateTime                  @default(now()) @updatedAt @map("updated_at") @db.DateTime(3)
-  deletedAt             DateTime?                 @map("deleted_at") @db.DateTime(3)
+  breedPrimary          String?                  @map("breed_primary") @db.VarChar(80)
+  breedSecondary        String?                  @map("breed_secondary") @db.VarChar(80)
+  isMixed               Boolean                  @default(true) @map("is_mixed")
+  coatColor             String?                  @map("coat_color") @db.VarChar(60)
+  coatLength            AnimalCoatLength?        @map("coat_length")
+  birthDate             DateTime?                @map("birth_date") @db.Date
+  birthDateEstimated    Boolean                  @default(true) @map("birth_date_estimated")
+  weightKg              Decimal?                 @map("weight_kg") @db.Decimal(5, 2)
+  microchipNumber       String?                  @unique(map: "uq_animals_microchip") @map("microchip_number") @db.Char(15)
+  microchipRegisteredOn DateTime?                @map("microchip_registered_on") @db.Date
+  anagrafeRegion        String?                  @map("anagrafe_region") @db.VarChar(40)
+  isSterilized          Boolean?                 @map("is_sterilized")
+  sterilizedOn          DateTime?                @map("sterilized_on") @db.Date
+  hasSpecialNeeds       Boolean                  @default(false) @map("has_special_needs")
+  specialNeedsSummary   String?                  @map("special_needs_summary") @db.VarChar(255)
+  isVaccinatedSummary   Boolean?                 @map("is_vaccinated_summary")
+  headlineIt            String?                  @map("headline_it") @db.VarChar(140)
+  headlineEn            String?                  @map("headline_en") @db.VarChar(140)
+  storyIt               String?                  @map("story_it") @db.Text
+  storyEn               String?                  @map("story_en") @db.Text
+  adoptionFeeCents      Int?                     @map("adoption_fee_cents") @db.UnsignedInt
+  status                AnimalStatus             @default(draft)
+  unavailableReason     AnimalUnavailableReason? @map("unavailable_reason")
+  intakeDate            DateTime                 @map("intake_date") @db.Date
+  publishedAt           DateTime?                @map("published_at") @db.DateTime(3)
+  adoptedAt             DateTime?                @map("adopted_at") @db.DateTime(3)
+  createdBy             String?                  @map("created_by") @db.Char(26)
+  createdAt             DateTime                 @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt             DateTime                 @default(now()) @updatedAt @map("updated_at") @db.DateTime(3)
+  deletedAt             DateTime?                @map("deleted_at") @db.DateTime(3)
   shelter               Shelter                  @relation(fields: [shelterId], references: [id])
   media                 AnimalMedia[]
   behaviorProfile       AnimalBehaviorProfile?
+  matchResults          MatchResult[]
+  favorites             Favorite[]
 
   @@index([shelterId, status], map: "idx_animals_shelter_status")
   @@index([status, species, publishedAt], map: "idx_animals_public")
@@ -318,53 +366,224 @@ model Animal {
 }
 
 model AnimalMedia {
-  id                String           @id @db.Char(26)
-  animalId          String           @map("animal_id") @db.Char(26)
-  kind              AnimalMediaKind
-  storageKey        String           @map("storage_key") @db.VarChar(255)
-  derivatives       Json?
-  placeholder       String?          @db.VarChar(512)
-  mimeType          String           @map("mime_type") @db.VarChar(80)
-  width             Int?             @db.UnsignedSmallInt
-  height            Int?             @db.UnsignedSmallInt
-  durationSeconds   Int?             @map("duration_seconds") @db.UnsignedSmallInt
-  byteSize          Int              @map("byte_size") @db.UnsignedInt
-  altTextIt         String?          @map("alt_text_it") @db.VarChar(255)
-  altTextEn         String?          @map("alt_text_en") @db.VarChar(255)
-  isPrimary         Boolean          @default(false) @map("is_primary")
-  sortOrder         Int              @default(0) @map("sort_order") @db.UnsignedSmallInt
-  processingStatus  ProcessingStatus @default(pending) @map("processing_status")
-  createdAt         DateTime         @default(now()) @map("created_at") @db.DateTime(3)
-  deletedAt         DateTime?        @map("deleted_at") @db.DateTime(3)
-  animal            Animal           @relation(fields: [animalId], references: [id], onDelete: Cascade)
+  id               String           @id @db.Char(26)
+  animalId         String           @map("animal_id") @db.Char(26)
+  kind             AnimalMediaKind
+  storageKey       String           @map("storage_key") @db.VarChar(255)
+  derivatives      Json?
+  placeholder      String?          @db.VarChar(512)
+  mimeType         String           @map("mime_type") @db.VarChar(80)
+  width            Int?             @db.UnsignedSmallInt
+  height           Int?             @db.UnsignedSmallInt
+  durationSeconds  Int?             @map("duration_seconds") @db.UnsignedSmallInt
+  byteSize         Int              @map("byte_size") @db.UnsignedInt
+  altTextIt        String?          @map("alt_text_it") @db.VarChar(255)
+  altTextEn        String?          @map("alt_text_en") @db.VarChar(255)
+  isPrimary        Boolean          @default(false) @map("is_primary")
+  sortOrder        Int              @default(0) @map("sort_order") @db.UnsignedSmallInt
+  processingStatus ProcessingStatus @default(pending) @map("processing_status")
+  createdAt        DateTime         @default(now()) @map("created_at") @db.DateTime(3)
+  deletedAt        DateTime?        @map("deleted_at") @db.DateTime(3)
+  animal           Animal           @relation(fields: [animalId], references: [id], onDelete: Cascade)
 
   @@index([animalId, sortOrder], map: "idx_media_animal")
   @@map("animal_media")
 }
 
 model AnimalBehaviorProfile {
-  animalId             String        @id @map("animal_id") @db.Char(26)
-  energyLevel          Int?          @map("energy_level") @db.UnsignedTinyInt
-  sociabilityPeople    Int?          @map("sociability_people") @db.UnsignedTinyInt
-  goodWithChildren     ChildCompatibility @default(unknown) @map("good_with_children")
+  animalId             String              @id @map("animal_id") @db.Char(26)
+  energyLevel          Int?                @map("energy_level") @db.UnsignedTinyInt
+  sociabilityPeople    Int?                @map("sociability_people") @db.UnsignedTinyInt
+  goodWithChildren     ChildCompatibility  @default(unknown) @map("good_with_children")
   goodWithDogs         AnimalCompatibility @default(unknown) @map("good_with_dogs")
   goodWithCats         AnimalCompatibility @default(unknown) @map("good_with_cats")
-  houseTrained         TrainingProgress @default(unknown) @map("house_trained")
-  leashTrained         TrainingProgress @default(unknown) @map("leash_trained")
-  noiseTolerance       Int?          @map("noise_tolerance") @db.UnsignedTinyInt
-  aloneToleranceHours  Int?          @map("alone_tolerance_hours") @db.UnsignedTinyInt
-  trainingNeeds        Int?          @map("training_needs") @db.UnsignedTinyInt
-  groomingNeeds        Int?          @map("grooming_needs") @db.UnsignedTinyInt
-  exerciseMinPerDay    Int?          @map("exercise_min_per_day") @db.UnsignedSmallInt
-  suitableForFirstTime Suitability @default(unknown) @map("suitable_for_first_time")
-  needsGarden          NeedsGarden   @default(unknown) @map("needs_garden")
-  temperamentTags      Json?         @map("temperament_tags")
-  notesIt              String?       @map("notes_it") @db.Text
-  notesEn              String?       @map("notes_en") @db.Text
-  assessedBy           String?       @map("assessed_by") @db.Char(26)
-  assessedAt           DateTime?     @map("assessed_at") @db.DateTime(3)
-  updatedAt            DateTime      @default(now()) @updatedAt @map("updated_at") @db.DateTime(3)
-  animal               Animal        @relation(fields: [animalId], references: [id], onDelete: Cascade)
+  houseTrained         TrainingProgress    @default(unknown) @map("house_trained")
+  leashTrained         TrainingProgress    @default(unknown) @map("leash_trained")
+  noiseTolerance       Int?                @map("noise_tolerance") @db.UnsignedTinyInt
+  aloneToleranceHours  Int?                @map("alone_tolerance_hours") @db.UnsignedTinyInt
+  trainingNeeds        Int?                @map("training_needs") @db.UnsignedTinyInt
+  groomingNeeds        Int?                @map("grooming_needs") @db.UnsignedTinyInt
+  exerciseMinPerDay    Int?                @map("exercise_min_per_day") @db.UnsignedSmallInt
+  suitableForFirstTime Suitability         @default(unknown) @map("suitable_for_first_time")
+  needsGarden          NeedsGarden         @default(unknown) @map("needs_garden")
+  temperamentTags      Json?               @map("temperament_tags")
+  notesIt              String?             @map("notes_it") @db.Text
+  notesEn              String?             @map("notes_en") @db.Text
+  assessedBy           String?             @map("assessed_by") @db.Char(26)
+  assessedAt           DateTime?           @map("assessed_at") @db.DateTime(3)
+  updatedAt            DateTime            @default(now()) @updatedAt @map("updated_at") @db.DateTime(3)
+  animal               Animal              @relation(fields: [animalId], references: [id], onDelete: Cascade)
 
   @@map("animal_behavior_profiles")
+}
+
+model AdopterProfile {
+  id                     String                  @id @db.Char(26)
+  userId                 String?                 @unique(map: "uq_profile_user") @map("user_id") @db.Char(26)
+  anonymousToken         String?                 @unique(map: "uq_profile_anon") @map("anonymous_token") @db.Char(32)
+  housingType            HousingType?            @map("housing_type")
+  housingSizeSqm         Int?                    @map("housing_size_sqm") @db.UnsignedSmallInt
+  hasOutdoorSpace        Boolean?                @map("has_outdoor_space")
+  outdoorSpaceSqm        Int?                    @map("outdoor_space_sqm") @db.UnsignedSmallInt
+  householdAdults        Int?                    @map("household_adults") @db.UnsignedTinyInt
+  childrenAges           Json?                   @map("children_ages")
+  existingDogs           Int                     @default(0) @map("existing_dogs") @db.UnsignedTinyInt
+  existingCats           Int                     @default(0) @map("existing_cats") @db.UnsignedTinyInt
+  hoursAlonePerDay       Int?                    @map("hours_alone_per_day") @db.UnsignedTinyInt
+  activityLevel          Int?                    @map("activity_level") @db.UnsignedTinyInt
+  experienceLevel        String?                 @map("experience_level") @db.VarChar(20)
+  groomingCapacity       Int?                    @map("grooming_capacity") @db.UnsignedTinyInt
+  trainingCapacity       Int?                    @map("training_capacity") @db.UnsignedTinyInt
+  monthlyBudgetEur       Int?                    @map("monthly_budget_eur") @db.UnsignedSmallInt
+  hasAllergies           Boolean                 @default(false) @map("has_allergies")
+  preferredSpecies       PreferredSpecies        @default(either) @map("preferred_species")
+  preferredSizes         Json?                   @map("preferred_sizes")
+  preferredAgeBands      Json?                   @map("preferred_age_bands")
+  preferredSex           PreferredSex            @default(any) @map("preferred_sex")
+  dealbreakers           Json?
+  searchComuneId         Int?                    @map("search_comune_id") @db.UnsignedSmallInt
+  searchRadiusKm         Int                     @default(50) @map("search_radius_km") @db.UnsignedSmallInt
+  notifyNewMatches       Boolean                 @default(false) @map("notify_new_matches")
+  minNotifyScore         Int                     @default(70) @map("min_notify_score") @db.UnsignedTinyInt
+  isActive               Boolean                 @default(true) @map("is_active")
+  currentStep            Int                     @default(0) @map("current_step") @db.UnsignedTinyInt
+  completedAt            DateTime?               @map("completed_at") @db.DateTime(3)
+  createdAt              DateTime                @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt              DateTime                @default(now()) @updatedAt @map("updated_at") @db.DateTime(3)
+  user                   User?                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  searchComune           Comune?                 @relation(fields: [searchComuneId], references: [id], onDelete: SetNull)
+  matchResults           MatchResult[]
+  favorites              Favorite[]
+  pendingVerifications   VerificationToken[]
+  matchUnsubscribeTokens MatchUnsubscribeToken[]
+  lastMatchDigestAt      DateTime?               @map("last_match_digest_at") @db.DateTime(3)
+  lastMatchComputedAt    DateTime?               @map("last_match_computed_at") @db.DateTime(3)
+
+  @@index([isActive, notifyNewMatches], map: "idx_profile_active_notify")
+  @@map("adopter_profiles")
+}
+
+model MatchResult {
+  id             BigInt         @id @default(autoincrement()) @db.UnsignedBigInt
+  profileId      String         @map("adopter_profile_id") @db.Char(26)
+  animalId       String         @map("animal_id") @db.Char(26)
+  score          Int            @db.UnsignedTinyInt
+  breakdown      Json
+  reasons        Json
+  considerations Json?
+  explanationIt  String?        @map("explanation_it") @db.VarChar(1000)
+  explanationEn  String?        @map("explanation_en") @db.VarChar(1000)
+  engineVersion  String         @map("engine_version") @db.VarChar(20)
+  computedAt     DateTime       @default(now()) @map("computed_at") @db.DateTime(3)
+  notifiedAt     DateTime?      @map("notified_at") @db.DateTime(3)
+  profile        AdopterProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  animal         Animal         @relation(fields: [animalId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, animalId], map: "uq_match")
+  @@index([profileId, score(sort: Desc)], map: "idx_match_score")
+  @@index([notifiedAt, score], map: "idx_match_notify")
+  @@map("match_results")
+}
+
+model Favorite {
+  id        BigInt         @id @default(autoincrement()) @db.UnsignedBigInt
+  profileId String         @map("adopter_profile_id") @db.Char(26)
+  animalId  String         @map("animal_id") @db.Char(26)
+  createdAt DateTime       @default(now()) @map("created_at") @db.DateTime(3)
+  profile   AdopterProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  animal    Animal         @relation(fields: [animalId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, animalId], map: "uq_favorite")
+  @@index([animalId], map: "idx_favorite_animal")
+  @@map("favorites")
+}
+
+model Session {
+  id        String   @id @db.Char(26)
+  userId    String   @map("user_id") @db.Char(26)
+  tokenHash String   @unique(map: "uq_sessions_token") @map("token_hash") @db.Char(64)
+  expiresAt DateTime @map("expires_at") @db.DateTime(3)
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(3)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "idx_sessions_user")
+  @@index([expiresAt], map: "idx_sessions_expiry")
+  @@map("sessions")
+}
+
+model VerificationToken {
+  id               String              @id @db.Char(26)
+  userId           String              @map("user_id") @db.Char(26)
+  adopterProfileId String?             @map("adopter_profile_id") @db.Char(26)
+  tokenHash        String              @unique(map: "uq_verification_token") @map("token_hash") @db.Char(64)
+  purpose          VerificationPurpose
+  expiresAt        DateTime            @map("expires_at") @db.DateTime(3)
+  consumedAt       DateTime?           @map("consumed_at") @db.DateTime(3)
+  createdAt        DateTime            @default(now()) @map("created_at") @db.DateTime(3)
+  user             User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  adopterProfile   AdopterProfile?     @relation(fields: [adopterProfileId], references: [id], onDelete: SetNull)
+
+  @@index([userId, purpose, expiresAt], map: "idx_verification_user_expiry")
+  @@map("verification_tokens")
+}
+
+model BackgroundJob {
+  id          BigInt              @id @default(autoincrement()) @db.UnsignedBigInt
+  type        String              @db.VarChar(60)
+  payload     Json
+  status      BackgroundJobStatus @default(queued)
+  attempts    Int                 @default(0) @db.UnsignedTinyInt
+  runAt       DateTime            @default(now()) @map("run_at") @db.DateTime(3)
+  lockedAt    DateTime?           @map("locked_at") @db.DateTime(3)
+  completedAt DateTime?           @map("completed_at") @db.DateTime(3)
+  lastError   String?             @map("last_error") @db.VarChar(500)
+  createdAt   DateTime            @default(now()) @map("created_at") @db.DateTime(3)
+
+  @@index([status, runAt], map: "idx_background_jobs_ready")
+  @@map("background_jobs")
+}
+
+model Notification {
+  id         BigInt                 @id @default(autoincrement()) @db.UnsignedBigInt
+  userId     String                 @map("user_id") @db.Char(26)
+  type       String                 @db.VarChar(60)
+  titleKey   String                 @map("title_key") @db.VarChar(120)
+  payload    Json
+  linkUrl    String?                @map("link_url") @db.VarChar(255)
+  readAt     DateTime?              @map("read_at") @db.DateTime(3)
+  createdAt  DateTime               @default(now()) @map("created_at") @db.DateTime(3)
+  user       User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveries NotificationDelivery[]
+
+  @@index([userId, readAt, createdAt], map: "idx_notif_user_unread")
+  @@map("notifications")
+}
+
+model NotificationDelivery {
+  id                BigInt       @id @default(autoincrement()) @db.UnsignedBigInt
+  notificationId    BigInt       @map("notification_id") @db.UnsignedBigInt
+  channel           String       @db.VarChar(20)
+  status            String       @default("pending") @db.VarChar(20)
+  providerMessageId String?      @map("provider_message_id") @db.VarChar(120)
+  error             String?      @db.VarChar(255)
+  attempts          Int          @default(0) @db.UnsignedTinyInt
+  sentAt            DateTime?    @map("sent_at") @db.DateTime(3)
+  notification      Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  @@index([notificationId], map: "idx_delivery_notification")
+  @@index([status, attempts], map: "idx_delivery_retry")
+  @@map("notification_deliveries")
+}
+
+model MatchUnsubscribeToken {
+  id         String         @id @db.Char(26)
+  profileId  String         @map("adopter_profile_id") @db.Char(26)
+  tokenHash  String         @unique(map: "uq_match_unsubscribe_token") @map("token_hash") @db.Char(64)
+  expiresAt  DateTime       @map("expires_at") @db.DateTime(3)
+  consumedAt DateTime?      @map("consumed_at") @db.DateTime(3)
+  createdAt  DateTime       @default(now()) @map("created_at") @db.DateTime(3)
+  profile    AdopterProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId, expiresAt], map: "idx_match_unsubscribe_profile")
+  @@map("match_unsubscribe_tokens")
 }

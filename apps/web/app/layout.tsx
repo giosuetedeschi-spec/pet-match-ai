@@ -6,6 +6,12 @@ export const metadata: Metadata = {
   description: "Un catalogo di animali in cerca di casa, gestito dai rifugi.",
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="it"><body>{children}</body></html>;
+export default function RootLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
+  return (
+    <html lang="it">
+      <body>{children}</body>
+    </html>
+  );
 }

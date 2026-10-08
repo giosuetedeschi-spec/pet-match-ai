@@ -1,6 +1,8 @@
 # 02 — Technical Architecture
 
-## 1. System overview
+> **Status, 8 October 2026:** This document describes the target architecture, not the complete running system. The repository currently runs a Django REST + Streamlit MVP and a parallel Next.js + Prisma release. Docker Compose defines separate MySQL databases (`petmatch_mvp` and `petmatch_web`), Mailpit, and a FastAPI service whose model is not configured. The Next.js release currently provides its database foundation and Italian public catalogue; its shelter authoring flow is still planned. See [`ROADMAP-OPERATIVA.md`](../ROADMAP-OPERATIVA.md) for feature status and [`STATE.md`](../STATE.md) for the repository checkpoint.
+
+## 1. Target system overview
 
 ```mermaid
 graph TB

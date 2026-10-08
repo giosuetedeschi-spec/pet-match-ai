@@ -28,7 +28,7 @@ def optimize_image(
     img.thumbnail((max_width, max_height), Image.Resampling.LANCZOS)
 
     output = BytesIO()
-    
+
     if convert_to_webp:
         filename = f"{os.path.splitext(image_field.name)[0]}.webp"
         img.save(output, format='WEBP', quality=quality, optimize=True)
