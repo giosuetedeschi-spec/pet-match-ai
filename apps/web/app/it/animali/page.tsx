@@ -6,6 +6,8 @@ import {
   ShelterStatus,
 } from "@prisma/client";
 import { cookies } from "next/headers";
+import { getUserSession, sessionCookieName } from "@/lib/auth";
+import { MATCH_ENGINE_VERSION } from "@/lib/matching";
 import { prisma } from "@/lib/prisma";
 
 const pageSize = 24;
@@ -81,10 +83,14 @@ export default async function CatalogPage({
       : {}),
   };
 
-  const token = sortByMatch ? (await cookies()).get("petmatch-adopter")?.value : undefined;
-  const profile = token ? await prisma.adopterProfile.findUnique({ where: { anonymousToken: token }, select: { id: true, completedAt: true } }) : null;
+  const cookieStore = sortByMatch ? await cookies() : null;
+  const token = cookieStore?.get("petmatch-adopter")?.value;
+  const session = sortByMatch ? await getUserSession(cookieStore?.get(sessionCookieName)?.value) : null;
+  const profile = session
+    ? await prisma.adopterProfile.findUnique({ where: { userId: session.user.id }, select: { id: true, completedAt: true } })
+    : token ? await prisma.adopterProfile.findUnique({ where: { anonymousToken: token }, select: { id: true, completedAt: true } }) : null;
   const rankedIds = profile?.completedAt
-    ? (await prisma.matchResult.findMany({ where: { profileId: profile.id, animal: where }, orderBy: [{ score: "desc" }, { animal: { name: "asc" } }], select: { animalId: true } })).map((match) => match.animalId)
+    ? (await prisma.matchResult.findMany({ where: { profileId: profile.id, engineVersion: MATCH_ENGINE_VERSION, animal: where }, orderBy: [{ score: "desc" }, { animal: { name: "asc" } }], select: { animalId: true } })).map((match) => match.animalId)
     : [];
   const total = sortByMatch && profile?.completedAt ? rankedIds.length : await prisma.animal.count({ where });
   const currentPage = Math.min(page, Math.max(1, Math.ceil(total / pageSize)));
@@ -195,7 +201,7 @@ export default async function CatalogPage({
                     {label(animal.species)} · {sexLabel(animal.sex)}
                     {animal.size ? ` · ${sizeLabel(animal.size)}` : ""}
                   </p>
-                  <h2>{animal.name}</h2>
+                  <h2><a href={`/it/animali/${animal.slug}`}>{animal.name}</a></h2>
                   {animal.breedPrimary && (
                     <p className="animal-breed">{animal.breedPrimary}</p>
                   )}

@@ -1,5 +1,7 @@
 import { AnimalSex, AnimalSize, AnimalSpecies, HousingType, PreferredSex, PreferredSpecies, Prisma } from "@prisma/client";
 
+export const MATCH_ENGINE_VERSION = "match-1.0.0";
+
 export const matchingAnimalSelect = {
   id: true,
   name: true,
@@ -85,6 +87,7 @@ export type MatchResult = {
   score: number;
   distanceKm: number | null;
   isFavorite?: boolean;
+  explanationIt?: string | null;
   reasons: string[];
   considerations: string[];
   dimensions: { name: string; score: number; weight: number }[];
@@ -100,7 +103,7 @@ export type MatchingResponse = {
   allResults: MatchResult[];
 };
 
-const weights = {
+export const MATCHING_WEIGHTS = {
   energy: 0.2,
   space: 0.15,
   timeAlone: 0.15,
@@ -111,13 +114,16 @@ const weights = {
   practical: 0.05,
 } as const;
 
+const weights = MATCHING_WEIGHTS;
+
 const exclusionLabels: Record<string, string> = {
   species: "specie diversa da quella scelta",
   children: "non compatibile con bambini",
   dogs: "non compatibile con cani già presenti",
   cats: "non compatibile con gatti già presenti",
   noSpecialNeeds: "ha esigenze speciali",
-  largeDog: "supera la taglia indicata",
+  largeDogWeight: "pesa più di 25 kg",
+  largeDogEstimate: "taglia grande usata come stima prudenziale del peso",
   houseTrained: "non è abituato alla vita in casa",
   sterilized: "non è sterilizzato",
   goodWithChildren: "non risulta adatto ai bambini",
@@ -134,7 +140,8 @@ const ageOrder = ["puppy", "young", "adult", "senior"] as const;
 function ageInMonths(birthDate: Date | null) {
   if (!birthDate) return null;
   const now = new Date();
-  return Math.max(0, (now.getFullYear() - birthDate.getFullYear()) * 12 + now.getMonth() - birthDate.getMonth());
+  const calendarMonths = (now.getFullYear() - birthDate.getFullYear()) * 12 + now.getMonth() - birthDate.getMonth();
+  return Math.max(0, calendarMonths - (now.getDate() < birthDate.getDate() ? 1 : 0));
 }
 
 function ageBand(months: number | null) {
@@ -167,11 +174,19 @@ function scoreAnimal(profile: MatchProfile, animal: MatchingAnimal) {
   const animalAge = ageInMonths(animal.birthDate);
   const animalAgeBand = ageBand(animalAge);
   const youngestChild = profile.childrenAges.length ? Math.min(...profile.childrenAges) : null;
-  const latitude = animal.shelter.latitude ?? animal.shelter.comune.latitude;
-  const longitude = animal.shelter.longitude ?? animal.shelter.comune.longitude;
+  const hasShelterCoordinates = animal.shelter.latitude !== null && animal.shelter.longitude !== null;
+  const latitude = hasShelterCoordinates ? animal.shelter.latitude : animal.shelter.comune.latitude;
+  const longitude = hasShelterCoordinates ? animal.shelter.longitude : animal.shelter.comune.longitude;
   const distance = latitude !== null && longitude !== null
     ? distanceKm(profile.searchLocation, { latitude: Number(latitude), longitude: Number(longitude) })
     : null;
+
+  if (childCompatibility === "unknown") considerations.add("Compatibilità con i bambini non ancora valutata.");
+  if (dogCompatibility === "unknown") considerations.add("Convivenza con cani non ancora valutata.");
+  if (catCompatibility === "unknown") considerations.add("Convivenza con gatti non ancora valutata.");
+  if (houseTraining === "unknown") considerations.add("Abitudine alla vita in casa da verificare con il rifugio.");
+  if (gardenNeed === "unknown") considerations.add("Il rifugio non ha ancora valutato se serve uno spazio esterno.");
+  if (firstTimeSuitability === "unknown") considerations.add("Idoneità per chi è alla prima esperienza non valutata.");
 
   if (profile.preferredSpecies !== "either" && profile.preferredSpecies !== animal.species) exclusions.push("species");
   if (youngestChild !== null && youngestChild < 6 && childCompatibility === "no") exclusions.push("children");
@@ -180,8 +195,9 @@ function scoreAnimal(profile: MatchProfile, animal: MatchingAnimal) {
 
   const deals = new Set(profile.dealbreakers);
   if (deals.has("no_special_needs") && animal.hasSpecialNeeds) exclusions.push("noSpecialNeeds");
-  if (deals.has("no_large_dogs") && animal.species === "dog" && (animal.size === "large" || animal.size === "xlarge")) {
-    exclusions.push("largeDog");
+  if (deals.has("no_dogs_over_25kg") && animal.species === "dog" &&
+    (animal.weightKg !== null ? Number(animal.weightKg) > 25 : animal.size === "large" || animal.size === "xlarge")) {
+    exclusions.push(animal.weightKg === null ? "largeDogEstimate" : "largeDogWeight");
   }
   if (deals.has("must_be_house_trained") && houseTraining === "no") exclusions.push("houseTrained");
   if (deals.has("must_be_good_with_children") && (childCompatibility === "no" || (childCompatibility === "older_only" && youngestChild !== null && youngestChild < 12))) exclusions.push("goodWithChildren");
@@ -190,10 +206,6 @@ function scoreAnimal(profile: MatchProfile, animal: MatchingAnimal) {
   if (deals.has("must_be_sterilized") && animal.isSterilized === false) exclusions.push("sterilized");
   if (deals.has("no_puppies") && animalAgeBand === "puppy") exclusions.push("puppy");
 
-  if (deals.has("must_be_house_trained") && houseTraining === "unknown") considerations.add("Abitudine alla vita in casa da verificare con il rifugio.");
-  if (deals.has("must_be_good_with_children") && childCompatibility === "unknown") considerations.add("Compatibilità con i bambini da verificare con il rifugio.");
-  if (deals.has("must_be_good_with_dogs") && dogCompatibility === "unknown") considerations.add("Compatibilità con i cani da verificare con il rifugio.");
-  if (deals.has("must_be_good_with_cats") && catCompatibility === "unknown") considerations.add("Compatibilità con i gatti da verificare con il rifugio.");
   if (deals.has("must_be_sterilized") && animal.isSterilized == null) considerations.add("Stato di sterilizzazione da verificare con il rifugio.");
   if (deals.has("no_puppies") && animalAgeBand === null) considerations.add("Età da verificare: il rifugio non l'ha indicata.");
 
@@ -216,7 +228,7 @@ function scoreAnimal(profile: MatchProfile, animal: MatchingAnimal) {
   if (behavior?.exerciseMinPerDay != null) {
     const offered = [20, 40, 60, 90, 120][profile.activityLevel - 1];
     if (offered < behavior.exerciseMinPerDay) {
-      energyScore -= Math.min(25, (behavior.exerciseMinPerDay - offered) / 4);
+      energyScore -= Math.min(25, (behavior.exerciseMinPerDay - offered) / 2);
     }
   } else {
     considerations.add("Tempo di attività quotidiana non indicato dal rifugio.");
@@ -250,10 +262,10 @@ function scoreAnimal(profile: MatchProfile, animal: MatchingAnimal) {
   addDimension("Tempo da solo", timeScore, weights.timeAlone);
 
   let household = 100;
+  let householdUnknown = false;
   if (youngestChild !== null) {
     if (childCompatibility === "unknown") {
-      household -= 25;
-      considerations.add("Compatibilità con bambini non ancora valutata.");
+      householdUnknown = true;
     } else if (childCompatibility === "older_only") {
       household -= youngestChild < 12 ? 45 : 5;
       considerations.add("Il rifugio consiglia la convivenza con bambini più grandi.");
@@ -261,22 +273,21 @@ function scoreAnimal(profile: MatchProfile, animal: MatchingAnimal) {
   }
   if (profile.existingDogs > 0) {
     if (dogCompatibility === "unknown") {
-      household -= 25;
-      considerations.add("Convivenza con cani non ancora valutata.");
+      householdUnknown = true;
     } else if (dogCompatibility === "selective") household -= 20;
   }
   if (profile.existingCats > 0) {
     if (catCompatibility === "unknown") {
-      household -= 25;
-      considerations.add("Convivenza con gatti non ancora valutata.");
+      householdUnknown = true;
     } else if (catCompatibility === "selective") household -= 20;
   }
   if (youngestChild !== null && youngestChild < 6 && (animal.size === "large" || animal.size === "xlarge") && (energy ?? 3) >= 4) household -= 15;
+  if (householdUnknown) household = 65 + (household - 100);
   addDimension("Nucleo familiare", household, weights.household);
 
   const demand = behavior?.trainingNeeds;
   let experience = 65;
-  if (demand == null) {
+  if (demand == null || (profile.experienceLevel === "first_time" && firstTimeSuitability === "unknown")) {
     considerations.add("Impegno educativo non ancora valutato.");
   } else {
     const userLevel = { first_time: 1, some: 2, experienced: 3 }[profile.experienceLevel];
@@ -284,7 +295,6 @@ function scoreAnimal(profile: MatchProfile, animal: MatchingAnimal) {
     experience = userLevel >= demandLevel ? 100 : userLevel === demandLevel - 1 ? 60 : 25;
     if (firstTimeSuitability === "yes" && profile.experienceLevel === "first_time") experience = Math.min(100, experience + 20);
     if (firstTimeSuitability === "no" && profile.experienceLevel === "first_time") experience = Math.min(experience, 30);
-    if (firstTimeSuitability === "unknown") considerations.add("Idoneità per chi è alla prima esperienza non valutata.");
   }
   addDimension("Esperienza", experience, weights.experience);
 
@@ -311,13 +321,15 @@ function scoreAnimal(profile: MatchProfile, animal: MatchingAnimal) {
         : profile.preferredSizes.some((preferred) => Math.abs(sizeOrder.indexOf(animal.size!) - sizeOrder.indexOf(preferred)) === 1)
           ? 60
           : 20;
-  const agePreference = profile.preferredAgeBands.length === 0 || animalAgeBand === null
+  const agePreference = profile.preferredAgeBands.length === 0
     ? 100
-    : profile.preferredAgeBands.includes(animalAgeBand)
-      ? 100
-      : profile.preferredAgeBands.some((preferred) => Math.abs(ageOrder.indexOf(animalAgeBand as (typeof ageOrder)[number]) - ageOrder.indexOf(preferred)) === 1)
-        ? 65
-        : 30;
+    : animalAgeBand === null
+      ? 65
+      : profile.preferredAgeBands.includes(animalAgeBand)
+        ? 100
+        : profile.preferredAgeBands.some((preferred) => Math.abs(ageOrder.indexOf(animalAgeBand as (typeof ageOrder)[number]) - ageOrder.indexOf(preferred)) === 1)
+          ? 65
+          : 30;
   const sexPreference = animal.sex === "unknown"
     ? 65
     : profile.preferredSex === "any"

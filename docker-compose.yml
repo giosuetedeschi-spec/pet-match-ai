@@ -114,11 +114,17 @@ services:
     restart: unless-stopped
     environment:
       DATABASE_URL: mysql://petmatch:${MYSQL_PASSWORD:-petmatch-local}@mysql:3306/petmatch_web
+      SMTP_HOST: mail
+      SMTP_PORT: "1025"
+      SMTP_FROM: "${SMTP_FROM:-PetMatch AI <noreply@petmatch.local>}"
+      APP_URL: ${APP_URL:-http://localhost:3000}
     depends_on:
       mysql:
         condition: service_healthy
       web-migrate:
         condition: service_completed_successfully
+      mail:
+        condition: service_started
     ports:
       - "127.0.0.1:${WEB_PORT:-3000}:3000"
     healthcheck:
@@ -127,6 +133,26 @@ services:
       timeout: 10s
       retries: 12
       start_period: 60s
+
+  web-worker:
+    build:
+      context: ./apps/web
+      dockerfile: Containerfile
+    restart: unless-stopped
+    command: ["bun", "run", "worker:matching"]
+    environment:
+      DATABASE_URL: mysql://petmatch:${MYSQL_PASSWORD:-petmatch-local}@mysql:3306/petmatch_web
+      SMTP_HOST: mail
+      SMTP_PORT: "1025"
+      SMTP_FROM: "${SMTP_FROM:-PetMatch AI <noreply@petmatch.local>}"
+      APP_URL: ${APP_URL:-http://localhost:3000}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      web-migrate:
+        condition: service_completed_successfully
+      mail:
+        condition: service_started
 
 volumes:
   mysql_data:

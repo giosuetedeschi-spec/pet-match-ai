@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { MatchResult, MatchingResponse } from "@/lib/matching";
+import NotificationSettings from "./NotificationSettings";
 
 type Response = Omit<MatchingResponse, "allResults"> & { radiusKm: number };
 
@@ -43,6 +44,7 @@ export default function MatchResults() {
 
   return <>
     <header className="catalog-heading"><p className="eyebrow">Il tuo profilo di compatibilità</p><h1>Questi animali potrebbero essere adatti a te.</h1><p className="intro">Il punteggio riassume quanto le informazioni disponibili corrispondono alle tue risposte. Leggi sempre i dettagli e confrontati con il rifugio.</p><div className="actions"><a className="button secondary" href="/it/abbinamento">Modifica il profilo</a><a className="button secondary" href="/it/preferiti">I tuoi preferiti</a></div></header>
+    <NotificationSettings />
     {error && <p role="alert" className="match-error">{error}</p>}
     <p className="catalog-count" aria-live="polite">{data.results.length} abbinamenti · {data.eligibleCount} compatibili nel raggio di {data.radiusKm} km · {data.totalAvailable} schede valutate</p>
     {data.outsideRadiusCount > 0 && data.radiusKm < 200 && <section className="match-exclusions"><h2>Vuoi allargare la ricerca?</h2><p>{data.outsideRadiusCount} animali compatibili si trovano oltre il raggio attuale.</p><button className="button" disabled={busy} onClick={() => void load(Math.min(200, data.radiusKm * 2))}>Estendi a {Math.min(200, data.radiusKm * 2)} km</button></section>}
@@ -53,7 +55,7 @@ export default function MatchResults() {
       {match.considerations.length > 0 && <details><summary>Aspetti da approfondire</summary><ul>{match.considerations.map((item) => <li key={item}>{item}</li>)}</ul></details>}
       <details><summary>Come si compone il punteggio</summary><ul>{match.dimensions.map((dimension) => <li key={dimension.name}>{dimension.name}: {dimension.score}/100 ({Math.round(dimension.weight * 100)}%)</li>)}</ul></details>
       <button className="button secondary" type="button" onClick={() => void toggleFavorite(match)}>{match.isFavorite ? "Rimuovi dai preferiti" : "Salva tra i preferiti"}</button>
-      <a className="match-catalog-link" href={`/it/animali?q=${encodeURIComponent(match.animal.name)}`}>Cerca nel catalogo</a>
+      <a className="match-catalog-link" href={`/it/animali/${match.animal.slug}`}>Consulta la scheda</a>
     </article>)}</section> : <section className="catalog-empty"><h2>Nessun abbinamento sopra la soglia</h2><p>Puoi ampliare il raggio oppure modificare le preferenze. Il punteggio non sostituisce il colloquio con il rifugio.</p><a className="button" href="/it/abbinamento">Modifica il profilo</a></section>}
     {data.belowThresholdCount > 0 && <p className="match-disclaimer">Altri {data.belowThresholdCount} animali nel raggio hanno un punteggio inferiore alla soglia mostrata.</p>}
     <p className="match-disclaimer">I dati mancanti sono trattati con prudenza e indicati come aspetti da verificare. Nessun punteggio garantisce l’esito dell’adozione.</p>

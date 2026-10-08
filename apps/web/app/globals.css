@@ -104,9 +104,31 @@ h1 { max-width: 700px; margin: 1rem 0; font-size: clamp(2.5rem, 8vw, 5rem); line
 .match-card .match-catalog-link { margin-left: .9rem; }
 .match-results .button:disabled { opacity: .6; cursor: wait; }
 .catalog-filters select[name="sort"] { min-width: 200px; }
+.account-form { display: grid; gap: 1rem; max-width: 520px; padding: 1.5rem; border: 1px solid #e9e4da; border-radius: 1rem; background: white; }
+.account-form label { display: grid; gap: .4rem; color: var(--muted); font-weight: 700; }
+.account-form input { min-height: 44px; padding: .65rem .8rem; border: 1px solid #c9c3b9; border-radius: .55rem; color: var(--ink); font: inherit; }
+.account-form small { color: var(--muted); font-weight: 400; }
+.account-form button { justify-self: start; border: 0; cursor: pointer; font: inherit; }
+.account-form :focus-visible { outline: 3px solid #1f6feb; outline-offset: 3px; }
+.match-notification-setting { margin: 1.5rem 0; padding: 1.25rem; border: 1px solid #e9e4da; border-radius: 1rem; background: white; }
+.match-notification-setting h2 { margin-top: 0; }
+.animal-profile-layout { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(280px, 1fr); gap: 1.5rem; align-items: start; }
+.animal-profile-card { padding: 1.5rem; border: 1px solid #e9e4da; border-radius: 1rem; background: white; line-height: 1.6; }
+.animal-story-full { white-space: pre-wrap; }
+.animal-profile-card .button { border: 0; cursor: pointer; font: inherit; }
+.animal-card h2 a { text-decoration: none; }
+.animal-card h2 a:hover, .animal-card h2 a:focus-visible { text-decoration: underline; }
+.notification-list { display: grid; gap: 1rem; }
+.notification-card { padding: 1.25rem; border: 1px solid #e9e4da; border-radius: 1rem; background: white; }
+.notification-card.read { background: #f5f2ec; }
+.notification-card h2 { margin: .35rem 0; }
+.notification-card li { margin: .6rem 0; }
+.notification-card button { border: 0; cursor: pointer; font: inherit; }
 
 @media (max-width: 600px) {
   .catalog-page { padding: 1.25rem; }
   .catalog-heading { margin-top: 3rem; }
+  .animal-profile-layout { grid-template-columns: 1fr; }
+  .match-wizard-controls { align-items: stretch; }
   .catalog-filters .button { width: 100%; }
 }

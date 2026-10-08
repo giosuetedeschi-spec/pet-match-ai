@@ -2,9 +2,9 @@
 
 Updated: 2026-10-08
 Base: `main` at `10ad3ff` (merge PR #23)
-Branch: `chore/clean-modules-types-docs`, matching feature committed and pushed to `origin`
-Working tree: matching implementation committed; checkpoint update in progress
-Merge status: push to protected `main` was rejected by GitHub (PR required, 3 status checks expected). PR creation is currently unavailable because the GitHub CLI token is invalid and the configured local proxy refuses API connections.
+Branch: `chore/clean-modules-types-docs`, matching implementation and completion work in progress
+Working tree: matching digest, account carry-over, notification and animal-detail work is in progress
+Merge status: direct push to protected `main` was rejected by GitHub (PR required, 3 status checks expected). The local GitHub CLI reports its keyring token as invalid; GitHub CLI API calls also fail through the configured local proxy.
 
 ## Completed unit
 
@@ -25,10 +25,12 @@ Commit `26d8cc9` also updated the project documentation, cleaned existing module
 - The FastAPI ML service is scaffolded, but `/health` reports `model: not-configured`.
 - Product requirements and intended architecture are in `docs/`; implementation status is in `ROADMAP-OPERATIVA.md`.
 
+## Current matching checkpoint
+
+The Next.js matching scope now includes the resumable quiz, saved anonymous/account profiles, score breakdowns, favorites, browse integration, animal details, cache invalidation, optional Claude explanations with deterministic fallback, verified account carry-over, notifications, unsubscribe, and a scheduled digest worker.
+
+Verification on 2026-10-08: Prisma schema validation, TypeScript typecheck, production build, Compose config, and automated scoring/digest tests passed. The test suite covers both documented examples (91 and 46), weight total, exclusions, unknown data, the 48-hour policy, and 10,000 animals (<300 ms). A three-person usability run and live MySQL/SMTP smoke test remain outstanding because Docker/MySQL and `DATABASE_URL` are unavailable here.
+
 ## Next planned unit
 
-Matching adopter: 14-step resumable quiz, anonymous profile, explained ranking, exclusions, age and distance preferences, radius expansion, favorites, and catalog ordering by compatibility.
-
-Verification: `bun run typecheck` and `bun run build` passed. Production pages `/`, `/it/abbinamento`, `/it/abbinamento/risultati`, and `/it/preferiti` returned 200. Database-backed catalog/API routes could not be live-verified because Docker/MySQL is stopped and `DATABASE_URL` is unset. Automatic new-match notifications remain pending verified adopter accounts/email and a scheduled worker.
-
-Next planned unit: implement the shelter flow to create and publish animals in Next.js with validation; keep photo integration separate until its storage and delivery path is decided.
+Next.js shelter flow to create and publish animals with validation. Photo integration remains a separate storage/delivery decision.

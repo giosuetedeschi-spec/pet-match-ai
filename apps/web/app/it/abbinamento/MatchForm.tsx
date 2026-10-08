@@ -163,7 +163,7 @@ export default function MatchForm() {
           <p>Gli animali che non rispettano una condizione selezionata non compariranno tra i risultati.</p>
           {[
             ["no_special_needs", "Non posso accogliere un animale con esigenze speciali"],
-            ["no_large_dogs", "Cerco un cane non grande o molto grande"],
+            ["no_dogs_over_25kg", "Cerco un cane sotto i 25 kg"],
             ["house_trained", "È importante che sia già abituato alla vita in casa"],
             ["children", "Deve risultare compatibile con i bambini"],
             ["dogs", "Deve risultare compatibile con i cani"],

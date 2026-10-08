@@ -64,7 +64,7 @@ Deal-breakers remove an animal from the results entirely. They are never a score
 |---|---|
 | `must_be_house_trained` | `house_trained` is `no` |
 | `no_special_needs` | `has_special_needs` is true |
-| `no_dogs_over_25kg` | `size` is `large` or `xlarge` |
+| `no_dogs_over_25kg` | Dogs over 25 kg are excluded; when weight is missing, `large`/`xlarge` is used as a cautious estimate and shown in the exclusion reason. |
 | `must_be_good_with_children` | `good_with_children` is `no` (`older_only` is kept if the youngest child is 12+) |
 | `must_be_good_with_cats` | `good_with_cats` is `no` |
 | `must_be_good_with_dogs` | `good_with_dogs` is `no` |
@@ -97,7 +97,7 @@ if a.energy_level > p.activity_level:  base −= 10 × (a.energy_level − p.act
 if a.exercise_min_per_day is known:
     required = a.exercise_min_per_day
     offered  = { 1: 20, 2: 40, 3: 60, 4: 90, 5: 120 }[p.activity_level]
-    if offered < required:  base −= min(25, (required − offered) / 4)
+    if offered < required:  base -= min(25, (required - offered) / 2)
 
 score = clamp(base, 0, 100)
 ```

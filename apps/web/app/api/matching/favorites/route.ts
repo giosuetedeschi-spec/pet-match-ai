@@ -1,11 +1,10 @@
 import { AnimalStatus, ShelterStatus } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
+import { findAdopterProfile } from "@/lib/adopter-profile";
 import { prisma } from "@/lib/prisma";
-
-const cookieName = "petmatch-adopter";
 async function profileFor(request: NextRequest) {
-  const token = request.cookies.get(cookieName)?.value;
-  return token ? prisma.adopterProfile.findUnique({ where: { anonymousToken: token }, select: { id: true } }) : null;
+  const profile = await findAdopterProfile(request);
+  return profile ? { id: profile.id } : null;
 }
 
 export async function GET(request: NextRequest) {

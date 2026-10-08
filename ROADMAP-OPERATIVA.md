@@ -14,13 +14,14 @@ Aggiornata: 2026-10-08. `docs/` descrive il prodotto e l'architettura di riferim
 - [x] Schema Prisma e database `petmatch_web` separato su MySQL condiviso.
 - [x] Migrazione eseguita all'avvio Compose e health check collegato al database.
 - [x] Catalogo pubblico italiano `/it/animali`: animali pubblicati di rifugi attivi, ricerca testuale, filtri per specie e taglia, paginazione.
-- [x] Matching adottanti: questionario riprendibile a 14 passaggi, profilo anonimo salvabile, punteggio deterministico spiegato, fasce d'età, distanza, condizioni di esclusione e preferiti.
-- [x] Ordinamento del catalogo per compatibilità e ampliamento del raggio dai risultati.
-- [ ] Aggiungere notifiche di nuovi abbinamenti dopo aver introdotto account/email verificati e un processo schedulato.
+- [x] Matching adottanti completo per la release Next.js: questionario anonimo riprendibile, profilo modificabile/cancellabile, account con verifica email e trasferimento del profilo, preferiti, risultati spiegati, filtri di sicurezza, raggio e catalogo ordinabile per compatibilità.
+- [x] Cache e invalidazione degli abbinamenti, spiegazione Claude opzionale con fallback deterministico, notifiche in-app/email e disiscrizione senza login.
+- [x] Worker schedulato per ricalcolo e digest, con limite di una notifica email ogni 48 ore per profilo.
+- [ ] Completare il test d'usabilità con tre persone e una verifica live su MySQL/SMTP.
 - [ ] Creazione e pubblicazione di animali da parte dei rifugi, con validazione.
 - [ ] Definire la consegna delle foto per Next.js. Nell'MVP Django le foto sono sul volume media; per ora non è previsto object storage.
 
-Il matching Next.js usa un profilo anonimo legato a un cookie HTTP-only conservato per sei mesi. I dati mancanti sono trattati in modo prudente e mostrati come verifiche da fare con il rifugio. Le notifiche automatiche restano in sospeso: la release non dispone ancora di account/email verificati né di un processo schedulato.
+Il matching Next.js supporta profili anonimi e account verificati. I dati mancanti sono trattati in modo prudente e mostrati come verifiche da fare con il rifugio. Build, typecheck e test automatici del matching sono passati; account, database e invio SMTP richiedono ancora una verifica live con i servizi attivi.
 
 ## ML
 

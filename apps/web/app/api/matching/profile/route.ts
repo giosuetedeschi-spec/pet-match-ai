@@ -1,9 +1,9 @@
-import { randomBytes } from "node:crypto";
 import { AnimalSize, HousingType, PreferredSex, PreferredSpecies, Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
+import { adopterCookieName, adopterProfileSelect, findAdopterProfile, getOrCreateAdopterProfile } from "@/lib/adopter-profile";
+import { getRequestSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-const cookieName = "petmatch-adopter";
 const experienceLevels = ["first_time", "some", "experienced"];
 const ageBands = ["puppy", "young", "adult", "senior"];
 const dealbreakers = [
@@ -17,44 +17,8 @@ const dealbreakers = [
   "must_be_sterilized",
 ];
 
-const profileSelect = {
-  id: true,
-  housingType: true,
-  housingSizeSqm: true,
-  hasOutdoorSpace: true,
-  outdoorSpaceSqm: true,
-  householdAdults: true,
-  childrenAges: true,
-  existingDogs: true,
-  existingCats: true,
-  hoursAlonePerDay: true,
-  activityLevel: true,
-  experienceLevel: true,
-  groomingCapacity: true,
-  trainingCapacity: true,
-  monthlyBudgetEur: true,
-  preferredSpecies: true,
-  preferredSizes: true,
-  preferredAgeBands: true,
-  preferredSex: true,
-  dealbreakers: true,
-  searchComuneId: true,
-  searchComune: { select: { id: true, name: true, provinceCode: true, region: true } },
-  searchRadiusKm: true,
-  currentStep: true,
-  completedAt: true,
-} satisfies Prisma.AdopterProfileSelect;
-
-function newId() {
-  return randomBytes(13).toString("hex");
-}
-
-function newToken() {
-  return randomBytes(16).toString("hex");
-}
-
-function attachTokenCookie(response: NextResponse, token: string) {
-  response.cookies.set(cookieName, token, {
+function attachTokenCookie(response: NextResponse, token: string | null) {
+  if (token) response.cookies.set(adopterCookieName, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
@@ -63,21 +27,6 @@ function attachTokenCookie(response: NextResponse, token: string) {
   });
   response.headers.set("Cache-Control", "private, no-store");
   return response;
-}
-
-async function getOrCreateProfile(request: NextRequest) {
-  const token = request.cookies.get(cookieName)?.value ?? newToken();
-  let profile = await prisma.adopterProfile.findUnique({
-    where: { anonymousToken: token },
-    select: profileSelect,
-  });
-  if (!profile) {
-    profile = await prisma.adopterProfile.create({
-      data: { id: newId(), anonymousToken: token },
-      select: profileSelect,
-    });
-  }
-  return { token, profile };
 }
 
 function record(value: unknown): value is Record<string, unknown> {
@@ -100,8 +49,8 @@ function stringArray(value: unknown, allowed: string[], max: number) {
 
 export async function GET(request: NextRequest) {
   try {
-    const { token, profile } = await getOrCreateProfile(request);
-    return attachTokenCookie(NextResponse.json(profile), token);
+    const { profile, anonymousToken } = await getOrCreateAdopterProfile(request);
+    return attachTokenCookie(NextResponse.json(profile), anonymousToken);
   } catch {
     return NextResponse.json({ error: "Profilo non disponibile." }, { status: 503 });
   }
@@ -149,7 +98,6 @@ export async function PUT(request: NextRequest) {
     if (!comune) return NextResponse.json({ error: "Seleziona un comune valido." }, { status: 400 });
   }
 
-  const token = request.cookies.get(cookieName)?.value ?? newToken();
   const currentStep = body.currentStep as number;
   const completedAt = currentStep === 14 ? new Date() : null;
   const profileData = {
@@ -179,24 +127,25 @@ export async function PUT(request: NextRequest) {
   };
 
   try {
-    const saved = await prisma.adopterProfile.upsert({
-      where: { anonymousToken: token },
-      create: { id: newId(), anonymousToken: token, ...profileData },
-      update: profileData,
-      select: profileSelect,
+    const { profile, anonymousToken } = await getOrCreateAdopterProfile(request);
+    const saved = await prisma.adopterProfile.update({
+      where: { id: profile.id },
+      data: profileData,
+      select: adopterProfileSelect,
     });
-    await prisma.matchResult.deleteMany({ where: { profileId: saved.id } });
-    return attachTokenCookie(NextResponse.json(saved), token);
+    await prisma.matchResult.updateMany({ where: { profileId: saved.id }, data: { engineVersion: "invalidated" } });
+    return attachTokenCookie(NextResponse.json(saved), anonymousToken);
   } catch {
     return NextResponse.json({ error: "Non riesco a salvare le risposte in questo momento." }, { status: 503 });
   }
 }
 
 export async function DELETE(request: NextRequest) {
-  const token = request.cookies.get(cookieName)?.value;
-  if (token) await prisma.adopterProfile.deleteMany({ where: { anonymousToken: token } });
+  const profile = await findAdopterProfile(request);
+  if (profile) await prisma.adopterProfile.delete({ where: { id: profile.id } });
   const response = NextResponse.json({ status: "deleted" });
-  response.cookies.set(cookieName, "", { path: "/", maxAge: 0 });
+  const session = await getRequestSession(request);
+  if (!session) response.cookies.set(adopterCookieName, "", { path: "/", maxAge: 0 });
   response.headers.set("Cache-Control", "private, no-store");
   return response;
 }

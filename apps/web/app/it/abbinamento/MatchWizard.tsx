@@ -199,6 +199,7 @@ export default function MatchWizard() {
         <p>Le risposte sono salvate in modo privato in questo browser. Puoi rivederle, vedere i risultati o cancellarle.</p>
         <div className="actions">
           <a className="button" href="/it/abbinamento/risultati">Vedi gli abbinamenti</a>
+          <a className="button secondary" href="/it/account/crea">Collega il profilo a un account</a>
           <button className="button secondary" type="button" onClick={() => { setComplete(false); setStep(0); }}>Modifica le risposte</button>
           <button className="button secondary" type="button" disabled={busy} onClick={deleteProfile}>Cancella profilo e preferiti</button>
         </div>
