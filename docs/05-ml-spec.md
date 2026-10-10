@@ -2,6 +2,8 @@
 
 Trained offline on the Austin Animal Center dataset, serving shelter staff only.
 
+**Current implementation status (2026-10-09):** `trained-model/cox_survival_model.joblib` is not served. Its stored feature list includes `duration_days` and `is_adopted`, which leak the target into inference and are unavailable for a live animal. FastAPI therefore returns a deterministic mock for integration work. The mock is not trained, calibrated, or suitable for operational decisions; the UI and API identify it as such. Serving a real model requires rebuilding features using only fields available at inference and completing the evaluation criteria in §10.
+
 **The primary model is a competing-risks survival model.** An animal enters care and exits by one of several routes — adoption, transfer, return to owner, death — or is still there when we look. That is a time-to-event problem, and modelling it as one answers both product questions from a single fitted curve instead of from two models that can disagree. The reasoning, and the alternatives considered, are in [12 — Modelling Approaches](./12-modelling-approaches.md) §3.
 
 | Model | Question | Type | Role |

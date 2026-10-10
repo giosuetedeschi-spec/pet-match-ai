@@ -124,6 +124,51 @@ h1 { max-width: 700px; margin: 1rem 0; font-size: clamp(2.5rem, 8vw, 5rem); line
 .notification-card h2 { margin: .35rem 0; }
 .notification-card li { margin: .6rem 0; }
 .notification-card button { border: 0; cursor: pointer; font: inherit; }
+.animal-card-media { display: block; width: 100%; height: 210px; object-fit: cover; background: #f3eee6; }
+.animal-photo-gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 1rem; margin: 0 0 2rem; }
+.animal-photo-gallery img { display: block; width: 100%; max-height: 520px; object-fit: cover; border-radius: 1rem; background: #f3eee6; }
+.shelter-page .catalog-heading .button { display: inline-block; margin-top: .75rem; }
+.animal-editor { display: grid; gap: 1.25rem; max-width: 980px; }
+.animal-editor > label, .animal-editor-grid > label, .animal-editor fieldset > label { display: grid; gap: .4rem; color: var(--muted); font-size: .95rem; font-weight: 700; }
+.animal-editor input:not([type="checkbox"]):not([type="file"]), .animal-editor select, .animal-editor textarea { width: 100%; min-height: 44px; padding: .65rem .8rem; border: 1px solid #c9c3b9; border-radius: .55rem; background: white; color: var(--ink); font: inherit; }
+.animal-editor textarea { resize: vertical; }
+.animal-editor fieldset { margin: 0; padding: 1.25rem; border: 1px solid #e9e4da; border-radius: 1rem; background: white; }
+.animal-editor legend { padding: 0 .4rem; color: var(--green); font-size: 1.2rem; font-weight: 700; }
+.animal-editor-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 1rem; }
+.animal-editor-wide { grid-column: 1 / -1; }
+.animal-editor .animal-editor-check { display: flex; align-items: center; gap: .65rem; }
+.animal-editor-check input { width: 1.1rem; height: 1.1rem; accent-color: var(--green); }
+.animal-editor-note { color: var(--muted); line-height: 1.5; }
+.animal-editor-actions { display: flex; flex-wrap: wrap; gap: .75rem; }
+.animal-editor-actions button { border: 0; cursor: pointer; font: inherit; }
+.animal-editor-actions button:disabled { cursor: wait; opacity: .6; }
+.animal-editor :focus-visible, .animal-editor-actions :focus-visible { outline: 3px solid #1f6feb; outline-offset: 3px; }
+.animal-photo-entry { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 1rem; margin-top: 1rem; padding: 1rem; border: 1px solid #e9e4da; border-radius: .75rem; }
+.animal-photo-entry p { grid-column: 1 / -1; margin: 0; color: var(--ink); font-weight: 700; }
+.animal-photo-list { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1rem; }
+.animal-photo-list figure { width: 150px; margin: 0; }
+.animal-photo-list img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: .65rem; }
+.animal-photo-list figcaption { color: var(--muted); font-size: .85rem; }
+.animal-photo-manager { margin-top: 1rem; }
+.animal-photo-manager > p { color: var(--muted); }
+.animal-photo-entry > img { width: 100%; max-width: 240px; aspect-ratio: 1; object-fit: cover; border-radius: .65rem; background: #f3eee6; }
+.animal-photo-fields { display: grid; gap: .8rem; }
+.animal-photo-fields label { display: grid; gap: .35rem; color: var(--muted); font-size: .9rem; font-weight: 700; }
+.animal-photo-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+.animal-photo-actions button { min-height: 40px; border: 1px solid #c9c3b9; cursor: pointer; font: inherit; }
+.animal-photo-actions button:disabled { cursor: default; opacity: .6; }
+.animal-photo-manager :focus-visible { outline: 3px solid #1f6feb; outline-offset: 3px; }
+.locale-toggle { position: fixed; z-index: 20; top: .75rem; right: .75rem; min-height: 42px; padding: .55rem .9rem; border: 1px solid #c9c3b9; border-radius: 999px; background: #fff; color: var(--ink); font: inherit; font-weight: 700; cursor: pointer; box-shadow: 0 4px 16px #18251e1a; }
+.shelter-registration { display: grid; gap: .9rem; max-width: 720px; }
+.shelter-registration h2 { margin: 1rem 0 0; }
+.shelter-registration label { display: grid; gap: .35rem; color: var(--muted); font-weight: 700; }
+.shelter-registration input, .shelter-registration select { min-height: 44px; padding: .65rem .8rem; border: 1px solid #c9c3b9; border-radius: .55rem; font: inherit; }
+.shelter-registration button { justify-self: start; border: 0; cursor: pointer; font: inherit; }
+.shelter-registration button:disabled { opacity: .55; cursor: wait; }
+.shelter-triage-list { display: grid; gap: 1rem; }
+.shelter-triage-card { padding: 1.2rem; border: 1px solid #e9e4da; border-radius: 1rem; background: white; }
+.shelter-triage-card h2 { margin: .3rem 0; }
+.shelter-triage-card ul { padding-left: 1.3rem; }
 
 @media (max-width: 600px) {
   .catalog-page { padding: 1.25rem; }

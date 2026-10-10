@@ -25,6 +25,8 @@ services:
       context: ./services/ml
       dockerfile: Containerfile
     restart: unless-stopped
+    environment:
+      ML_SERVICE_TOKEN: ${ML_SERVICE_TOKEN:-local-development-token}
     ports:
       - "127.0.0.1:${ML_PORT:-8001}:8001"
     healthcheck:
@@ -32,6 +34,19 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  translate:
+    image: libretranslate/libretranslate:v1.8.4
+    restart: unless-stopped
+    command: ["--load-only", "en,it", "--update-models", "--disable-web-ui"]
+    environment:
+      LT_DISABLE_FILES_TRANSLATION: "true"
+    healthcheck:
+      test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://127.0.0.1:5000/languages')"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 120s
 
   mail:
     image: axllent/mailpit:v1.31.3
@@ -118,6 +133,15 @@ services:
       SMTP_PORT: "1025"
       SMTP_FROM: "${SMTP_FROM:-PetMatch AI <noreply@petmatch.local>}"
       APP_URL: ${APP_URL:-http://localhost:3000}
+      MEDIA_LOCAL_PATH: /var/lib/petmatch/media
+      MEDIA_S3_BUCKET: ${MEDIA_S3_BUCKET:-}
+      MEDIA_S3_REGION: ${MEDIA_S3_REGION:-eu-south-1}
+      MEDIA_S3_ENDPOINT: ${MEDIA_S3_ENDPOINT:-}
+      MEDIA_S3_ACCESS_KEY_ID: ${MEDIA_S3_ACCESS_KEY_ID:-}
+      MEDIA_S3_SECRET_ACCESS_KEY: ${MEDIA_S3_SECRET_ACCESS_KEY:-}
+      ML_SERVICE_URL: http://ml:8001
+      ML_SERVICE_TOKEN: ${ML_SERVICE_TOKEN:-local-development-token}
+      TRANSLATION_SERVICE_URL: http://translate:5000
     depends_on:
       mysql:
         condition: service_healthy
@@ -127,6 +151,8 @@ services:
         condition: service_started
     ports:
       - "127.0.0.1:${WEB_PORT:-3000}:3000"
+    volumes:
+      - web_media:/var/lib/petmatch/media
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(async r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
       interval: 10s
@@ -157,3 +183,4 @@ services:
 volumes:
   mysql_data:
   django_media:
+  web_media:

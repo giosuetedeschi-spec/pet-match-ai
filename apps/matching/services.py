@@ -1,86 +1,11 @@
-import os
-import logging
-from typing import Dict, Any, Tuple, Optional
-
-import joblib
+from typing import Dict, Any, Tuple
 import numpy as np
 import pandas as pd
-from django.conf import settings
 from django.utils import timezone
 
 from apps.users.models import User, AdopterProfile
 from apps.core.models import Animal, AnimalEnergy, Species
 from apps.matching.models import MatchResult
-
-logger = logging.getLogger(__name__)
-
-
-class CoxSurvivalModelLoader:
-    """
-    Singleton class per il caricamento lazy e thread-safe del modello Cox Survival.
-    Evita di ricaricare il file .joblib ad ogni singola richiesta di inferenza.
-    """
-    _instance: Optional['CoxSurvivalModelLoader'] = None
-    _model: Any = None
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(CoxSurvivalModelLoader, cls).__new__(cls)
-            cls._instance._load_model()
-        return cls._instance
-
-    def _load_model(self):
-        # Percorso predefinito all'interno del progetto
-        model_path = getattr(
-            settings,
-            'COX_MODEL_PATH',
-            os.path.join(settings.BASE_DIR, 'trained-model', 'cox_survival_model.joblib')
-        )
-
-        if os.path.exists(model_path):
-            try:
-                self._model = joblib.load(model_path)
-                logger.info(f"Modello ML Cox Survival caricato con successo da {model_path}")
-            except Exception as e:
-                logger.error(f"Errore durante il caricamento del modello ML: {str(e)}")
-                self._model = None
-        else:
-            logger.warning(f"File modello non trovato in {model_path}. L'inferenza ML userà valori di fallback.")
-            self._model = None
-
-    def predict(self, feature_df: pd.DataFrame) -> Tuple[Optional[float], Optional[float]]:
-        """
-        Esegue l'inferenza usando il modello caricato.
-        Ritorna: (tempo_stimato_giorni, probabilita_adozione_30giorni)
-        """
-        if self._model is None:
-            # Fallback se il modello non è disponibile
-            return None, None
-
-        try:
-            # Previsione del tempo mediano o atteso dal modello di sopravvivenza
-            if hasattr(self._model, 'predict_expectation'):
-                predicted_days = float(self._model.predict_expectation(feature_df).iloc[0])
-            elif hasattr(self._model, 'predict'):
-                predicted_days = float(self._model.predict(feature_df)[0])
-            else:
-                predicted_days = 45.0  # Valore stimato di default
-
-            # Probabilità di essere ancora nel rifugio al giorno 30 (S(30))
-            # Probabilità di adozione entro 30gg = 1 - S(30)
-            if hasattr(self._model, 'predict_survival_function'):
-                surv_func = self._model.predict_survival_function(feature_df)
-                # Estrazione valore al giorno 30
-                surv_30_prob = float(surv_func.loc[30].iloc[0]) if 30 in surv_func.index else 0.50
-                adoption_prob_30d = float(np.clip(1.0 - surv_30_prob, 0.0, 1.0))
-            else:
-                adoption_prob_30d = 0.50
-
-            return round(predicted_days, 1), round(adoption_prob_30d, 4)
-
-        except Exception as e:
-            logger.error(f"Errore durante l'inferenza del modello ML Cox: {str(e)}")
-            return None, None
 
 
 class MatchingService:
@@ -236,10 +161,9 @@ class MatchingService:
         # 1. Calcolo punteggio deterministico
         score, breakdown = cls.calculate_match_score(adopter_profile, animal)
 
-        # 2. Preparazione Feature e Inferenza ML Cox
-        feature_df = cls._prepare_ml_features(adopter_profile, animal)
-        ml_loader = CoxSurvivalModelLoader()
-        predicted_days, surv_30d_prob = ml_loader.predict(feature_df)
+        # Keep ML fields empty until a validated replacement is deployed.
+        predicted_days = None
+        surv_30d_prob = None
 
         # 3. Salvataggio o Aggiornamento a DB
         match_record, created = MatchResult.objects.update_or_create(

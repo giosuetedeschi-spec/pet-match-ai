@@ -23,6 +23,7 @@ These documents describe the **target product and architecture**. Implementation
 | 10 | [Marketing Plan](./10-marketing-plan.md) | Positioning, competitors, go-to-market, metrics, pricing, projections, naming | how it reaches shelters and adopters — **later** |
 | 11 | [Training Workflow](./11-training-workflow.md) | Colab notebook sequence, reproducibility checklist, graduation to scripts | how the models actually get built |
 | 12 | [Modelling Approaches](./12-modelling-approaches.md) | Problem formulation, survival analysis recommendation, why not LLM fine-tuning, rejected ideas | which model to build, and why not the others |
+| 13 | [ML Validation and Reconstruction](./13-ml-validation-and-reconstruction.md) | Evidence that the saved artifact fails validation and the steps required to rebuild it | why the current artifact is disabled and what is needed to replace it |
 
 If you only read three: **01** (what), **03** (data), **08** (order).
 

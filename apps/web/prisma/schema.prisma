@@ -334,6 +334,7 @@ model Animal {
   microchipRegisteredOn DateTime?                @map("microchip_registered_on") @db.Date
   anagrafeRegion        String?                  @map("anagrafe_region") @db.VarChar(40)
   isSterilized          Boolean?                 @map("is_sterilized")
+  sterilizationAssessed Boolean                  @default(false) @map("sterilization_assessed")
   sterilizedOn          DateTime?                @map("sterilized_on") @db.Date
   hasSpecialNeeds       Boolean                  @default(false) @map("has_special_needs")
   specialNeedsSummary   String?                  @map("special_needs_summary") @db.VarChar(255)
@@ -357,6 +358,7 @@ model Animal {
   behaviorProfile       AnimalBehaviorProfile?
   matchResults          MatchResult[]
   favorites             Favorite[]
+  predictions           AnimalPrediction[]
 
   @@index([shelterId, status], map: "idx_animals_shelter_status")
   @@index([status, species, publishedAt], map: "idx_animals_public")
@@ -388,6 +390,22 @@ model AnimalMedia {
 
   @@index([animalId, sortOrder], map: "idx_media_animal")
   @@map("animal_media")
+}
+
+model AnimalPrediction {
+  id                    String   @id @db.Char(26)
+  animalId              String   @map("animal_id") @db.Char(26)
+  modelVersion          String   @map("model_version") @db.VarChar(80)
+  mode                  String   @db.VarChar(20)
+  predictedAt           DateTime @default(now()) @map("predicted_at") @db.DateTime(3)
+  adoptionProbability   Float    @map("adoption_probability")
+  bucketProbabilities  Json     @map("bucket_probabilities")
+  topFactors            Json     @map("top_factors")
+  dataCompleteness      Float    @map("data_completeness")
+  animal                Animal   @relation(fields: [animalId], references: [id], onDelete: Cascade)
+
+  @@index([animalId, predictedAt], map: "idx_prediction_animal_date")
+  @@map("animal_predictions")
 }
 
 model AnimalBehaviorProfile {

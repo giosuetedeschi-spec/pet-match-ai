@@ -110,6 +110,7 @@ export default async function CatalogPage({
       headlineIt: true,
       storyIt: true,
       shelter: { select: { name: true, comune: { select: { name: true } } } },
+      media: { where: { isPrimary: true, kind: "photo", processingStatus: "ready", deletedAt: null }, take: 1, select: { id: true, altTextIt: true, altTextEn: true } },
     },
   });
   const animalOrder = new Map(pageIds.map((id, index) => [id, index]));
@@ -193,9 +194,7 @@ export default async function CatalogPage({
           <section className="animal-grid" aria-label="Animali disponibili">
             {animals.map((animal) => (
               <article className="animal-card" key={animal.slug}>
-                <div className="animal-mark" aria-hidden="true">
-                  {animal.species === "dog" ? "🐕" : "🐈"}
-                </div>
+                {animal.media[0] ? <img className="animal-card-media" src={`/api/media/${animal.media[0].id}?width=640`} alt={animal.media[0].altTextIt || animal.media[0].altTextEn || `Foto di ${animal.name}`} /> : <div className="animal-mark" aria-hidden="true">{animal.species === "dog" ? "🐕" : "🐈"}</div>}
                 <div className="animal-card-body">
                   <p className="animal-meta">
                     {label(animal.species)} · {sexLabel(animal.sex)}

@@ -1,6 +1,6 @@
 # Roadmap operativa PetMatch AI
 
-Aggiornata: 2026-10-08. `docs/` descrive il prodotto e l'architettura di riferimento; questo file registra lo stato effettivo dell'implementazione.
+Aggiornata: 2026-10-09. `docs/` descrive il prodotto e l'architettura di riferimento; questo file registra lo stato effettivo dell'implementazione.
 
 ## MVP Django + Streamlit
 
@@ -18,15 +18,17 @@ Aggiornata: 2026-10-08. `docs/` descrive il prodotto e l'architettura di riferim
 - [x] Cache e invalidazione degli abbinamenti, spiegazione Claude opzionale con fallback deterministico, notifiche in-app/email e disiscrizione senza login.
 - [x] Worker schedulato per ricalcolo e digest, con limite di una notifica email ogni 48 ore per profilo.
 - [ ] Completare il test d'usabilità con tre persone e verificare end-to-end invio digest e disiscrizione email. GitHub CI ha già avviato Compose e verificato la connessione MySQL.
-- [ ] Creazione e pubblicazione di animali da parte dei rifugi, con validazione.
-- [ ] Definire la consegna delle foto per Next.js. Nell'MVP Django le foto sono sul volume media; per ora non è previsto object storage.
+- [x] Portale Next.js per membri di rifugi: bozze animali, dati e comportamento validati, pubblicazione consentita solo a strutture attive.
+- [x] Foto: upload fino a 10 MB, testo alternativo, conversione WebP, varianti adattive, rimozione dei metadati EXIF, copertina e ordine gestibili, rimozione logica, storage locale persistente o bucket S3 compatibile privato.
+- [x] Onboarding Next.js dei rifugi: account e struttura pending nella stessa transazione, verifica email, selezione comune ISTAT, revisione admin, approvazione/rifiuto con motivazione e bootstrap admin CLI.
+- [x] Interfaccia e contenuti leggibili in italiano/inglese tramite servizio self-hosted LibreTranslate/Argos; i testi originali rimangono intatti.
 
-Il matching Next.js supporta profili anonimi e account verificati. I dati mancanti sono trattati in modo prudente e mostrati come verifiche da fare con il rifugio. Build, typecheck, test automatici e smoke test Compose in CI sono passati; restano il test d'usabilità e la prova end-to-end dell'email.
+Il matching Next.js supporta profili anonimi e account verificati. Gli account del portale rifugio devono essere membri di una struttura attiva; onboarding e approvazione sono gestiti fuori da questo flusso.
 
 ## ML
 
-- [x] Scaffold del servizio FastAPI incluso in Docker Compose.
-- [ ] Configurare e servire un modello tramite API. Al momento `/health` riporta `model: not-configured`; le previsioni non sono una funzionalità live.
+- [x] API FastAPI privata con health, model-info, inferenza singola e batch; autenticazione bearer e triage rifugi collegato con storico append-only.
+- [x] Mock deterministico dichiarato esplicitamente per integrare e verificare il flusso. L'artefatto Cox ? escluso per leakage (`duration_days`, `is_adopted`); nessun numero ? presentato come previsione validata.
 - [ ] Validare il modello rispetto ai criteri e ai limiti specificati in [`docs/05-ml-spec.md`](./docs/05-ml-spec.md).
 
 ## Procedura per ogni unità
@@ -39,4 +41,4 @@ Il matching Next.js supporta profili anonimi e account verificati. I dati mancan
 
 ## Stato corrente
 
-Il catalogo pubblico Next.js è stato unito in PR #23. Il repository locale è su `main`, sincronizzato con `origin/main` al commit `10ad3ff` (merge di PR #23), senza modifiche locali al momento dell'aggiornamento. La prossima unità pianificata è il flusso rifugio per creare e pubblicare animali in Next.js; l'integrazione foto resta una decisione separata.
+Onboarding, revisione admin, servizio ML mock, triage e traduzione automatica sono implementati localmente nel branch `chore/clean-modules-types-docs`; le modifiche non sono ancora unite. Restano la validazione scientifica del modello, i test di usabilit? con tre persone e la verifica end-to-end di email, digest e disiscrizione.

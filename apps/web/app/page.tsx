@@ -14,6 +14,12 @@ export default function Home() {
         <a className="button secondary" href="/it/abbinamento">
           Trova un abbinamento
         </a>
+        <a className="button secondary" href="/it/rifugio/animali">
+          Area rifugi
+        </a>
+        <a className="button secondary" href="/it/rifugio/registrazione">
+          Registra un rifugio
+        </a>
         <a className="button secondary" href="http://localhost:8501">
           Catalogo MVP
         </a>

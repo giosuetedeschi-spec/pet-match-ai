@@ -1,6 +1,6 @@
 # 02 — Technical Architecture
 
-> **Status, 8 October 2026:** This document describes the target architecture, not the complete running system. The repository currently runs a Django REST + Streamlit MVP and a parallel Next.js + Prisma release. Docker Compose defines separate MySQL databases (`petmatch_mvp` and `petmatch_web`), Mailpit, and a FastAPI service whose model is not configured. The Next.js release currently provides its database foundation and Italian public catalogue; its shelter authoring flow is still planned. See [`ROADMAP-OPERATIVA.md`](../ROADMAP-OPERATIVA.md) for feature status and [`STATE.md`](../STATE.md) for the repository checkpoint.
+> **Status, 9 October 2026:** This document describes the target architecture, not the complete running system. The repository currently runs a Django REST + Streamlit MVP and a parallel Next.js + Prisma release. Docker Compose defines separate MySQL databases (`petmatch_mvp` and `petmatch_web`), Mailpit, and a FastAPI service whose model is not configured. The Next.js release provides the Italian public catalogue and shelter authoring with validated publishing and photo processing. See [`ROADMAP-OPERATIVA.md`](../ROADMAP-OPERATIVA.md) for feature status and [`STATE.md`](../STATE.md) for the repository checkpoint.
 
 ## 1. Target system overview
 
@@ -163,32 +163,28 @@ Row-level tenancy on a shared schema. Every shelter-owned table carries `shelter
 - **Shelter reads and all writes** are scoped by membership.
 - **Deleting a shelter** never hard-deletes animals with outcomes; the shelter is archived and its listings de-published, because adoption history is the platform's memory and other people's applications reference it.
 
-## 6. Internationalisation
+## 6. Automatic translation
 
-- **Routing.** `/[locale]/...` with `it` as default and `en` alongside. Locale is detected from the path, then a cookie, then `Accept-Language`. `hreflang` alternates on every public page; canonical URLs per locale.
-- **UI strings.** `next-intl` with `messages/it.json` and `messages/en.json`. Keys are namespaced by feature. A missing key fails the build in CI rather than silently rendering the key.
-- **Database content.** Shelter-authored text has explicit per-language columns (`story_it`, `story_en`, `description_it`, …). When one is empty the UI renders the other with a visible "in inglese" / "in Italian" label — never machine-translates silently.
-- **Slugs.** Animal and shelter slugs are generated once from Italian content and are stable across locales; renaming an animal does not break links (old slugs redirect).
-- **Formatting.** Dates, numbers and distances use `Intl`; the display timezone is `Europe/Rome` while storage is UTC.
-- **Outbound messages.** Emails, WhatsApp templates and notifications are rendered in the recipient's `users.locale`.
-- **Assistant.** Replies in the conversation's locale; retrieval prefers knowledge-base documents in that locale and falls back to the other, translating in-flight rather than quoting a foreign-language source.
+The Next.js release uses runtime machine translation through a private LibreTranslate service, powered by Argos Translate. This is the product's Italian/English language mechanism; it does not use i18n dictionaries or separate locale routes.
+
+- The language toggle stores the preference in the browser and updates the document language.
+- A DOM observer translates visible text and accessible `alt`, `aria-label`, `placeholder`, and `title` values through the same-origin `/api/translate` route. Dynamically rendered text is handled as it appears.
+- Translation changes only the current display. Original shelter-authored text remains in the database and in the page's source state, and switching back restores it.
+- The local translation service is private to the Compose network. Requests are bounded by text count, size, and per-IP rate limits.
+- Machine translations can be inaccurate, especially for health or behaviour descriptions. The source text remains authoritative; English text is offered as a reading aid.
+- Dates, numbers, and distances use `Intl`; the display timezone is `Europe/Rome` while storage remains UTC.
 
 ## 7. Media pipeline
 
-```
-client → validate (type, size, dimensions) → direct upload to storage
-       → server records animal_media row
-       → job generates derivatives → row updated with derivative keys
-```
+Current Next.js shelter uploads are sent to the application one photo at a time. The server validates and normalizes each image before storing it; the browser never receives storage credentials.
 
-- **Storage.** S3-compatible. Local development uses MinIO in Compose; production can be any provider. All access goes through a thin storage adapter so the provider is a configuration detail.
-- **Keys.** `shelters/{shelterId}/animals/{animalId}/{mediaId}/{variant}.{ext}` — never user-supplied filenames.
-- **Photos.** Accepted: JPEG, PNG, WebP, HEIC. Max 12 MB. Derivatives at 320 / 640 / 1280 / 1920 px in WebP and AVIF, plus a blurred placeholder stored inline for instant paint. EXIF stripped except orientation, which is applied then discarded — camera GPS coordinates must not survive upload.
-- **Video.** Accepted: MP4 (H.264/AAC), MOV. Max 60 s, max 100 MB. Transcoded to a 720p MP4 and a poster frame. Videos never autoplay with sound and always have a poster.
-- **Serving.** Public URLs for published media; private media (medical attachments) served through signed, short-lived URLs behind an authorisation check.
-- **Deletion.** Removing media soft-deletes the row immediately and enqueues object deletion, so an accidental delete is recoverable for 30 days.
-- **Fallback.** Animals without a photo render a species-appropriate illustrated placeholder, and publication is blocked until at least one real photo exists.
-
+- **Storage.** Local development uses a persistent Docker volume. Deployments can configure a private S3-compatible bucket through `MEDIA_S3_*`; an adapter keeps storage details out of route handlers.
+- **Keys.** `shelters/{shelterId}/animals/{animalId}/{mediaId}/{variant}.webp` — generated by the server, never from a user-supplied filename.
+- **Photos.** JPEG, PNG, WebP, HEIC and AVIF up to 10 MB and 40 megapixels; up to 10 per animal. `sharp` applies EXIF orientation, strips metadata (including GPS), stores a normalized WebP master and 320 / 640 / 1280 / 1920 px derivatives. The submitted bytes are not retained verbatim. Alternative text is required in Italian or English for every photo.
+- **Serving.** The media route checks that a listing is public and belongs to an active shelter. Draft media is returned only to an authenticated member of its shelter. Private buckets are never exposed directly.
+- **Management.** Shelter members can edit alternative text, choose a cover, reorder photos, and remove a photo from the listing. Removal is a soft delete: the database hides the object from the listing, while the stored bytes are retained.
+- **Fallback.** Animals without a photo render a species-appropriate illustrated placeholder, and publication is blocked until at least one processed photo with alternative text is ready.
+- **Not implemented in the Next.js release.** Video transcoding, drag reordering, and scheduled media deletion remain future work.
 ## 8. Geography and distance
 
 Italy has ~7,900 comuni. Rather than depend on a geocoding API for every search, the platform ships a bundled lookup table (ISTAT code, name, province, region, CAPs, centroid coordinates) seeded from public open data.

@@ -4,6 +4,7 @@ node_modules/
 .next/
 *.tsbuildinfo
 *.log
+apps/web/.media/
 
 # Python
 env/
