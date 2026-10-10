@@ -1,6 +1,5 @@
 from typing import Dict, Any, Tuple
 import numpy as np
-import pandas as pd
 from django.utils import timezone
 
 from apps.users.models import User, AdopterProfile
@@ -121,37 +120,10 @@ class MatchingService:
 
         return float(np.clip(overall_score, 0.0, 100.0)), breakdown
 
-    @staticmethod
-    def _prepare_ml_features(adopter_profile: AdopterProfile, animal: Animal) -> pd.DataFrame:
-        """
-        Trasforma i dati dell'animale e dell'adottante nel DataFrame richiesto dal modello ML Cox Survival.
-        """
-        size_encoded = {'SMALL': 1, 'MEDIUM': 2, 'LARGE': 3, 'GIANT': 4}.get(animal.size, 2)
-        energy_encoded = {'LOW': 1, 'MEDIUM': 2, 'HIGH': 3, 'VERY_HIGH': 4}.get(animal.energy_level, 2)
-        exp_encoded = {'BEGINNER': 1, 'INTERMEDIATE': 2, 'EXPERT': 3}.get(adopter_profile.experience_level, 1)
-
-        feature_dict = {
-            'age_months': [animal.total_age_in_months],
-            'size_encoded': [size_encoded],
-            'energy_encoded': [energy_encoded],
-            'is_spayed_neutered': [int(animal.is_spayed_neutered)],
-            'is_vaccinated': [int(animal.is_vaccinated)],
-            'good_with_children': [int(animal.good_with_children or False)],
-            'good_with_dogs': [int(animal.good_with_dogs or False)],
-            'good_with_cats': [int(animal.good_with_cats or False)],
-            'requires_garden': [int(animal.requires_garden)],
-            'adopter_experience_level': [exp_encoded],
-            'adopter_hours_away': [adopter_profile.hours_away_from_home],
-            'adopter_has_children': [int(adopter_profile.has_children)],
-            'adopter_has_other_pets': [int(adopter_profile.has_other_pets)]
-        }
-
-        return pd.DataFrame(feature_dict)
-
     @classmethod
     def process_and_save_match(cls, adopter_user: User, animal: Animal) -> MatchResult:
         """
-        Esegue il matching completo, interroga il modello ML e salva/aggiorna il record MatchResult.
+        Calcola il punteggio di compatibilità e salva/aggiorna il risultato, senza previsioni ML non validate.
         """
         try:
             adopter_profile = adopter_user.adopter_profile
@@ -165,7 +137,7 @@ class MatchingService:
         predicted_days = None
         surv_30d_prob = None
 
-        # 3. Salvataggio o Aggiornamento a DB
+        # 2. Salvataggio o aggiornamento a DB
         match_record, created = MatchResult.objects.update_or_create(
             adopter=adopter_user,
             animal=animal,

@@ -5,7 +5,7 @@
 ## Validation findings
 
 - The serialized feature list in `trained-model/model_features.joblib` contains `duration_days` and `is_adopted`. Both describe the outcome being predicted and are unavailable at inference time. This is direct target leakage, so any reported performance from this artifact is invalid.
-- The legacy Django inference input in `apps/matching/services.py` uses a different feature schema (animal age, size, energy, adopter household attributes). It does not match the stored training columns. The previous loader could therefore return missing values or fail during inference.
+- The former Django inference input used a different feature schema (animal age, size, energy, adopter household attributes), which did not match the stored training columns. The previous loader could therefore return missing values or fail during inference; that legacy path has now been removed.
 - `trained-model/features.py` also includes `duration_days` and `event_type` in its feature output. The training feature builder itself needs a leakage deny-list before it can be reused.
 - There is no Austin intake/outcome training dataset, reproducible training command, artifact metadata, model card, or evaluation metrics in this checkout. The serialized artifact cannot be independently reproduced or evaluated here.
 - Austin Animal Center outcomes (Texas, 2013–2018) are not local Italian shelter outcomes. Even a leakage-free model trained on Austin data would require local validation before its probabilities could be presented as calibrated for Italian shelters.
