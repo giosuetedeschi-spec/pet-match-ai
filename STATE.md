@@ -1,10 +1,11 @@
 # PetMatch AI — Operational State
 
-Updated: 2026-10-09
-Base: `main` is one documentation-only commit ahead of this branch
-Branch: `chore/clean-modules-types-docs` at `62dd474`
-Working tree: shelter authoring, onboarding/review, mock ML integration, and automatic translation are local and uncommitted
+Updated: 2026-10-10
+Branch: `chore/clean-modules-types-docs` at `400bc88`, pushed to `origin`
+Working tree: clean
 Merge status: not merged.
+
+CI on the branch passed on Ubuntu 24.04 (GitHub Actions run `38040076466`). It now runs on branch pushes, checks Django matching, typechecks and tests the web app during its image build, and runs ML service contract tests. The full Compose smoke test passed.
 
 ## Completed unit
 
