@@ -8,7 +8,7 @@ COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile
 
 COPY . .
-RUN bunx --bun prisma generate && bun --bun run build
+RUN bunx --bun prisma generate && bun --bun run typecheck && bun run test:shelter && bun --bun run build
 
 FROM build AS migrator
 CMD ["bunx", "--bun", "prisma", "migrate", "deploy"]
