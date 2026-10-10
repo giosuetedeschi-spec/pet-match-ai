@@ -16,7 +16,7 @@ permissions:
 jobs:
   phase1:
     name: Phase 1 Django and Streamlit checks
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - name: Check out repository
@@ -139,7 +139,7 @@ jobs:
 
   ml:
     name: ML service checks
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - name: Check out repository
@@ -162,7 +162,7 @@ jobs:
 
   secrets:
     name: Secret scan
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - name: Check out full history
@@ -179,7 +179,7 @@ jobs:
 
   compose:
     name: Compose stack smoke test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
       - name: Check out repository
