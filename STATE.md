@@ -30,7 +30,7 @@ Commit `26d8cc9` also updated the project documentation, cleaned existing module
 
 - Streamlit's public Compatibilità tab keeps the anonymous deterministic ranking and discloses internal ML use without exposing predictions to adopters.
 - The authenticated Rifugi area now offers an Austin-trained adoption-outcome classifier and conditional length-of-stay estimate, plus a Kaggle-trained synthetic dog-pair return-risk model. The latter is clearly labelled synthetic and weak (ROC-AUC 0.6125); Austin adoption ROC-AUC is 0.6507 and conditional stay MAE is 20.36 days.
-- Docker builds the ML image from root context and trains both models from the Austin data and `training-data/dog_adoption_master.csv`. The latter is a Kaggle dataset with license marked `Other`; it is not suitable for redistribution until clarified.
+- Docker builds the ML image from root context and trains both models from the versioned Austin and Kaggle CSV files in `training-data/`. Source links and upstream license labels, including Kaggle's `Other` label, are documented in `docs/14-mvp-ml-demo.md`.
 - Local seed login: `rifugio_esperanza` / `DemoRifugio123!`, limited to `DEBUG=True`; verified with an in-memory SQLite seed and JWT `/users/me/` request. Three ML service unit tests, direct inferences, Python compilation, `manage.py check`, and Compose config passed. Docker live validation is blocked by denied access to the Docker Desktop named pipe.
 
 ## Shelter authoring unit (2026-10-09)

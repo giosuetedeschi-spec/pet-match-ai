@@ -17,7 +17,7 @@ Nessuna stima puÃ² rifiutare un adottante o un animale. Il modello di coppia �
 
 ### Esito e permanenza
 
-Fonte: [Austin Animal Center Shelter Intakes and Outcomes su Kaggle](https://www.kaggle.com/datasets/aaronschlegel/austin-animal-center-shelter-intakes-and-outcomes), giÃ  presente in `training-data/aac_intakes_outcomes.csv`.
+Fonte: [Austin Animal Center Shelter Intakes and Outcomes su Kaggle](https://www.kaggle.com/datasets/aaronschlegel/austin-animal-center-shelter-intakes-and-outcomes), inclusa in `training-data/aac_intakes_outcomes.csv`. Kaggle indica `Database: Open Database, Contents: © Original Authors`; il file è incluso con attribuzione alla fonte.
 
 Il training usa una regressione logistica per adozione rispetto agli altri esiti osservati, e un regressore per la permanenza dei soli animali poi adottati. Le variabili di esito e di durata non entrano tra le feature. La valutazione usa le date di intake: training prima del 2017, validazione nel primo semestre 2017, test dal luglio 2017.
 
@@ -27,13 +27,13 @@ Il training usa una regressione logistica per adozione rispetto agli altri esiti
 
 ### Rischio di restituzione della coppia
 
-Fonte: [Dog Adoption Success â€” Does the Match Last? su Kaggle](https://www.kaggle.com/datasets/sergionefedov/dog-adoption-success-does-the-match-last). La scheda Kaggle lo descrive come sintetico, con 42.000 righe e 15% di esiti di restituzione; la licenza Ã¨ indicata come `Other`.
+Fonte: [Dog Adoption Success — Does the Match Last? su Kaggle](https://www.kaggle.com/datasets/sergionefedov/dog-adoption-success-does-the-match-last), incluso in `training-data/dog_adoption_master.csv` con il dizionario `training-data/data_dictionary.csv`. La scheda Kaggle lo descrive come sintetico, con 42.000 righe e 15% di esiti di restituzione; la licenza è indicata come `Other`.
 
 Il modello usa 16 attributi del cane e della famiglia. Esclude identificatore, target, motivo e giorni alla restituzione, oltre ai due campi di mismatch pre-calcolati. Lo split Ã¨ stratificato 80/20, seed 42.
 
 - ROC-AUC 0,6172; average precision 0,2223; Brier 0,1244 (baseline costante 0,1274) sul test (8.400 righe; base rate 14,99%).
 - Questi risultati sono deboli e derivano da dati sintetici: l'indicatore non Ã¨ una probabilitÃ  calibrata per il mondo reale e non costituisce un modello validato di compatibilitÃ .
-- La riga CSV Kaggle va scaricata manualmente nella cartella `training-data/` e salvata come `dog_adoption_master.csv`. Non redistribuire il dataset finchÃ© la licenza `Other` non Ã¨ stata chiarita.
+- I file di training sono versionati nel repository per consentire la build da clone pulito. L'etichetta Kaggle `Other` è riportata senza reinterpretarla come una licenza standard; consultare la scheda sorgente per le condizioni dell'autore.
 
 ## Addestramento e avvio
 
@@ -43,7 +43,7 @@ Il training riproducibile Ã¨ in `services/ml/train_models.py`. Dalla radice de
 .venv/Scripts/python.exe services/ml/train_models.py --data-dir training-data --output-dir services/ml/models
 ```
 
-La compilazione dell'immagine Compose esegue lo stesso training e include i modelli nell'immagine. Per usare Streamlit:
+La compilazione dell'immagine Compose esegue lo stesso training e include i modelli nell'immagine. I CSV sono nel repository, quindi non servono credenziali Kaggle durante build o avvio. Per usare Streamlit:
 
 ```powershell
 docker compose up -d --build mysql mail ml django streamlit
