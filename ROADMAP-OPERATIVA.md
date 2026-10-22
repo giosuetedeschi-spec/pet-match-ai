@@ -7,6 +7,10 @@ Aggiornata: 2026-10-09. `docs/` descrive il prodotto e l'architettura di riferim
 - [x] Gestione e pubblicazione degli animali da parte dei rifugi.
 - [x] Catalogo pubblico e ricerca geografica di base con dati ISTAT.
 - [x] API per candidature, revisione lato rifugio, richieste dell'adottante e programmazione visite.
+- [x] Questionario MVP per confronto adottante-animale con ranking deterministico; accesso dal tab Streamlit Compatibilità.
+- [x] Modello Austin per esito e permanenza condizionale, visibile solo nell'area rifugio autenticata.
+- [x] Modello Kaggle sintetico per rischio di restituzione cane-adottante, visibile solo al personale e dichiarato come demo.
+- [x] Disclosure pubblica dell'uso interno di ML; il questionario adozione non mostra previsioni interne.
 - [ ] Consolidare i flussi di gestione MVP e le verifiche CI prima di estendere il prodotto.
 
 ## Release parallela Next.js + Prisma
@@ -28,8 +32,9 @@ Il matching Next.js supporta profili anonimi e account verificati. Gli account d
 ## ML
 
 - [x] API FastAPI privata con health, model-info, inferenza singola e batch; autenticazione bearer e triage rifugi collegato con storico append-only.
-- [x] Mock deterministico dichiarato esplicitamente per integrare e verificare il flusso. L'artefatto Cox ? escluso per leakage (`duration_days`, `is_adopted`); nessun numero ? presentato come previsione validata.
-- [ ] Validare il modello rispetto ai criteri e ai limiti specificati in [`docs/05-ml-spec.md`](./docs/05-ml-spec.md).
+- [x] Training riproducibile dei due modelli demo con feature di input separate dai target e metriche holdout registrate in `docs/14-mvp-ml-demo.md`. L'artefatto Cox resta escluso per leakage (`duration_days`, `is_adopted`).
+- [ ] Validare su esiti reali italiani, misurare calibrazione e follow-up; i modelli MVP sono sperimentali e non adatti a decisioni operative.
+- [ ] Raccogliere candidature, profili e follow-up post-adozione collegati per addestrare e validare una reale compatibilità adottante-animale; il dataset Kaggle corrente è sintetico e predice restituzione.
 
 ## Procedura per ogni unità
 
@@ -41,4 +46,4 @@ Il matching Next.js supporta profili anonimi e account verificati. Gli account d
 
 ## Stato corrente
 
-Onboarding, revisione admin, servizio ML mock, triage e traduzione automatica sono implementati localmente nel branch `chore/clean-modules-types-docs`; le modifiche non sono ancora unite. Restano la validazione scientifica del modello, i test di usabilit? con tre persone e la verifica end-to-end di email, digest e disiscrizione.
+Onboarding, revisione admin, modelli ML demo, triage e traduzione automatica sono implementati localmente nel branch `chore/clean-modules-types-docs`; le modifiche non sono ancora unite. Restano la validazione scientifica del modello, i test di usabilità con tre persone e la verifica end-to-end di email, digest e disiscrizione.

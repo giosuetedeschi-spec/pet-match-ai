@@ -1,5 +1,6 @@
 import json
 import os
+from datetime import date
 from urllib.parse import urlencode
 
 import requests
@@ -7,6 +8,8 @@ import streamlit as st
 import pandas as pd
 
 API_BASE = os.getenv("PET_MATCH_API_URL", "http://127.0.0.1:8000").rstrip("/")
+ML_BASE = os.getenv("ML_SERVICE_URL", "http://127.0.0.1:8001").rstrip("/")
+ML_TOKEN = os.getenv("ML_SERVICE_TOKEN", "local-development-token")
 TIMEOUT = 20
 MAX_IMAGE_SIZE = 5 * 1024 * 1024
 
@@ -91,6 +94,43 @@ def publish_animal(animal_id, token):
         f"shelter/animals/{animal_id}/publish/",
         token=token,
     )
+
+
+def preview_matches(answers):
+    return api_request("POST", "matching/preview/", json=answers)
+
+
+def ml_request(path, ref, features):
+    """Call a staff-only model endpoint; never expose its output in adopter views."""
+    try:
+        response = requests.post(
+            f"{ML_BASE}/{path.lstrip('/')}",
+            headers={"Authorization": f"Bearer {ML_TOKEN}", "Accept": "application/json"},
+            json={"ref": str(ref), "features": features},
+            timeout=TIMEOUT,
+        )
+        response.raise_for_status()
+    except requests.RequestException as exc:
+        raise ApiError(f"Servizio ML non raggiungibile ({ML_BASE}). Avvia il servizio ML e riprova.") from exc
+    return response.json()["prediction"]
+
+
+def predict_animal_outcome(animal):
+    age = animal.get("total_age_in_months", animal.get("age_months", 0))
+    intake_date = animal.get("date_entry_shelter")
+    if intake_date:
+        try:
+            days_in_care = max(0, (date.today() - date.fromisoformat(intake_date[:10])).days)
+            age = max(0, age - days_in_care / 30.4375)
+        except ValueError:
+            pass
+    breed = (animal.get("breed_detail") or {}).get("name") or animal.get("breed_name") or "unknown"
+    return ml_request("predict", animal["id"], {
+        "age_months": age,
+        "gender": animal.get("gender"),
+        "species": animal.get("species"),
+        "breed": breed,
+    })
 
 
 CATALOG_TEXT = {
@@ -206,7 +246,7 @@ def render_catalog():
                     st.image(
                         animal["primary_image"],
                         caption=animal.get("primary_image_caption") or animal.get("name", "Animale"),
-                        use_container_width=True,
+                        width="stretch",
                     )
                 st.subheader(animal.get("name", "Animale"))
                 species_labels = {"DOG": "Dog" if language_code == "en" else "Cane", "CAT": "Cat" if language_code == "en" else "Gatto"}
@@ -274,12 +314,181 @@ def render_catalog():
             )
             for image in detail.get("images", []):
                 if image.get("image"):
-                    st.image(image["image"], caption=image.get("caption") or detail.get("name"), use_container_width=True)
+                    st.image(image["image"], caption=image.get("caption") or detail.get("name"), width="stretch")
             if st.button(text["close"], key="close-animal-detail"):
                 del st.session_state.selected_animal_id
                 st.rerun()
         except ApiError as exc:
             st.error(str(exc))
+
+
+def render_matching():
+    st.header("Compatibilità con gli animali")
+    st.caption("Rispondi al questionario: il punteggio usa le regole di compatibilità attuali, non un modello ML validato.")
+    st.info("PetMatch usa modelli ML solo per supportare il lavoro interno dei rifugi. Le relative stime non vengono mostrate a chi adotta e non decidono l'accesso a un'adozione.")
+    with st.form("matching-preview-form"):
+        preferred_species = st.selectbox("Specie", ["ANY", "DOG", "CAT"], format_func=lambda value: {"ANY": "Cane o gatto", "DOG": "Cane", "CAT": "Gatto"}[value])
+        housing_type = st.selectbox("Abitazione", ["APARTMENT_NO_BALCONY", "APARTMENT_BALCONY", "HOUSE_GARDEN", "VILLA_PARK"], format_func=lambda value: {
+            "APARTMENT_NO_BALCONY": "Appartamento senza balcone",
+            "APARTMENT_BALCONY": "Appartamento con balcone o terrazzo",
+            "HOUSE_GARDEN": "Casa con giardino",
+            "VILLA_PARK": "Villa o casa con terreno",
+        }[value])
+        garden_sqm = st.number_input("Spazio verde disponibile (m²)", min_value=0, max_value=10000, value=0, step=5)
+        has_children = st.checkbox("In casa ci sono bambini")
+        has_other_pets = st.checkbox("In casa ci sono già altri animali")
+        hours_away_from_home = st.slider("Ore al giorno fuori casa", 0, 24, 4)
+        activity_level = st.selectbox("Attività quotidiana", ["SEDENTARY", "MODERATE", "ACTIVE"], format_func=lambda value: {
+            "SEDENTARY": "Bassa", "MODERATE": "Moderata", "ACTIVE": "Alta",
+        }[value])
+        experience_level = st.selectbox("Esperienza con animali", ["BEGINNER", "INTERMEDIATE", "EXPERT"], format_func=lambda value: {
+            "BEGINNER": "Prima esperienza", "INTERMEDIATE": "Intermedia", "EXPERT": "Esperta",
+        }[value])
+        min_age, max_age = st.slider("Età preferita (mesi)", 0, 360, (0, 360), step=6)
+        submitted = st.form_submit_button("Calcola compatibilità")
+
+    if submitted:
+        answers = {
+            "preferred_species": preferred_species,
+            "housing_type": housing_type,
+            "garden_sqm": garden_sqm,
+            "has_children": has_children,
+            "has_other_pets": has_other_pets,
+            "hours_away_from_home": hours_away_from_home,
+            "activity_level": activity_level,
+            "experience_level": experience_level,
+            "preferred_age_min_months": min_age,
+            "preferred_age_max_months": max_age,
+        }
+        try:
+            st.session_state.matching_preview = preview_matches(answers)
+        except ApiError as exc:
+            st.error(str(exc))
+            return
+
+    preview = st.session_state.get("matching_preview")
+    if not preview:
+        return
+    st.caption(f"{preview['total']} animali disponibili nella fascia scelta · compatibilità calcolata con regole deterministiche")
+    if not preview["results"]:
+        st.info("Non ci sono animali compatibili con questi filtri.")
+        return
+
+    for animal in preview["results"]:
+        with st.container(border=True):
+            st.subheader(animal["name"])
+            st.caption(f"{animal['species']} · {animal['breed']} · {animal['city']} · {animal['shelter']}")
+            st.metric("Compatibilità indicativa (regole)", f"{animal['score']}%")
+            with st.expander("Dettaglio del punteggio"):
+                st.json(animal["breakdown"])
+
+
+def render_internal_ml(animals):
+    with st.expander("Previsioni ML interne (demo)"):
+        st.warning(
+            "Solo per il personale del rifugio. Modelli dimostrativi: il rischio di restituzione è addestrato su dati sintetici Kaggle; "
+            "la previsione di adozione e la permanenza condizionale usano dati storici di Austin, Texas. "
+            "Non usare questi numeri per rifiutare persone o animali."
+        )
+        if not animals:
+            st.info("Pubblica o crea una scheda animale per provare i modelli.")
+            return
+        labels = {
+            str(animal["id"]): f'{animal.get("name", "Animale")} · {animal.get("species", "")}'
+            for animal in animals
+        }
+        selected_id = st.selectbox(
+            "Animale da valutare",
+            list(labels),
+            format_func=lambda animal_id: labels[animal_id],
+            key="internal_ml_animal_id",
+        )
+        animal = next(item for item in animals if str(item["id"]) == selected_id)
+
+        if st.button("Stima esito e permanenza", key="ml-animal-outcome"):
+            try:
+                st.session_state["ml-animal-outcome-result"] = {
+                    "ref": selected_id,
+                    "prediction": predict_animal_outcome(animal),
+                }
+            except ApiError as exc:
+                st.error(str(exc))
+        outcome_record = st.session_state.get("ml-animal-outcome-result") or {}
+        outcome = outcome_record.get("prediction") if outcome_record.get("ref") == selected_id else None
+        if outcome:
+            st.metric("Adozione tra gli esiti storici osservati", f'{outcome["adoption_probability"]:.0%}')
+            st.metric("Permanenza stimata se adottato", f'{outcome["estimated_days_if_adopted"]:.0f} giorni')
+            st.caption(
+                f'ROC-AUC test adozione: {outcome["test_roc_auc"]:.2f} · MAE permanenza test: {outcome["days_mae_on_test"]:.1f} giorni · '
+                f"modello `{outcome['model_version']}`. La durata è condizionale a un'adozione registrata, non una data promessa."
+            )
+
+        if animal.get("species") != "DOG":
+            st.info("Il modello dimostrativo di rischio restituzione è addestrato solo su cani.")
+            return
+
+        st.markdown("**Valuta una coppia adottante–cane**")
+        with st.form("internal-compatibility-ml-form"):
+            c1, c2, c3 = st.columns(3)
+            first_time_owner = c1.checkbox("Prima esperienza con cani")
+            household_has_kids = c2.checkbox("In casa ci sono bambini")
+            household_has_pets = c3.checkbox("In casa ci sono altri animali")
+            home_type = st.selectbox("Abitazione", ["apartment", "house_owned", "house_rented"], format_func=lambda v: {
+                "apartment": "Appartamento", "house_owned": "Casa di proprietà", "house_rented": "Casa in affitto",
+            }[v])
+            c4, c5, c6 = st.columns(3)
+            has_yard = c4.checkbox("Giardino")
+            hours_alone = c5.slider("Ore solo al giorno", 0, 14, 4)
+            activity = c6.slider("Attività dell'adottante", 0, 10, 5)
+            c7, c8, c9 = st.columns(3)
+            visits = c7.selectbox("Incontri con il cane", [1, 2, 3, 4], index=0)
+            met_pets = c8.checkbox("Il cane ha incontrato gli altri animali")
+            counseling = c9.checkbox("Colloquio di preparazione svolto")
+            c10, c11 = st.columns(2)
+            expectations = c10.slider("Aspettative iniziali dichiarate", 0, 10, 6)
+            medical_needs = c11.selectbox("Bisogni sanitari", ["none", "minor", "chronic"], format_func=lambda v: {
+                "none": "Nessuno", "minor": "Gestibili", "chronic": "Continuativi",
+            }[v])
+            submitted = st.form_submit_button("Calcola indicatore interno di restituzione")
+
+        size = {"SMALL": "small", "MEDIUM": "medium", "LARGE": "large", "GIANT": "xlarge"}.get(animal.get("size"), "medium")
+        energy = {"LOW": 2, "MEDIUM": 5, "HIGH": 8, "VERY_HIGH": 10}.get(animal.get("energy_level"), 5)
+        features = {
+            "age_years": float(animal.get("age_years", 0)) + float(animal.get("age_months", 0)) / 12,
+            "size": size,
+            "medical_needs": medical_needs,
+            "neutered": int(bool(animal.get("is_spayed_neutered"))),
+            "energy_level": energy,
+            "first_time_owner": int(first_time_owner),
+            "household_has_kids": int(household_has_kids),
+            "household_has_pets": int(household_has_pets),
+            "home_type": home_type,
+            "has_yard": int(has_yard),
+            "hours_alone_per_day": hours_alone,
+            "adopter_activity_level": activity,
+            "visits_before_adoption": visits,
+            "met_resident_pets": int(met_pets),
+            "adoption_counseling": int(counseling),
+            "expectation_score": expectations,
+        }
+        if submitted:
+            try:
+                st.session_state["ml-pair-return-result"] = {
+                    "ref": selected_id,
+                    "features": features,
+                    "prediction": ml_request("predict/compatibility", selected_id, features),
+                }
+            except ApiError as exc:
+                st.error(str(exc))
+        pair_record = st.session_state.get("ml-pair-return-result") or {}
+        pair_result = pair_record.get("prediction") if pair_record.get("ref") == selected_id and pair_record.get("features") == features else None
+        if pair_result:
+            st.metric("Indicatore sintetico di restituzione", f'{pair_result["return_risk_score"]:.0%}')
+            st.caption(
+                f'Modello `{pair_result["model_version"]}` · target: restituzione dopo l’adozione. '
+                "È un punteggio non calibrato su dati sintetici, non una probabilità affidabile per questa coppia. "
+                "Usalo solo per discutere eventuale supporto aggiuntivo con il rifugio."
+            )
 
 
 def render_shelter():
@@ -293,8 +502,12 @@ def render_shelter():
         if submitted:
             try:
                 result = api_request("POST", "users/auth/login/", json={"username": username, "password": password})
-                st.session_state.shelter_access_token = result["access"]
-                st.rerun()
+                profile = api_request("GET", "users/me/", token=result["access"])
+                if profile.get("role") != "SHELTER":
+                    st.error("L'area rifugio e le stime ML sono riservate agli account rifugio.")
+                else:
+                    st.session_state.shelter_access_token = result["access"]
+                    st.rerun()
             except (ApiError, KeyError) as exc:
                 st.error(str(exc) or "Credenziali non valide.")
 
@@ -380,6 +593,8 @@ def render_shelter():
     top[0].write("Sessione rifugio autenticata")
     if top[1].button("Esci"):
         del st.session_state.shelter_access_token
+        st.session_state.pop("ml-animal-outcome-result", None)
+        st.session_state.pop("ml-pair-return-result", None)
         st.rerun()
 
     st.subheader("Inserisci un animale")
@@ -510,14 +725,18 @@ def render_shelter():
                     except ApiError as exc:
                         st.error(str(exc))
 
+    render_internal_ml(animals)
+
 
 def main():
     st.set_page_config(page_title="PetMatch AI", page_icon="🐾", layout="wide")
     st.title("PetMatch AI 🐾")
     st.caption("Animali dei rifugi, pronti a incontrare una famiglia.")
-    catalog_tab, shelter_tab = st.tabs(["Catalogo", "Rifugi"])
+    catalog_tab, matching_tab, shelter_tab = st.tabs(["Catalogo", "Compatibilità", "Rifugi"])
     with catalog_tab:
         render_catalog()
+    with matching_tab:
+        render_matching()
     with shelter_tab:
         render_shelter()
 

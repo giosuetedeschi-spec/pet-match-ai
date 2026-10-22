@@ -1,6 +1,6 @@
 # ML artifact validation and reconstruction decision
 
-**Decision (2026-10-10): do not use the checked-in Cox artifact for predictions.** Keep the FastAPI mock explicitly labelled as a mock; Django matching may continue to calculate compatibility scores, but its prediction fields must stay empty until a replacement passes validation.
+**Historical decision (2026-10-10):** the checked-in Cox artifact was rejected for target leakage. The MVP now serves two trained but experimental models described in [14 ? MVP ML demo](./14-mvp-ml-demo.md); neither passes a production validation gate. The findings and reconstruction plan below record the earlier review.
 
 ## Validation findings
 

@@ -1,8 +1,8 @@
 # PetMatch AI — Operational State
 
-Updated: 2026-10-10
-Branch: `chore/clean-modules-types-docs` at `400bc88`, pushed to `origin`
-Working tree: clean
+Updated: 2026-10-13
+Branch: `chore/clean-modules-types-docs`; local MVP compatibility changes are uncommitted
+Working tree: dirty
 Merge status: not merged.
 
 CI on the branch passed on Ubuntu 24.04 (GitHub Actions run `38040076466`). It now runs on branch pushes, checks Django matching, typechecks and tests the web app during its image build, and runs ML service contract tests. The full Compose smoke test passed.
@@ -23,8 +23,15 @@ Commit `26d8cc9` also updated the project documentation, cleaned existing module
 - Django + Streamlit remains the MVP priority; Next.js + Prisma is a parallel release.
 - Next.js shelter animal drafting, validated publication, and photo handling are implemented locally.
 - Next.js Prisma uses MySQL, so the new flow was validated against the Compose MySQL service; SQLite cannot run this schema directly. Django MVP media continues to use its local volume.
-- FastAPI exposes authenticated mock predictions and shelter triage stores append-only results. The Cox artifact is excluded because its feature list contains target leakage; no validated model is served.
+- FastAPI now serves two authenticated, trained demo models: Austin adoption outcome and conditional stay duration, plus synthetic Kaggle dog-pair return risk. Both are experimental and staff-only; the old Cox artifact remains excluded for target leakage.
 - Product requirements and intended architecture are in `docs/`; implementation status is in `ROADMAP-OPERATIVA.md`.
+
+## MVP adopter compatibility and ML access (2026-10-13)
+
+- Streamlit's public Compatibilità tab keeps the anonymous deterministic ranking and discloses internal ML use without exposing predictions to adopters.
+- The authenticated Rifugi area now offers an Austin-trained adoption-outcome classifier and conditional length-of-stay estimate, plus a Kaggle-trained synthetic dog-pair return-risk model. The latter is clearly labelled synthetic and weak (ROC-AUC 0.6125); Austin adoption ROC-AUC is 0.6507 and conditional stay MAE is 20.36 days.
+- Docker builds the ML image from root context and trains both models from the Austin data and `training-data/dog_adoption_master.csv`. The latter is a Kaggle dataset with license marked `Other`; it is not suitable for redistribution until clarified.
+- Local seed login: `rifugio_esperanza` / `DemoRifugio123!`, limited to `DEBUG=True`; verified with an in-memory SQLite seed and JWT `/users/me/` request. Three ML service unit tests, direct inferences, Python compilation, `manage.py check`, and Compose config passed. Docker live validation is blocked by denied access to the Docker Desktop named pipe.
 
 ## Shelter authoring unit (2026-10-09)
 
@@ -41,12 +48,12 @@ Verification on 2026-10-08: Prisma schema validation, TypeScript typecheck, prod
 
 ## Next planned unit
 
-Usability run with three people, end-to-end email delivery/unsubscribe validation, and ML artifact retraining/evaluation to replace the labelled mock.
+Usability run with three people and end-to-end email delivery/unsubscribe validation remain. The MVP ML demo now has a reproducible training path; local Docker verification remains.
 
 ## Shelter onboarding, ML integration, and translation (2026-10-09)
 
 - Shelter registration validates legal/contact/location data, creates the user, pending shelter, and first membership atomically, then uses the existing email verification. Admins review verified contacts in a protected queue, approve, or reject with a reason. A CLI promotes only an existing verified account to `platform_admin`.
-- FastAPI provides health, model-info, single and batch inference behind a bearer token. The existing Cox artifact was inspected and excluded because its feature list includes `duration_days` and `is_adopted`; a clearly labelled deterministic mock keeps the complete web-to-service flow usable. Staff triage reads latest predictions for active shelters only; new runs are appended to `animal_predictions`.
+- FastAPI provides health, model-info, single and batch inference behind a bearer token. The old Cox artifact remains excluded for leakage; shelter-only MVP demo models are documented in `docs/14-mvp-ml-demo.md`.
 - Self-hosted LibreTranslate/Argos supplies automatic Italian/English text translation at display time. Original text remains in the database and is restored when switching back. Translation failure preserves the source content.
 - TypeScript typecheck, the six existing shelter/photo tests, Python compile, Compose config, Next.js production build, Prisma client generation in Docker, and the MySQL migration passed. Live smoke checks returned 200 for web health and registration, 403/401 for unauthenticated admin/shelter APIs, 400 for invalid shelter registration, and a successful Italian-to-English translation. ML health and authorized prediction worked; model-info correctly returned 401 without a token. No test shelter account was created.
 - The local Prisma CLI could not download its pinned engine through the sandbox proxy, but Docker build generated the client and the migration container applied the migration successfully.
