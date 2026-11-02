@@ -46,7 +46,7 @@
     ]
   },
   "animal_adoption_outcome": {
-    "version": "austin-adoption-outcome-0.1.0",
+    "version": "austin-adoption-outcome-0.1.1",
     "dataset": "Austin Animal Center Shelter Intakes and Outcomes (Kaggle)",
     "dataset_is_synthetic": false,
     "target": "eventual_adoption_among_records_with_observed_outcome",
@@ -66,14 +66,14 @@
     "split": "train before 2017-01; validation 2017-01 to 2017-06; test from 2017-07",
     "training_rows": 64056,
     "test_metrics": {
-      "roc_auc": 0.6507,
-      "average_precision": 0.5925,
-      "brier_score": 0.2303,
+      "roc_auc": 0.6489,
+      "average_precision": 0.5922,
+      "brier_score": 0.2302,
       "rows": 10776,
       "positive_rate": 0.4813
     },
     "adoption_days_if_adopted": {
-      "mae_days": 20.36,
+      "mae_days": 20.44,
       "test_rows": 5186,
       "interpretation": "Estimated length of stay conditional on a recorded adoption, not a guaranteed date."
     },

@@ -1,6 +1,6 @@
 # 02 — Technical Architecture
 
-> **Status, 9 October 2026:** This document describes the target architecture, not the complete running system. The repository currently runs a Django REST + Streamlit MVP and a parallel Next.js + Prisma release. Docker Compose defines separate MySQL databases (`petmatch_mvp` and `petmatch_web`), Mailpit, and a FastAPI service whose model is not configured. The Next.js release provides the Italian public catalogue and shelter authoring with validated publishing and photo processing. See [`ROADMAP-OPERATIVA.md`](../ROADMAP-OPERATIVA.md) for feature status and [`STATE.md`](../STATE.md) for the repository checkpoint.
+> **Status, 2 November 2026:** Django REST + Streamlit is the MVP; Next.js + Prisma is the parallel portal. Compose keeps separate MySQL databases (`petmatch_mvp` and `petmatch_web`), which are not synchronized. The web portal uses its own authoritative rule-based matcher; Django has separate MVP rules, so scores are not comparable. Public matching is not ML. Shelter-only models are demonstrative; both interfaces use the shared RAG assistant. See [`ROADMAP-OPERATIVA.md`](../ROADMAP-OPERATIVA.md) and [`STATE.md`](../STATE.md).
 
 ## 1. Target system overview
 
@@ -52,6 +52,10 @@ graph TB
 The web application is the only thing that talks to the database. The ML service is stateless and knows nothing about MySQL: it receives a feature payload and returns numbers. That boundary is deliberate — it keeps model iteration independent of application deployment, and it means an ML outage degrades two features instead of taking the site down.
 
 ## 2. Stack decisions
+
+### Current product boundaries
+
+Compose keeps the Django/Streamlit MVP database (`petmatch_mvp`) separate from the Next.js portal database (`petmatch_web`); records are not synchronized. The Next.js rule engine is authoritative for the web portal. Django has separate MVP matching rules, so scores from the two experiences are not comparable. Public matching is rule-based, not ML; trained ML demos are shelter-facing only. Both interfaces call the same authenticated RAG assistant.
 
 ### Web application — Next.js (TypeScript, App Router)
 

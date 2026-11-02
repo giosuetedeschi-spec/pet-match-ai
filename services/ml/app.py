@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import joblib
+import numpy as np
 import pandas as pd
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -51,6 +52,29 @@ def _probability(model, features: dict[str, Any], columns: list[str]) -> float:
     return float(model.predict_proba(row)[0][1])
 
 
+def _austin_factors(model, row: dict[str, Any]) -> list[dict[str, Any]]:
+    """Return per-field logistic contributions in log-odds space."""
+    try:
+        preprocessor = model.named_steps["preprocess"]
+        classifier = model.named_steps["model"]
+        transformed = preprocessor.transform(pd.DataFrame([row]))
+        values = transformed.toarray().reshape(-1) if hasattr(transformed, "toarray") else np.asarray(transformed).reshape(-1)
+        names = preprocessor.get_feature_names_out()
+        contributions: dict[str, float] = {}
+        for name, value, coefficient in zip(names, values, classifier.coef_[0]):
+            encoded_name = str(name).split("__", 1)[-1]
+            source = next((field for field in ("age_months", "species", "breed", "sex") if encoded_name == field or encoded_name.startswith(field + "_")), None)
+            if source:
+                contributions[source] = contributions.get(source, 0.0) + float(value * coefficient)
+        display = {"age_months": "età (mesi)", "species": "specie", "breed": "razza", "sex": "sesso"}
+        return [
+            {"label": f"{display[field]}: {row[field]}", "contribution": round(value, 4), "direction": "positive" if value >= 0 else "negative"}
+            for field, value in sorted(contributions.items(), key=lambda item: abs(item[1]), reverse=True)[:4]
+        ]
+    except (AttributeError, KeyError, TypeError, ValueError):
+        return []
+
+
 def _normalise_austin(features: dict[str, Any]) -> dict[str, Any]:
     species = str(features.get("species") or features.get("animal_type") or "unknown").lower()
     species = {"dog": "dog", "cane": "dog", "cat": "cat", "gatto": "cat"}.get(species, species)
@@ -71,8 +95,18 @@ def predict(features: dict[str, Any]) -> dict[str, Any]:
     row = _normalise_austin(features)
     probability = _probability(models["austin_outcome"], row, record["features"])
     expected_days = float(models["austin_adoption_days"].predict(pd.DataFrame([row]))[0])
+    raw_values = {
+        "species": features.get("species") or features.get("animal_type"),
+        "breed": features.get("breed"),
+        "sex": features.get("gender") or features.get("sex"),
+        "age_months": features.get("age_months", features.get("age_months_at_intake")),
+    }
+    data_completeness = sum(value not in (None, "", "unknown", "Unknown") for value in raw_values.values()) / len(raw_values)
     return {
         "adoption_probability": round(probability, 4),
+        "bucket_probabilities": {"adoption": round(probability, 4), "other_observed_outcome": round(1 - probability, 4)},
+        "top_factors": _austin_factors(models["austin_outcome"], row),
+        "data_completeness": round(data_completeness, 4),
         "estimated_days_if_adopted": round(max(0.0, expected_days), 1),
         "days_mae_on_test": record["adoption_days_if_adopted"]["mae_days"],
         "test_roc_auc": record["test_metrics"]["roc_auc"],

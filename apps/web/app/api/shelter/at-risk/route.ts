@@ -4,8 +4,8 @@ import { createRecordId } from "@/lib/auth";
 import { getShelterAccess } from "@/lib/shelter-access";
 import { prisma } from "@/lib/prisma";
 
-type Prediction = { ref: string; prediction: { adoption_probability: number; bucket_probabilities: Record<string, number>; top_factors: unknown[]; data_completeness: number; model_version: string; mode: string } };
-type StoredPrediction = { animalId: string; modelVersion: string; mode: string; predictedAt: Date; adoptionProbability: number; bucketProbabilities: unknown; topFactors: unknown; dataCompleteness: number; name: string; slug: string; intakeDate: Date; species: string; shelterId: string; shelterName: string };
+type Prediction = { ref: string; prediction: { adoption_probability: number; estimated_days_if_adopted: number; bucket_probabilities: Record<string, number>; top_factors: unknown[]; data_completeness: number; model_version: string; mode: string } };
+type StoredPrediction = { animalId: string; modelVersion: string; mode: string; predictedAt: Date; adoptionProbability: number; estimatedDaysIfAdopted: number | null; bucketProbabilities: unknown; topFactors: unknown; dataCompleteness: number; name: string; slug: string; intakeDate: Date; species: string; shelterId: string; shelterName: string };
 const mlUrl = () => (process.env.ML_SERVICE_URL ?? "http://ml:8001").replace(/\/$/, "");
 const refreshes = new Map<string, number[]>();
 
@@ -16,7 +16,8 @@ export async function GET(request: NextRequest) {
   if (!ids.length) return NextResponse.json({ predictions: [], modelInfo: null, serviceAvailable: false });
   const predictions = await prisma.$queryRaw<StoredPrediction[]>(Prisma.sql`
     SELECT ap.animal_id AS animalId, ap.model_version AS modelVersion, ap.mode, ap.predicted_at AS predictedAt,
-      ap.adoption_probability AS adoptionProbability, ap.bucket_probabilities AS bucketProbabilities,
+      ap.adoption_probability AS adoptionProbability, ap.estimated_days_if_adopted AS estimatedDaysIfAdopted,
+      ap.bucket_probabilities AS bucketProbabilities,
       ap.top_factors AS topFactors, ap.data_completeness AS dataCompleteness,
       a.name, a.slug, a.intake_date AS intakeDate, a.species, a.shelter_id AS shelterId, s.name AS shelterName
     FROM animal_predictions ap JOIN animals a ON a.id = ap.animal_id JOIN shelters s ON s.id = a.shelter_id
@@ -64,9 +65,9 @@ export async function POST(request: NextRequest) {
     const byId = new Map(animals.map((animal) => [animal.id, animal]));
     const rows = result.predictions.flatMap(({ ref, prediction }) => {
       if (!byId.has(ref)) return [];
-      return [{ id: createRecordId(), animalId: ref, modelVersion: prediction.model_version, mode: prediction.mode, adoptionProbability: prediction.adoption_probability, bucketProbabilities: JSON.stringify(prediction.bucket_probabilities), topFactors: JSON.stringify(prediction.top_factors), dataCompleteness: prediction.data_completeness }];
+      return [{ id: createRecordId(), animalId: ref, modelVersion: prediction.model_version, mode: prediction.mode, adoptionProbability: prediction.adoption_probability, estimatedDaysIfAdopted: prediction.estimated_days_if_adopted, bucketProbabilities: JSON.stringify(prediction.bucket_probabilities), topFactors: JSON.stringify(prediction.top_factors), dataCompleteness: prediction.data_completeness }];
     });
-    if (rows.length) await Promise.all(rows.map((row) => prisma.$executeRaw(Prisma.sql`INSERT INTO animal_predictions (id, animal_id, model_version, mode, predicted_at, adoption_probability, bucket_probabilities, top_factors, data_completeness) VALUES (${row.id}, ${row.animalId}, ${row.modelVersion}, ${row.mode}, NOW(3), ${row.adoptionProbability}, CAST(${row.bucketProbabilities} AS JSON), CAST(${row.topFactors} AS JSON), ${row.dataCompleteness})`)));
+    if (rows.length) await Promise.all(rows.map((row) => prisma.$executeRaw(Prisma.sql`INSERT INTO animal_predictions (id, animal_id, model_version, mode, predicted_at, adoption_probability, estimated_days_if_adopted, bucket_probabilities, top_factors, data_completeness) VALUES (${row.id}, ${row.animalId}, ${row.modelVersion}, ${row.mode}, NOW(3), ${row.adoptionProbability}, ${row.estimatedDaysIfAdopted}, CAST(${row.bucketProbabilities} AS JSON), CAST(${row.topFactors} AS JSON), ${row.dataCompleteness})`)));
     return NextResponse.json({ refreshed: rows.length });
   } catch {
     return NextResponse.json({ error: "Servizio di previsione non disponibile. Riprova più tardi.", code: "dependency_unavailable" }, { status: 503 });

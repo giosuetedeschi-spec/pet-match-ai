@@ -25,6 +25,7 @@ These documents describe the **target product and architecture**. Implementation
 | 12 | [Modelling Approaches](./12-modelling-approaches.md) | Problem formulation, survival analysis recommendation, why not LLM fine-tuning, rejected ideas | which model to build, and why not the others |
 | 13 | [ML Validation and Reconstruction](./13-ml-validation-and-reconstruction.md) | Evidence that the saved artifact fails validation and the steps required to rebuild it | why the current artifact is disabled and what is needed to replace it |
 | 14 | [MVP ML Demo](./14-mvp-ml-demo.md) | Training data, metrics, privacy boundary, and demo limitations | what the MVP models actually predict |
+| 15 | [RAG Assistant](./15-rag-assistant.md) | Shared bilingual retrieval assistant, sources, evaluation, and safety limits | how demo guidance is grounded and shown |
 
 If you only read three: **01** (what), **03** (data), **08** (order).
 

@@ -1,0 +1,102 @@
+[
+  {
+    "id": "poison-foods-it",
+    "title": "Alimenti e sostanze da evitare per cani e gatti",
+    "organization": "ASPCA Animal Poison Control",
+    "url": "https://www.aspca.org/pet-care/aspca-poison-control/people-foods-avoid-feeding-your-pets",
+    "verified_at": "2026-11-02",
+    "locale": "it",
+    "keywords": "cane gatto cioccolato caffeina uva uvetta xilitolo cipolla aglio alcol lievito",
+    "text": "Cioccolato, caffè e caffeina possono causare disturbi gastrointestinali, alterazioni cardiache, tremori e convulsioni. Uva e uvetta possono danneggiare i reni dei cani; cipolla, aglio ed erba cipollina possono danneggiare i globuli rossi. Lo xilitolo può causare ipoglicemia e danni al fegato, soprattutto nei cani. Se un animale ha ingerito una sostanza potenzialmente tossica, contatta subito un veterinario o un centro antiveleni veterinario; comunica prodotto, quantità stimata e orario. Non aspettare la comparsa dei sintomi."
+  },
+  {
+    "id": "poison-foods-en",
+    "title": "Foods and substances to avoid for dogs and cats",
+    "organization": "ASPCA Animal Poison Control",
+    "url": "https://www.aspca.org/pet-care/aspca-poison-control/people-foods-avoid-feeding-your-pets",
+    "verified_at": "2026-11-02",
+    "locale": "en",
+    "keywords": "dog cat chocolate caffeine grapes raisins xylitol onion garlic alcohol yeast",
+    "text": "Chocolate, coffee and caffeine can cause gastrointestinal upset, heart rhythm changes, tremors and seizures. Grapes and raisins can damage dogs' kidneys; onion, garlic and chives can damage red blood cells. Xylitol can cause low blood sugar and liver injury, especially in dogs. If a pet may have ingested a toxic substance, contact a veterinarian or veterinary poison center immediately; share the product, estimated amount and time. Do not wait for symptoms."
+  },
+  {
+    "id": "emergency-it",
+    "title": "Primo soccorso e urgenze per animali",
+    "organization": "American Veterinary Medical Association",
+    "url": "https://ebusiness.avma.org/files/productdownloads/mcm-client-brochures-pet-first-aid-2023.pdf",
+    "verified_at": "2026-11-02",
+    "locale": "it",
+    "keywords": "emergenza pronto soccorso respirazione soffocamento convulsioni avvelenamento veterinario",
+    "text": "Il primo soccorso non sostituisce le cure veterinarie. In caso di emergenza, chiama il veterinario o un pronto soccorso veterinario locale affinché possa prepararsi al tuo arrivo. Difficoltà respiratoria, soffocamento, convulsioni, collasso o possibile avvelenamento richiedono contatto veterinario immediato. Mantieni l'animale calmo e porta con te confezione o informazioni sulla sostanza ingerita, quantità e orario. Non somministrare farmaci e non indurre il vomito se non su indicazione del veterinario."
+  },
+  {
+    "id": "emergency-en",
+    "title": "Pet first aid and emergencies",
+    "organization": "American Veterinary Medical Association",
+    "url": "https://ebusiness.avma.org/files/productdownloads/mcm-client-brochures-pet-first-aid-2023.pdf",
+    "verified_at": "2026-11-02",
+    "locale": "en",
+    "keywords": "emergency first aid breathing choking seizures poisoning veterinarian",
+    "text": "First aid is not a substitute for veterinary care. In an emergency, call your veterinarian or a local emergency veterinary hospital so they can prepare for your arrival. Difficulty breathing, choking, seizures, collapse or suspected poisoning require immediate veterinary contact. Keep the pet calm and bring the product label and information about the substance, estimated amount and time. Do not give medicine or induce vomiting unless a veterinarian directs you."
+  },
+  {
+    "id": "nutrition-it",
+    "title": "Nutrizione di cani e gatti e scelta dell'alimento",
+    "organization": "World Small Animal Veterinary Association",
+    "url": "https://wsava.org/Global-Guidelines/Global-Nutrition-Guidelines/",
+    "verified_at": "2026-11-02",
+    "locale": "it",
+    "keywords": "nutrizione cane gatto cibo dieta marca etichetta alimentazione peso",
+    "text": "La scelta dell'alimento deve considerare specie, età, stato di salute e condizione corporea. Le linee guida WSAVA invitano a valutare chi formula la dieta, le qualifiche del nutrizionista, il controllo qualità, la completezza nutrizionale e la disponibilità di informazioni caloriche. Termini promozionali come 'premium' o 'olistico' da soli non dimostrano qualità nutrizionale. Le esigenze individuali e i cambi di dieta vanno discussi con il veterinario; diete terapeutiche o casalinghe richiedono supervisione professionale."
+  },
+  {
+    "id": "nutrition-en",
+    "title": "Dog and cat nutrition and choosing pet food",
+    "organization": "World Small Animal Veterinary Association",
+    "url": "https://wsava.org/Global-Guidelines/Global-Nutrition-Guidelines/",
+    "verified_at": "2026-11-02",
+    "locale": "en",
+    "keywords": "nutrition dog cat food diet brand label feeding weight",
+    "text": "Food choice should account for species, age, health and body condition. WSAVA guidelines suggest checking who formulates the diet, nutritionist qualifications, quality control, nutritional completeness and calorie information. Marketing terms such as 'premium' or 'holistic' alone do not establish nutritional quality. Individual needs and diet changes should be discussed with a veterinarian; therapeutic or home-prepared diets require professional supervision."
+  },
+  {
+    "id": "cat-feeding-it",
+    "title": "Alimentazione del gatto e perdita di appetito",
+    "organization": "Cornell Feline Health Center",
+    "url": "https://www.vet.cornell.edu/departments-centers-and-institutes/cornell-feline-health-center/health-information/feline-health-topics/feeding-your-cat",
+    "verified_at": "2026-11-02",
+    "locale": "it",
+    "keywords": "gatto cibo alimentazione dieta appetito digiuno peso veterinario",
+    "text": "I gatti hanno esigenze nutrizionali specifiche e necessitano di acqua fresca. Una dieta completa e bilanciata è preferibile; integratori non vanno aggiunti senza approvazione veterinaria. Non esiste una quantità universale adatta a ogni gatto: peso ideale e variazioni della dieta vanno concordati con il veterinario. Un gatto che rifiuta il cibo e perde peso deve essere visitato."
+  },
+  {
+    "id": "cat-feeding-en",
+    "title": "Cat feeding and loss of appetite",
+    "organization": "Cornell Feline Health Center",
+    "url": "https://www.vet.cornell.edu/departments-centers-and-institutes/cornell-feline-health-center/health-information/feline-health-topics/feeding-your-cat",
+    "verified_at": "2026-11-02",
+    "locale": "en",
+    "keywords": "cat food feeding diet appetite fasting weight veterinarian",
+    "text": "Cats have specific nutritional needs and require fresh water. A complete and balanced diet is preferred; supplements should not be added without veterinary approval. There is no universal portion for every cat: discuss ideal weight and diet changes with a veterinarian. A cat that refuses food and is losing weight should be examined."
+  },
+  {
+    "id": "poison-cat-it",
+    "title": "Sospetta ingestione di sostanze tossiche nel gatto",
+    "organization": "Cornell Feline Health Center",
+    "url": "https://www.vet.cornell.edu/departments-centers-and-institutes/cornell-feline-health-center/health-information/feline-health-topics/poisons",
+    "verified_at": "2026-11-02",
+    "locale": "it",
+    "keywords": "gatto veleno tossico farmaco dose vomito veterinario",
+    "text": "La gravità di un'intossicazione dipende da sostanza, quantità, età, taglia e salute dell'animale. Se sospetti che un gatto abbia ingerito un veleno, contatta subito il veterinario o un centro antiveleni veterinario. Non indurre il vomito e non somministrare rimedi o farmaci senza istruzioni professionali."
+  },
+  {
+    "id": "poison-cat-en",
+    "title": "Suspected poisoning in cats",
+    "organization": "Cornell Feline Health Center",
+    "url": "https://www.vet.cornell.edu/departments-centers-and-institutes/cornell-feline-health-center/health-information/feline-health-topics/poisons",
+    "verified_at": "2026-11-02",
+    "locale": "en",
+    "keywords": "cat poison toxic medication dose vomiting veterinarian",
+    "text": "The severity of poisoning depends on the substance, amount, age, size and health of the animal. If you suspect a cat ingested poison, contact a veterinarian or veterinary poison center immediately. Do not induce vomiting or give remedies or medicine without professional instructions."
+  }
+]

@@ -20,8 +20,8 @@ export default function Home() {
         <a className="button secondary" href="/it/rifugio/registrazione">
           Registra un rifugio
         </a>
-        <a className="button secondary" href="http://localhost:8501">
-          Catalogo MVP
+        <a className="button secondary" href="/it/assistente">
+          Assistente informativo
         </a>
       </div>
     </main>

@@ -2,8 +2,8 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 from django.contrib.auth import get_user_model
-from apps.users.models import ShelterProfile
-from apps.core.models import Animal, Species, Breed, AnimalSize, AnimalEnergy
+from apps.users.models import AdopterProfile, ShelterProfile
+from apps.core.models import Animal, AnimalStatus, Species, Breed, AnimalSize, AnimalEnergy
 
 User = get_user_model()
 
@@ -19,6 +19,7 @@ class MatchingAPITestCase(APITestCase):
             role=User.Role.ADOPTER,
             gdpr_consent=True
         )
+        AdopterProfile.objects.create(user=self.adopter)
 
         # Utente Rifugio
         self.shelter_user = User.objects.create_user(
@@ -44,7 +45,8 @@ class MatchingAPITestCase(APITestCase):
             age_years=3,
             size=AnimalSize.LARGE,
             energy_level=AnimalEnergy.HIGH,
-            date_entry_shelter="2026-01-01"
+            date_entry_shelter="2026-01-01",
+            status=AnimalStatus.AVAILABLE,
         )
 
         self.url = reverse('matching:adopter_recommendations')

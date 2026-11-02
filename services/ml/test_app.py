@@ -46,6 +46,9 @@ class PredictionTests(unittest.TestCase):
         with patch("app._models", return_value=self.models):
             result = predict({"species": "DOG", "breed": "Mix", "gender": "F", "age_months": 15})
         self.assertEqual(result["adoption_probability"], 0.3)
+        self.assertEqual(result["bucket_probabilities"], {"adoption": 0.3, "other_observed_outcome": 0.7})
+        self.assertEqual(result["data_completeness"], 1.0)
+        self.assertEqual(result["top_factors"], [])
         self.assertEqual(result["estimated_days_if_adopted"], 42.0)
         self.assertEqual(result["audience"], "shelter_staff_only")
         self.assertEqual(self.models["austin_outcome"].last_frame.loc[0, "sex"], "female")

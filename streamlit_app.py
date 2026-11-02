@@ -10,6 +10,8 @@ import pandas as pd
 API_BASE = os.getenv("PET_MATCH_API_URL", "http://127.0.0.1:8000").rstrip("/")
 ML_BASE = os.getenv("ML_SERVICE_URL", "http://127.0.0.1:8001").rstrip("/")
 ML_TOKEN = os.getenv("ML_SERVICE_TOKEN", "local-development-token")
+CHAT_BASE = os.getenv("CHAT_SERVICE_URL", "http://127.0.0.1:8002").rstrip("/")
+CHAT_TOKEN = os.getenv("CHAT_SERVICE_TOKEN", "local-chat-token")
 TIMEOUT = 20
 MAX_IMAGE_SIZE = 5 * 1024 * 1024
 
@@ -115,6 +117,20 @@ def ml_request(path, ref, features):
     return response.json()["prediction"]
 
 
+def chat_request(message, locale):
+    try:
+        response = requests.post(
+            f"{CHAT_BASE}/chat",
+            headers={"Authorization": f"Bearer {CHAT_TOKEN}", "Accept": "application/json"},
+            json={"message": message, "locale": locale},
+            timeout=20,
+        )
+        response.raise_for_status()
+    except requests.RequestException as exc:
+        raise ApiError(f"Assistente non raggiungibile ({CHAT_BASE}). Avvia il servizio assistant e riprova.") from exc
+    return response.json()
+
+
 def predict_animal_outcome(animal):
     age = animal.get("total_age_in_months", animal.get("age_months", 0))
     intake_date = animal.get("date_entry_shelter")
@@ -189,11 +205,12 @@ def render_catalog():
     )
     with st.form("catalog_filter_form"):
         search = st.text_input(text["search"])
-        c1, c2, c3, c4, c5, c6 = st.columns([2, 1, 1, 1, 1, 1])
+        c1, c2, c3 = st.columns([2, 1, 1])
         species = c1.selectbox(text["species"], [text["all_species"], "DOG", "CAT"], format_func=lambda value: {"DOG": "Dog" if language_code == "en" else "Cane", "CAT": "Cat" if language_code == "en" else "Gatto"}.get(value, value))
         city = c2.text_input(text["city"])
         province = c3.text_input(text["province"], max_chars=10)
         ages = [text["any_age"], *range(41)]
+        c4, c5, c6 = st.columns(3)
         min_age = c4.selectbox(text["min_age"], ages)
         max_age = c5.selectbox(text["max_age"], ages)
         gender = c6.selectbox(text["gender"], [text["all_genders"], "M", "F"], format_func=lambda value: {"M": "Male" if language_code == "en" else "Maschio", "F": "Female" if language_code == "en" else "Femmina"}.get(value, value))
@@ -324,7 +341,7 @@ def render_catalog():
 
 def render_matching():
     st.header("Compatibilità con gli animali")
-    st.caption("Rispondi al questionario: il punteggio usa le regole di compatibilità attuali, non un modello ML validato.")
+    st.caption("Questo questionario MVP usa regole deterministiche Django. Il portale web ha un motore separato; i punteggi delle due demo non sono direttamente confrontabili.")
     st.info("PetMatch usa modelli ML solo per supportare il lavoro interno dei rifugi. Le relative stime non vengono mostrate a chi adotta e non decidono l'accesso a un'adozione.")
     with st.form("matching-preview-form"):
         preferred_species = st.selectbox("Specie", ["ANY", "DOG", "CAT"], format_func=lambda value: {"ANY": "Cane o gatto", "DOG": "Cane", "CAT": "Gatto"}[value])
@@ -380,7 +397,51 @@ def render_matching():
             st.caption(f"{animal['species']} · {animal['breed']} · {animal['city']} · {animal['shelter']}")
             st.metric("Compatibilità indicativa (regole)", f"{animal['score']}%")
             with st.expander("Dettaglio del punteggio"):
-                st.json(animal["breakdown"])
+                breakdown = animal.get("breakdown") or {}
+                if isinstance(breakdown, dict):
+                    for dimension, value in breakdown.items():
+                        if isinstance(value, dict):
+                            score = value.get("score")
+                            contribution = value.get("contribution")
+                            st.write(f"**{dimension.replace('_', ' ').capitalize()}**: {score if score is not None else '—'}/100")
+                            if contribution is not None:
+                                st.caption(f"Contributo al totale: {contribution:.1f} punti")
+                        else:
+                            st.write(f"**{dimension.replace('_', ' ').capitalize()}**: {value}")
+                else:
+                    st.caption("Dettaglio del punteggio non disponibile.")
+
+
+def render_assistant():
+    language = st.selectbox("Lingua / Language", ["Italiano", "English"], key="assistant_language")
+    locale = "en" if language == "English" else "it"
+    italian = locale == "it"
+    st.header("Assistente informativo" if italian else "Information assistant")
+    st.caption("Risposte basate su fonti curate. Non sostituisce il veterinario." if italian else "Answers grounded in curated sources. Not a substitute for a veterinarian.")
+    with st.form("assistant-question-form", clear_on_submit=True):
+        message = st.text_area("La tua domanda" if italian else "Your question", max_chars=1200)
+        submitted = st.form_submit_button("Chiedi" if italian else "Ask")
+    if submitted and message.strip():
+        try:
+            st.session_state.assistant_reply = chat_request(message.strip(), locale)
+        except ApiError as exc:
+            st.error(str(exc))
+    reply = st.session_state.get("assistant_reply")
+    if not reply:
+        return
+    st.write(reply["answer"])
+    engine_labels = {
+        "pretrained_model_rag": "Modello linguistico + fonti" if italian else "Language model + sources",
+        "retrieval_fallback": "Risposta guidata dalle fonti, senza modello generativo" if italian else "Source-based response, no generative model",
+        "safety_guidance": "Indicazione di sicurezza" if italian else "Safety guidance",
+        "no_answer": "Fonti insufficienti" if italian else "Insufficient sources",
+    }
+    st.caption(engine_labels.get(reply.get("engine"), reply.get("engine", "")))
+    if reply.get("citations"):
+        st.markdown("**Fonti**" if italian else "**Sources**")
+        for citation in reply["citations"]:
+            st.markdown(f"- [{citation['organization']}: {citation['title']}]({citation['url']}) · {citation['verified_at']}")
+    st.info(reply.get("disclosure", ""))
 
 
 def render_internal_ml(animals):
@@ -732,11 +793,13 @@ def main():
     st.set_page_config(page_title="PetMatch AI", page_icon="🐾", layout="wide")
     st.title("PetMatch AI 🐾")
     st.caption("Animali dei rifugi, pronti a incontrare una famiglia.")
-    catalog_tab, matching_tab, shelter_tab = st.tabs(["Catalogo", "Compatibilità", "Rifugi"])
+    catalog_tab, matching_tab, assistant_tab, shelter_tab = st.tabs(["Catalogo", "Compatibilità", "Assistente", "Rifugi"])
     with catalog_tab:
         render_catalog()
     with matching_tab:
         render_matching()
+    with assistant_tab:
+        render_assistant()
     with shelter_tab:
         render_shelter()
 

@@ -399,6 +399,7 @@ model AnimalPrediction {
   mode                  String   @db.VarChar(20)
   predictedAt           DateTime @default(now()) @map("predicted_at") @db.DateTime(3)
   adoptionProbability   Float    @map("adoption_probability")
+  estimatedDaysIfAdopted Float?  @map("estimated_days_if_adopted")
   bucketProbabilities  Json     @map("bucket_probabilities")
   topFactors            Json     @map("top_factors")
   dataCompleteness      Float    @map("data_completeness")

@@ -113,10 +113,10 @@ def _age_months(value) -> float:
 
 def _sex(value) -> str:
     value = str(value or "").lower()
-    if "male" in value:
-        return "male"
     if "female" in value:
         return "female"
+    if "male" in value:
+        return "male"
     return "unknown"
 
 
@@ -167,7 +167,7 @@ def train_austin_outcome(data_dir: Path, output_dir: Path) -> dict:
     predicted_days = regression.predict(X.loc[regression_test])
     joblib.dump(regression, output_dir / "austin_adoption_days.joblib")
     return {
-        "version": "austin-adoption-outcome-0.1.0",
+        "version": "austin-adoption-outcome-0.1.1",
         "dataset": "Austin Animal Center Shelter Intakes and Outcomes (Kaggle)",
         "dataset_is_synthetic": False,
         "target": "eventual_adoption_among_records_with_observed_outcome",

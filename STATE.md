@@ -1,7 +1,7 @@
 # PetMatch AI — Operational State
 
-Updated: 2026-10-13
-Branch: `chore/clean-modules-types-docs`; local MVP compatibility changes are uncommitted
+Updated: 2026-11-02
+Branch: `chore/clean-modules-types-docs`; audit implementation is in progress
 Working tree: dirty
 Merge status: not merged.
 
@@ -26,10 +26,19 @@ Commit `26d8cc9` also updated the project documentation, cleaned existing module
 - FastAPI now serves two authenticated, trained demo models: Austin adoption outcome and conditional stay duration, plus synthetic Kaggle dog-pair return risk. Both are experimental and staff-only; the old Cox artifact remains excluded for target leakage.
 - Product requirements and intended architecture are in `docs/`; implementation status is in `ROADMAP-OPERATIVA.md`.
 
+## Audit implementation (2026-11-02)
+
+- Corrected Austin `Sex upon Intake` encoding so “Spayed Female” is not classified as male; retrained and advanced the model version to `austin-adoption-outcome-0.1.1` (ROC-AUC 0.6489; conditional-stay MAE 20.44 days).
+- ML prediction payload now provides bucket probabilities, field-level logistic signals, and input completeness. Next.js triage persists and displays those fields plus estimated stay; model limitations remain visible.
+- Added a shared authenticated bilingual RAG assistant for Next.js and Streamlit, with a curated citation-bearing corpus, abstention for unsupported prompts, and conservative veterinary guidance for emergency/dosage queries. A language model remains optional; retrieval fallback needs no provider credentials.
+- Public matching remains deterministic. The Next.js matcher is authoritative for the portal; Django MVP scoring is separate. Compose uses distinct databases with no synchronization. Removed the localhost Streamlit link from the web home page.
+- Added assistant evaluation to CI; improved Streamlit filter layout and theme; added assistant source and safety documentation.
+- Verification: assistant evaluation (6 tests), ML tests (4), Django matching tests (3), TypeScript typecheck, production Next build, and `docker compose config` passed. Live Compose startup could not be verified because the Docker Desktop Linux engine named pipe was unavailable.
+
 ## MVP adopter compatibility and ML access (2026-10-13)
 
 - Streamlit's public Compatibilità tab keeps the anonymous deterministic ranking and discloses internal ML use without exposing predictions to adopters.
-- The authenticated Rifugi area now offers an Austin-trained adoption-outcome classifier and conditional length-of-stay estimate, plus a Kaggle-trained synthetic dog-pair return-risk model. The latter is clearly labelled synthetic and weak (ROC-AUC 0.6125); Austin adoption ROC-AUC is 0.6507 and conditional stay MAE is 20.36 days.
+- The authenticated Rifugi area now offers an Austin-trained adoption-outcome classifier and conditional length-of-stay estimate, plus a Kaggle-trained synthetic dog-pair return-risk model. The latter is clearly labelled synthetic and weak (ROC-AUC 0.6172); Austin adoption ROC-AUC is 0.6489 and conditional stay MAE is 20.44 days after correcting female sex encoding and retraining.
 - Docker builds the ML image from root context and trains both models from the versioned Austin and Kaggle CSV files in `training-data/`. Source links and upstream license labels, including Kaggle's `Other` label, are documented in `docs/14-mvp-ml-demo.md`.
 - Local seed login: `rifugio_esperanza` / `DemoRifugio123!`, limited to `DEBUG=True`; verified with an in-memory SQLite seed and JWT `/users/me/` request. Three ML service unit tests, direct inferences, Python compilation, `manage.py check`, and Compose config passed. Docker live validation is blocked by denied access to the Docker Desktop named pipe.
 

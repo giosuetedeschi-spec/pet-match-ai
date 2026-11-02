@@ -44,6 +44,7 @@ export default function MatchResults() {
 
   return <>
     <header className="catalog-heading"><p className="eyebrow">Il tuo profilo di compatibilità</p><h1>Questi animali potrebbero essere adatti a te.</h1><p className="intro">Il punteggio riassume quanto le informazioni disponibili corrispondono alle tue risposte. Leggi sempre i dettagli e confrontati con il rifugio.</p><div className="actions"><a className="button secondary" href="/it/abbinamento">Modifica il profilo</a><a className="button secondary" href="/it/preferiti">I tuoi preferiti</a></div></header>
+    <p className="match-method-note">La compatibilità pubblica è calcolata dal motore di regole del portale. Non è una previsione ML dell’esito dell’adozione; i modelli ML sono riservati al supporto interno dei rifugi.</p>
     <NotificationSettings />
     {error && <p role="alert" className="match-error">{error}</p>}
     <p className="catalog-count" aria-live="polite">{data.results.length} abbinamenti · {data.eligibleCount} compatibili nel raggio di {data.radiusKm} km · {data.totalAvailable} schede valutate</p>

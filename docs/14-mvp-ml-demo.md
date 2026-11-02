@@ -1,4 +1,4 @@
-﻿# Modelli ML dimostrativi nell'MVP
+# Modelli ML dimostrativi nell'MVP
 
 Aggiornato: 2026-10-13.
 
@@ -21,8 +21,8 @@ Fonte: [Austin Animal Center Shelter Intakes and Outcomes su Kaggle](https://www
 
 Il training usa una regressione logistica per adozione rispetto agli altri esiti osservati, e un regressore per la permanenza dei soli animali poi adottati. Le variabili di esito e di durata non entrano tra le feature. La valutazione usa le date di intake: training prima del 2017, validazione nel primo semestre 2017, test dal luglio 2017.
 
-- Adozione: ROC-AUC 0,6507; average precision 0,5925; Brier 0,2303 sul test temporale (10.776 righe; base rate 48,13%).
-- Permanenza condizionata all'adozione: MAE 20,36 giorni sul test temporale (5.186 adozioni).
+- Adozione: ROC-AUC 0,6489; average precision 0,5922; Brier 0,2302 sul test temporale (10.776 righe; base rate 48,13%).
+- Permanenza condizionata all'adozione: MAE 20,44 giorni sul test temporale (5.186 adozioni).
 - Limiti: dati storici di Austin, Texas; il file unito contiene esiti completati, non gli animali ancora in attesa; le metriche non convalidano l'uso in rifugi italiani e la durata non Ã¨ una data promessa.
 
 ### Rischio di restituzione della coppia
@@ -46,7 +46,7 @@ Il training riproducibile Ã¨ in `services/ml/train_models.py`. Dalla radice de
 La compilazione dell'immagine Compose esegue lo stesso training e include i modelli nell'immagine. I CSV sono nel repository, quindi non servono credenziali Kaggle durante build o avvio. Per usare Streamlit:
 
 ```powershell
-docker compose up -d --build mysql mail ml django streamlit
+docker compose up -d --build mysql mail ml assistant django streamlit
 ```
 
 Le inferenze ML sono dietro l'area Streamlit Rifugi e gli endpoint FastAPI richiedono il bearer token di servizio. L'account locale generato dal seed Ã¨ `rifugio_esperanza` / `DemoRifugio123!`.
