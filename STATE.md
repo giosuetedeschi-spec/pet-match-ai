@@ -1,8 +1,8 @@
 # PetMatch AI — Operational State
 
 Updated: 2026-11-02
-Branch: `chore/clean-modules-types-docs`; audit implementation is in progress
-Working tree: dirty
+Branch: `chore/clean-modules-types-docs`; audit pushed as `be1f647`
+Working tree: separate local `manage.py` demo-login comment remains uncommitted
 Merge status: not merged.
 
 CI on the branch passed on Ubuntu 24.04 (GitHub Actions run `38040076466`). It now runs on branch pushes, checks Django matching, typechecks and tests the web app during its image build, and runs ML service contract tests. The full Compose smoke test passed.
@@ -33,7 +33,7 @@ Commit `26d8cc9` also updated the project documentation, cleaned existing module
 - Added a shared authenticated bilingual RAG assistant for Next.js and Streamlit, with a curated citation-bearing corpus, abstention for unsupported prompts, and conservative veterinary guidance for emergency/dosage queries. A language model remains optional; retrieval fallback needs no provider credentials.
 - Public matching remains deterministic. The Next.js matcher is authoritative for the portal; Django MVP scoring is separate. Compose uses distinct databases with no synchronization. Removed the localhost Streamlit link from the web home page.
 - Added assistant evaluation to CI; improved Streamlit filter layout and theme; added assistant source and safety documentation.
-- Verification: assistant evaluation (6 tests), ML tests (4), Django matching tests (3), TypeScript typecheck, production Next build, and `docker compose config` passed. Live Compose startup could not be verified because the Docker Desktop Linux engine named pipe was unavailable.
+- Verification: assistant evaluation (6 tests), ML tests (4), Django matching tests (3), TypeScript typecheck, production Next build, Streamlit rendering, and `docker compose config` passed. GitHub Actions run `41538497791` passed all jobs, including Compose startup, migrations, assistant retrieval and the Next.js proxy. Local Compose startup could not be run because the Docker Desktop Linux engine named pipe was unavailable.
 
 ## MVP adopter compatibility and ML access (2026-10-13)
 
