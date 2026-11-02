@@ -49,4 +49,4 @@ Il matching Next.js supporta profili anonimi e account verificati. Gli account d
 
 ## Stato corrente
 
-Onboarding, revisione admin, modelli ML demo, triage, traduzione automatica e audit di assistente/matching sono implementati localmente nel branch `chore/clean-modules-types-docs`; questa unità attende il CI GitHub. Il motore Docker locale non è raggiungibile. Restano la validazione scientifica del modello, i test di usabilità con tre persone e la verifica end-to-end di email, digest e disiscrizione.
+Onboarding, revisione admin, modelli ML demo, triage, traduzione automatica e audit di assistente/matching sono implementati nel branch `chore/clean-modules-types-docs`; GitHub Actions run `41541971890` ha superato tutti i job, incluso Compose. Il motore Docker locale non è raggiungibile. Restano la validazione scientifica del modello, i test di usabilità con tre persone e la verifica end-to-end di email, digest e disiscrizione.
