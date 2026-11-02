@@ -1,16 +1,18 @@
 # PetMatch AI — Operational State
 
-Updated: 2026-11-02
-Branch: `chore/clean-modules-types-docs`; audit pushed as `be1f647`
+Updated: 2026-11-03
+Branch: `chore/clean-modules-types-docs`; audit pushed as `bc1775d` (implementation `adef1ff`)
 Working tree: separate local `manage.py` demo-login comment remains uncommitted
 Merge status: not merged.
 
-## Assistant and compatibility audit follow-up (2026-11-02)
+## Assistant and compatibility audit follow-up (2026-11-03)
 
 - RAG now rejects low-relevance and out-of-scope prompts (including unsupported species and live shop/price claims), uses the previous user turn for short follow-ups, and routes adoption searches to a read-only public catalog lookup. It adds dog-selection and official breed-standard references with per-entry topic/species/source/review metadata.
-- Emergency routing no longer treats ordinary food ingestion alone as urgent. Generated responses are structured as claims with source IDs and lexical support checks; unsupported generation falls back to text from one cited source. The web proxy rate-limits to 10 requests per minute per client IP.
+- Emergency routing distinguishes ordinary food from toxic/unknown ingestion and directs cat-lily, dog-paracetamol, and unknown-ingestion cases to veterinary help with appropriate sources. Health answers bypass generation and use controlled source text or referral guidance, avoiding reliance on the lexical overlap checker for medical meaning. Adoption-topic model claims retain source-ID and lexical checks, which do not establish entailment. The web proxy rate-limits to 10 requests per minute per client IP.
+- The web and Streamlit assistants parse explicit species, city, and child-compatibility filters. Child-compatible results require an explicit positive assessment; unknown compatibility is omitted. City parsing handles multiword locations and the English article before a species. Live-provider generation has a gated test but was not invoked; the default has no API key and makes no external call.
+- Commercial inventory/pricing remains out of scope and abstains; breed information remains limited to official standards. Web and Django/Streamlit public matching remain separate rule engines, and the synthetic Kaggle return-risk model is not a validated compatibility model; no common head-to-head or real-outcome evaluation exists.
 - The Django compatibility quiz now records existing dogs and cats separately, excludes known conflicts with children/dogs/cats, and exposes cautions for unknown compatibility. Streamlit and web assistant UIs explain the pipeline, citations, catalogue limits, and abstention examples.
-- Verification: 15 assistant tests, 12 Django matching/API tests, migration consistency, Streamlit AppTest (4 tabs), TypeScript typecheck, production Next build, Compose config, `git diff --check`, and desktop/mobile page review passed. The Windows AppTest process emitted a tempfile cleanup `WinError 5` after its successful assertion. Local Compose could not run because the Docker Desktop Linux engine pipe is unavailable; GitHub CI run `41541971890` passed all jobs and exercises catalog lookup, commercial-query abstention, and the 10-request limit. The first CI attempt exposed a mistaken expectation that the web catalog had seed rows; the smoke assertion now checks the correct empty-catalog response.
+- Verification: 20 assistant tests, 12 Django matching/API tests, 21 web tests, migration consistency, Streamlit AppTest (4 tabs), TypeScript typecheck, production Next build, Compose config, and `git diff --check` passed. GitHub Actions run `41544976767` passed all jobs; Compose verified the assistant proxy, catalog filters, and rate limit. The local AppTest assertions passed but Windows emitted a tempfile cleanup `WinError 5`; local Docker Compose remains unavailable because the Docker Desktop Linux engine pipe is missing.
 - Existing local `manage.py` change is a separate demo-login comment and must remain unstaged/uncommitted.
 
 CI on the branch passed on Ubuntu 24.04 (GitHub Actions run `38040076466`). It now runs on branch pushes, checks Django matching, typechecks and tests the web app during its image build, and runs ML service contract tests. The full Compose smoke test passed.
