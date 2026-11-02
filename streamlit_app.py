@@ -1,5 +1,6 @@
 import json
 import os
+import re
 from datetime import date
 from urllib.parse import urlencode
 
@@ -117,12 +118,12 @@ def ml_request(path, ref, features):
     return response.json()["prediction"]
 
 
-def chat_request(message, locale):
+def chat_request(message, locale, history=None, catalog_animals=None):
     try:
         response = requests.post(
             f"{CHAT_BASE}/chat",
             headers={"Authorization": f"Bearer {CHAT_TOKEN}", "Accept": "application/json"},
-            json={"message": message, "locale": locale},
+            json={"message": message, "locale": locale, "history": history or [], "catalog_animals": catalog_animals or []},
             timeout=20,
         )
         response.raise_for_status()
@@ -353,7 +354,8 @@ def render_matching():
         }[value])
         garden_sqm = st.number_input("Spazio verde disponibile (m²)", min_value=0, max_value=10000, value=0, step=5)
         has_children = st.checkbox("In casa ci sono bambini")
-        has_other_pets = st.checkbox("In casa ci sono già altri animali")
+        has_dogs = st.checkbox("In casa ci sono già cani")
+        has_cats = st.checkbox("In casa ci sono già gatti")
         hours_away_from_home = st.slider("Ore al giorno fuori casa", 0, 24, 4)
         activity_level = st.selectbox("Attività quotidiana", ["SEDENTARY", "MODERATE", "ACTIVE"], format_func=lambda value: {
             "SEDENTARY": "Bassa", "MODERATE": "Moderata", "ACTIVE": "Alta",
@@ -370,7 +372,9 @@ def render_matching():
             "housing_type": housing_type,
             "garden_sqm": garden_sqm,
             "has_children": has_children,
-            "has_other_pets": has_other_pets,
+            "has_other_pets": has_dogs or has_cats,
+            "has_dogs": has_dogs,
+            "has_cats": has_cats,
             "hours_away_from_home": hours_away_from_home,
             "activity_level": activity_level,
             "experience_level": experience_level,
@@ -389,6 +393,10 @@ def render_matching():
     st.caption(f"{preview['total']} animali disponibili nella fascia scelta · compatibilità calcolata con regole deterministiche")
     if not preview["results"]:
         st.info("Non ci sono animali compatibili con questi filtri.")
+        if preview.get("excluded_total"):
+            with st.expander(f'{preview["excluded_total"]} animali esclusi per incompatibilità dichiarate'):
+                for animal in preview.get("excluded", []):
+                    st.write(f'**{animal["name"]}**: {", ".join(animal["reasons"])}')
         return
 
     for animal in preview["results"]:
@@ -396,6 +404,8 @@ def render_matching():
             st.subheader(animal["name"])
             st.caption(f"{animal['species']} · {animal['breed']} · {animal['city']} · {animal['shelter']}")
             st.metric("Compatibilità indicativa (regole)", f"{animal['score']}%")
+            for caution in animal.get("cautions", []):
+                st.warning(caution)
             with st.expander("Dettaglio del punteggio"):
                 breakdown = animal.get("breakdown") or {}
                 if isinstance(breakdown, dict):
@@ -416,32 +426,79 @@ def render_assistant():
     language = st.selectbox("Lingua / Language", ["Italiano", "English"], key="assistant_language")
     locale = "en" if language == "English" else "it"
     italian = locale == "it"
-    st.header("Assistente informativo" if italian else "Information assistant")
-    st.caption("Risposte basate su fonti curate. Non sostituisce il veterinario." if italian else "Answers grounded in curated sources. Not a substitute for a veterinarian.")
-    with st.form("assistant-question-form", clear_on_submit=True):
-        message = st.text_area("La tua domanda" if italian else "Your question", max_chars=1200)
-        submitted = st.form_submit_button("Chiedi" if italian else "Ask")
-    if submitted and message.strip():
-        try:
-            st.session_state.assistant_reply = chat_request(message.strip(), locale)
-        except ApiError as exc:
-            st.error(str(exc))
-    reply = st.session_state.get("assistant_reply")
-    if not reply:
-        return
-    st.write(reply["answer"])
     engine_labels = {
         "pretrained_model_rag": "Modello linguistico + fonti" if italian else "Language model + sources",
         "retrieval_fallback": "Risposta guidata dalle fonti, senza modello generativo" if italian else "Source-based response, no generative model",
         "safety_guidance": "Indicazione di sicurezza" if italian else "Safety guidance",
-        "no_answer": "Fonti insufficienti" if italian else "Insufficient sources",
+        "catalog_lookup": "Ricerca in sola lettura nel catalogo pubblico" if italian else "Read-only public catalogue lookup",
+        "no_answer": "Astensione: fonti insufficienti" if italian else "Abstained: insufficient sources",
     }
-    st.caption(engine_labels.get(reply.get("engine"), reply.get("engine", "")))
-    if reply.get("citations"):
-        st.markdown("**Fonti**" if italian else "**Sources**")
-        for citation in reply["citations"]:
-            st.markdown(f"- [{citation['organization']}: {citation['title']}]({citation['url']}) · {citation['verified_at']}")
-    st.info(reply.get("disclosure", ""))
+    st.header("Assistente informativo" if italian else "Information assistant")
+    st.caption("Fonti curate, domande di follow-up e ricerca in sola lettura degli animali pubblicati. Nessun dato della conversazione viene salvato sul database." if italian else "Curated sources, follow-up questions, and read-only search of published animals. Conversation data is not saved to the database.")
+    with st.expander("Come funziona / How it works"):
+        st.markdown("1. Controllo di sicurezza e ambito\n2. Ricerca nel corpus per lingua, specie e pertinenza\n3. Modello opzionale con affermazioni collegate alle fonti, altrimenti estratto della fonte\n4. Astensione quando non esistono fonti sufficienti")
+        st.caption("Prova: “Quale negozio vende Royal Canin a Torino?” oppure “Quale cibo per un coniglio?” → il sistema deve astenersi. / Try a local shop or rabbit-food question → the assistant should abstain.")
+        st.caption("Dati di negozi, prezzi e disponibilità commerciale non sono collegati: non verranno inventati.")
+
+    if "assistant_history" not in st.session_state:
+        st.session_state.assistant_history = []
+    history = st.session_state.assistant_history
+    for item in history:
+        with st.chat_message(item["role"]):
+            st.write(item["content"])
+            reply = item.get("reply")
+            if not reply:
+                continue
+            for claim in reply.get("claims", []):
+                st.write(claim["text"])
+                citations = {source["id"]: source for source in reply.get("citations", [])}
+                for source_id in claim.get("source_ids", []):
+                    source = citations.get(source_id)
+                    if source:
+                        st.markdown(f'- [{source["organization"]}: {source["title"]}]({source["url"]}) · {source["verified_at"]}')
+            if reply.get("catalog_animals"):
+                st.markdown("**Schede pubbliche disponibili**" if italian else "**Published profiles available**")
+                for animal in reply["catalog_animals"]:
+                    st.markdown(f'- **{animal["name"]}** · {animal["species"]} · {animal.get("breed", "")} · {animal.get("shelter", "")}, {animal.get("city", "")}')
+            st.caption(engine_labels.get(reply.get("engine"), reply.get("engine", "")))
+            with st.expander("Traccia RAG / RAG trace"):
+                for step in reply.get("pipeline", []):
+                    st.write(f"→ {step}")
+                if reply.get("retrieved"):
+                    st.caption("Fonti candidate: " + "; ".join(source["title"] for source in reply["retrieved"]))
+            st.info(reply.get("disclosure", ""))
+
+    message = st.chat_input("La tua domanda" if italian else "Your question", max_chars=1200)
+    if message and message.strip():
+        animals = []
+        if re.search(r"(adott|cerc\w*.{0,24}(cane|gatto|animal)|looking for (a )?(dog|cat|pet)|find me (a )?(dog|cat|pet)|available animals|animali disponibili|schede disponibili)", message, re.IGNORECASE):
+            params = {}
+            lowered = message.lower()
+            if re.search(r"\b(gatt|cat)", lowered):
+                params["species"] = "CAT"
+            elif re.search(r"\b(can|dog)", lowered):
+                params["species"] = "DOG"
+            try:
+                payload = api_request("GET", "catalog/animals/?" + urlencode(params))
+                animals = [
+                    {"name": row.get("name", ""), "species": row.get("species_display", row.get("species", "")), "breed": row.get("breed_name", ""), "city": row.get("city", ""), "shelter": row.get("shelter_name", ""), "slug": "", "description": ""}
+                    for row in list_results(payload)[:6]
+                ]
+            except ApiError as exc:
+                st.error(str(exc))
+        try:
+            reply = chat_request(message.strip(), locale, [{"role": item["role"], "content": item["content"]} for item in history[-8:]], animals)
+            st.session_state.assistant_history.extend([
+                {"role": "user", "content": message.strip()},
+                {"role": "assistant", "content": reply["answer"], "reply": reply},
+            ])
+            st.rerun()
+        except ApiError as exc:
+            st.error(str(exc))
+    if st.session_state.get("assistant_history"):
+        if st.button("Nuova conversazione / New conversation", key="assistant-clear-history"):
+            st.session_state.assistant_history = []
+            st.rerun()
 
 
 def render_internal_ml(animals):

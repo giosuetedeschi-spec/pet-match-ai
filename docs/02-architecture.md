@@ -1,6 +1,6 @@
 # 02 — Technical Architecture
 
-> **Status, 2 November 2026:** Django REST + Streamlit is the MVP; Next.js + Prisma is the parallel portal. Compose keeps separate MySQL databases (`petmatch_mvp` and `petmatch_web`), which are not synchronized. The web portal uses its own authoritative rule-based matcher; Django has separate MVP rules, so scores are not comparable. Public matching is not ML. Shelter-only models are demonstrative; both interfaces use the shared RAG assistant. See [`ROADMAP-OPERATIVA.md`](../ROADMAP-OPERATIVA.md) and [`STATE.md`](../STATE.md).
+> **Status, 2 November 2026:** Django REST + Streamlit is the MVP; Next.js + Prisma is the parallel portal. Compose keeps separate MySQL databases (`petmatch_mvp` and `petmatch_web`), which are not synchronized. The web portal uses its own authoritative rule-based matcher; Django has separate MVP rules, so scores are not comparable. Public matching is not ML. Django excludes known child/pet incompatibilities and evaluates existing dogs and cats separately. Shelter-only models are demonstrative; both interfaces use the shared RAG assistant, which abstains outside its curated dog/cat scope and can read only published public animal profiles. See [`ROADMAP-OPERATIVA.md`](../ROADMAP-OPERATIVA.md) and [`STATE.md`](../STATE.md).
 
 ## 1. Target system overview
 

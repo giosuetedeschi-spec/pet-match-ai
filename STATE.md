@@ -5,6 +5,14 @@ Branch: `chore/clean-modules-types-docs`; audit pushed as `be1f647`
 Working tree: separate local `manage.py` demo-login comment remains uncommitted
 Merge status: not merged.
 
+## Assistant and compatibility audit follow-up (2026-11-02)
+
+- RAG now rejects low-relevance and out-of-scope prompts (including unsupported species and live shop/price claims), uses the previous user turn for short follow-ups, and routes adoption searches to a read-only public catalog lookup. It adds dog-selection and official breed-standard references with per-entry topic/species/source/review metadata.
+- Emergency routing no longer treats ordinary food ingestion alone as urgent. Generated responses are structured as claims with source IDs and lexical support checks; unsupported generation falls back to text from one cited source. The web proxy rate-limits to 10 requests per minute per client IP.
+- The Django compatibility quiz now records existing dogs and cats separately, excludes known conflicts with children/dogs/cats, and exposes cautions for unknown compatibility. Streamlit and web assistant UIs explain the pipeline, citations, catalogue limits, and abstention examples.
+- Verification: 15 assistant tests, 12 Django matching/API tests, migration consistency, Streamlit AppTest (4 tabs), TypeScript typecheck, production Next build, Compose config, `git diff --check`, and desktop/mobile page review passed. The Windows AppTest process emitted a tempfile cleanup `WinError 5` after its successful assertion. Local Compose could not run because the Docker Desktop Linux engine pipe is unavailable; CI now exercises catalog lookup, commercial-query abstention, and the 10-request limit. GitHub CI is pending the push for these changes.
+- Existing local `manage.py` change is a separate demo-login comment and must remain unstaged/uncommitted.
+
 CI on the branch passed on Ubuntu 24.04 (GitHub Actions run `38040076466`). It now runs on branch pushes, checks Django matching, typechecks and tests the web app during its image build, and runs ML service contract tests. The full Compose smoke test passed.
 
 ## Completed unit

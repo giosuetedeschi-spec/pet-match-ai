@@ -42,7 +42,9 @@ class MatchingPreviewSerializer(serializers.Serializer):
     housing_type = serializers.ChoiceField(choices=AdopterProfile.HousingType.choices)
     garden_sqm = serializers.IntegerField(min_value=0, max_value=10000)
     has_children = serializers.BooleanField()
-    has_other_pets = serializers.BooleanField()
+    has_other_pets = serializers.BooleanField(required=False, default=False)
+    has_dogs = serializers.BooleanField(required=False, default=False)
+    has_cats = serializers.BooleanField(required=False, default=False)
     hours_away_from_home = serializers.IntegerField(min_value=0, max_value=24)
     activity_level = serializers.ChoiceField(choices=AdopterProfile.ActivityLevel.choices)
     experience_level = serializers.ChoiceField(choices=AdopterProfile.ExperienceLevel.choices)
@@ -73,11 +75,15 @@ class MatchingPreviewAPIView(views.APIView):
             animals = animals.filter(species=answers['preferred_species'])
 
         results = []
+        excluded = []
         for animal in animals:
             age_months = animal.total_age_in_months
             if not answers['preferred_age_min_months'] <= age_months <= answers['preferred_age_max_months']:
                 continue
             score, breakdown = MatchingService.calculate_match_score(profile, animal)
+            if breakdown['excluded']:
+                excluded.append({'name': animal.name, 'reasons': breakdown['exclusions']})
+                continue
             days_in_care = max(0, (timezone.localdate() - animal.date_entry_shelter).days)
             results.append({
                 'animal_id': animal.id,
@@ -93,6 +99,7 @@ class MatchingPreviewAPIView(views.APIView):
                 'city': animal.shelter.user.city,
                 'score': round(score, 1),
                 'breakdown': breakdown,
+                'cautions': breakdown['cautions'],
             })
 
         results.sort(key=lambda item: (-item['score'], item['name'].casefold()))
@@ -101,4 +108,6 @@ class MatchingPreviewAPIView(views.APIView):
             'validated_ml': False,
             'results': results[:20],
             'total': len(results),
+            'excluded_total': len(excluded),
+            'excluded': excluded[:20],
         })

@@ -1,6 +1,6 @@
 # Roadmap operativa PetMatch AI
 
-Aggiornata: 2026-10-09. `docs/` descrive il prodotto e l'architettura di riferimento; questo file registra lo stato effettivo dell'implementazione.
+Aggiornata: 2026-11-02. `docs/` descrive il prodotto e l'architettura di riferimento; questo file registra lo stato effettivo dell'implementazione.
 
 ## MVP Django + Streamlit
 
@@ -26,6 +26,9 @@ Aggiornata: 2026-10-09. `docs/` descrive il prodotto e l'architettura di riferim
 - [x] Foto: upload fino a 10 MB, testo alternativo, conversione WebP, varianti adattive, rimozione dei metadati EXIF, copertina e ordine gestibili, rimozione logica, storage locale persistente o bucket S3 compatibile privato.
 - [x] Onboarding Next.js dei rifugi: account e struttura pending nella stessa transazione, verifica email, selezione comune ISTAT, revisione admin, approvazione/rifiuto con motivazione e bootstrap admin CLI.
 - [x] Interfaccia e contenuti leggibili in italiano/inglese tramite servizio self-hosted LibreTranslate/Argos; i testi originali rimangono intatti.
+- [x] Assistente RAG dimostrativo bilingue con corpus dog/cat verificabile, citazioni per affermazione, astensione su risultati deboli/specie non coperte e lookup read-only del catalogo; proxy con rate limit in memoria (limite adatto solo al demo).
+- [x] Questionario Django distingue cani e gatti già presenti; incompatibilità confermate con bambini o animali domestici escludono il risultato e dati ignoti generano cautele.
+- [x] Copertura CI dell'astensione per richieste commerciali, lookup del catalogo e limite 10 richieste/minuto del proxy; verifica visuale desktop/mobile eseguita per la pagina assistente.
 
 Il matching Next.js supporta profili anonimi e account verificati. Gli account del portale rifugio devono essere membri di una struttura attiva; onboarding e approvazione sono gestiti fuori da questo flusso.
 
@@ -46,4 +49,4 @@ Il matching Next.js supporta profili anonimi e account verificati. Gli account d
 
 ## Stato corrente
 
-Onboarding, revisione admin, modelli ML demo, triage e traduzione automatica sono implementati localmente nel branch `chore/clean-modules-types-docs`; le modifiche non sono ancora unite. Restano la validazione scientifica del modello, i test di usabilità con tre persone e la verifica end-to-end di email, digest e disiscrizione.
+Onboarding, revisione admin, modelli ML demo, triage, traduzione automatica e audit di assistente/matching sono implementati localmente nel branch `chore/clean-modules-types-docs`; questa unità attende il CI GitHub. Il motore Docker locale non è raggiungibile. Restano la validazione scientifica del modello, i test di usabilità con tre persone e la verifica end-to-end di email, digest e disiscrizione.

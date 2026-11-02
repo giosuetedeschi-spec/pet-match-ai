@@ -47,6 +47,7 @@ jobs:
           apps.users.tests.test_auth_api
           apps.core.tests.test_shelter_api
           apps.matching.tests.test_services
+          apps.matching.tests.test_api
           --verbosity 2
 
       - name: Prepare isolated SQLite database
@@ -250,6 +251,20 @@ jobs:
           assert safety["engine"] == "safety_guidance" and safety["citations"] and "veterinario" in safety["answer"], safety
           answer = post("http://127.0.0.1:3000/api/assistant", {"message": "Come scelgo il cibo per il gatto?", "locale": "it"})
           assert answer["citations"] and answer["engine"] == "retrieval_fallback", answer
+          shops = post("http://127.0.0.1:3000/api/assistant", {"message": "Quale negozio di animali a Torino vende Royal Canin?", "locale": "it"})
+          assert shops["engine"] == "no_answer" and shops["abstained"] and not shops["citations"], shops
+          catalog = post("http://127.0.0.1:3000/api/assistant", {"message": "Cerco un cane da adottare", "locale": "it"})
+          assert catalog["engine"] == "catalog_lookup" and "pubblicate" in catalog["answer"], catalog
+          for attempt in range(10):
+              limited = post("http://127.0.0.1:3000/api/assistant", {"message": "Come scelgo il cibo per il gatto?", "locale": "it"}, {"x-forwarded-for": "198.51.100.10"})
+              assert limited["engine"] == "retrieval_fallback", (attempt, limited)
+          try:
+              post("http://127.0.0.1:3000/api/assistant", {"message": "Come scelgo il cibo per il gatto?", "locale": "it"}, {"x-forwarded-for": "198.51.100.10"})
+          except Exception as error:
+              assert getattr(error, "code", None) == 429, error
+              assert error.headers.get("Retry-After") == "60", error.headers
+          else:
+              raise AssertionError("Expected assistant proxy rate limit after 10 requests per minute")
           PY
           echo "Checking Mailpit API"
           curl --fail --silent --show-error --retry 3 --retry-all-errors http://127.0.0.1:8025/api/v1/info >/dev/null

@@ -119,3 +119,39 @@ class MatchingServiceUnitTest(TestCase):
 
         self.assertIsNone(match.predicted_adoption_time_days)
         self.assertIsNone(match.survival_probability_30d)
+
+    def test_confirmed_child_incompatibility_excludes_animal(self):
+        self.adopter_profile.has_children = True
+        self.adopter_profile.save()
+        self.animal.good_with_children = False
+        self.animal.save()
+
+        score, breakdown = MatchingService.calculate_match_score(self.adopter_profile, self.animal)
+
+        self.assertEqual(score, 0.0)
+        self.assertTrue(breakdown['excluded'])
+        self.assertIn("Non indicato per la convivenza con bambini.", breakdown['exclusions'])
+
+    def test_dog_only_household_does_not_get_cat_incompatibility_penalty(self):
+        self.adopter_profile.has_other_pets = True
+        self.adopter_profile.has_dogs = True
+        self.adopter_profile.save()
+        self.animal.good_with_dogs = True
+        self.animal.good_with_cats = False
+        self.animal.save()
+
+        score, breakdown = MatchingService.calculate_match_score(self.adopter_profile, self.animal)
+
+        self.assertEqual(score, 100.0)
+        self.assertFalse(breakdown['excluded'])
+        self.assertNotIn("Non idoneo alla convivenza con gatti.", breakdown['penalties'])
+
+    def test_unspecified_existing_pet_species_is_a_caution_not_a_guess(self):
+        self.adopter_profile.has_other_pets = True
+        self.adopter_profile.save()
+
+        score, breakdown = MatchingService.calculate_match_score(self.adopter_profile, self.animal)
+
+        self.assertEqual(score, 100.0)
+        self.assertFalse(breakdown['excluded'])
+        self.assertTrue(any("Specie degli animali già presenti" in item for item in breakdown['cautions']))

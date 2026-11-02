@@ -76,6 +76,8 @@ class AdopterProfile(models.Model):
     has_children = models.BooleanField(default=False, verbose_name=_('Presenza Bambini'))
     children_ages_info = models.CharField(max_length=200, blank=True, verbose_name=_('Età Bambini'))
     has_other_pets = models.BooleanField(default=False, verbose_name=_('Presenza Altri Animali'))
+    has_dogs = models.BooleanField(default=False, verbose_name=_('Presenza Cani'))
+    has_cats = models.BooleanField(default=False, verbose_name=_('Presenza Gatti'))
     other_pets_details = models.TextField(blank=True, verbose_name=_('Dettagli Altri Animali in Casa'))
     hours_away_from_home = models.PositiveIntegerField(default=4, verbose_name=_('Ore fuori casa al giorno'))
     activity_level = models.CharField(

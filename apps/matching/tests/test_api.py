@@ -33,7 +33,8 @@ class MatchingAPITestCase(APITestCase):
             user=self.shelter_user,
             shelter_name="Rifugio Milano",
             tax_code_vat="98765432109",
-            official_email="shelter@test.com"
+            official_email="shelter@test.com",
+            is_verified=True,
         )
         self.breed = Breed.objects.create(species=Species.DOG, name="Golden Retriever")
 
@@ -50,6 +51,25 @@ class MatchingAPITestCase(APITestCase):
         )
 
         self.url = reverse('matching:adopter_recommendations')
+        self.preview_url = reverse('matching:matching_preview')
+
+    def _preview(self, **changes):
+        payload = {
+            "housing_type": AdopterProfile.HousingType.HOUSE_GARDEN,
+            "garden_sqm": 50,
+            "has_children": False,
+            "has_other_pets": False,
+            "has_dogs": False,
+            "has_cats": False,
+            "hours_away_from_home": 4,
+            "activity_level": AdopterProfile.ActivityLevel.MODERATE,
+            "experience_level": AdopterProfile.ExperienceLevel.BEGINNER,
+            "preferred_species": "ANY",
+            "preferred_age_min_months": 0,
+            "preferred_age_max_months": 360,
+        }
+        payload.update(changes)
+        return self.client.post(self.preview_url, payload, format="json")
 
     def test_unauthenticated_access_denied(self):
         """
@@ -79,3 +99,26 @@ class MatchingAPITestCase(APITestCase):
         self.assertEqual(response.data[0]['animal_name'], "Rocky")
         self.assertIn('overall_score', response.data[0])
         self.assertIn('score_breakdown', response.data[0])
+
+    def test_preview_only_penalizes_pets_of_the_matching_species(self):
+        self.animal.good_with_dogs = True
+        self.animal.good_with_cats = False
+        self.animal.save()
+
+        response = self._preview(has_other_pets=True, has_dogs=True)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['total'], 1)
+        self.assertEqual(response.data['results'][0]['score'], 100.0)
+        self.assertEqual(response.data['excluded_total'], 0)
+
+    def test_preview_excludes_confirmed_child_incompatibility_with_reason(self):
+        self.animal.good_with_children = False
+        self.animal.save()
+
+        response = self._preview(has_children=True)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['results'], [])
+        self.assertEqual(response.data['excluded_total'], 1)
+        self.assertIn('bambini', response.data['excluded'][0]['reasons'][0])

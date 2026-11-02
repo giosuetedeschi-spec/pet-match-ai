@@ -24,7 +24,9 @@ class MatchingService:
             'family_score': 0.0,
             'lifestyle_score': 0.0,
             'experience_score': 0.0,
-            'penalties': []
+            'penalties': [],
+            'exclusions': [],
+            'cautions': [],
         }
 
         # 1. COMPATIBILITÀ SPAZIO E ABITAZIONE (Peso Max: 25 Punti)
@@ -44,14 +46,25 @@ class MatchingService:
         if adopter_profile.has_children and animal.good_with_children is False:
             family_score -= 20.0
             breakdown['penalties'].append("L'animale non è indicato per nuclei familiari con bambini.")
+            breakdown['exclusions'].append("Non indicato per la convivenza con bambini.")
+        elif adopter_profile.has_children and animal.good_with_children is None:
+            breakdown['cautions'].append("Compatibilità con bambini non valutata dal rifugio.")
 
-        if adopter_profile.has_other_pets:
-            if animal.species == Species.DOG and animal.good_with_dogs is False:
-                family_score -= 15.0
-                breakdown['penalties'].append("Non idoneo alla convivenza con altri cani.")
-            if animal.good_with_cats is False:
-                family_score -= 15.0
-                breakdown['penalties'].append("Non idoneo alla convivenza con gatti.")
+        household_pets_known = adopter_profile.has_dogs or adopter_profile.has_cats
+        if adopter_profile.has_dogs and animal.good_with_dogs is False:
+            family_score -= 15.0
+            breakdown['penalties'].append("Non idoneo alla convivenza con altri cani.")
+            breakdown['exclusions'].append("Non indicato per la convivenza con cani.")
+        elif adopter_profile.has_dogs and animal.good_with_dogs is None:
+            breakdown['cautions'].append("Compatibilità con cani non valutata dal rifugio.")
+        if adopter_profile.has_cats and animal.good_with_cats is False:
+            family_score -= 15.0
+            breakdown['penalties'].append("Non idoneo alla convivenza con gatti.")
+            breakdown['exclusions'].append("Non indicato per la convivenza con gatti.")
+        elif adopter_profile.has_cats and animal.good_with_cats is None:
+            breakdown['cautions'].append("Compatibilità con gatti non valutata dal rifugio.")
+        if adopter_profile.has_other_pets and not household_pets_known:
+            breakdown['cautions'].append("Specie degli animali già presenti non specificata: verifica la convivenza con il rifugio.")
 
         breakdown['family_score'] = max(0.0, family_score)
 
@@ -118,6 +131,9 @@ class MatchingService:
             breakdown['experience_score']
         ])
 
+        breakdown['excluded'] = bool(breakdown['exclusions'])
+        if breakdown['excluded']:
+            overall_score = 0.0
         return float(np.clip(overall_score, 0.0, 100.0)), breakdown
 
     @classmethod
@@ -162,7 +178,8 @@ class MatchingService:
 
         for animal in available_animals:
             match_res = cls.process_and_save_match(adopter_user, animal)
-            results.append(match_res)
+            if not match_res.score_breakdown.get('excluded', False):
+                results.append(match_res)
 
         # Ordinamento descrescente per punteggio di compatibilità
         results.sort(key=lambda x: x.overall_score, reverse=True)

@@ -2,38 +2,58 @@
 
 import { FormEvent, useState } from "react";
 
-type Citation = { title: string; organization: string; url: string; verified_at: string };
-type Reply = { answer: string; engine: string; pipeline: string[]; citations: Citation[]; disclosure: string };
+type Citation = { id: string; title: string; organization: string; url: string; verified_at: string };
+type Claim = { text: string; source_ids: string[] };
+type Animal = { name: string; slug: string; species: string; breed: string; shelter: string; city: string; description: string };
+type Reply = { answer: string; claims: Claim[]; engine: string; pipeline: string[]; retrieved: { id: string; title: string }[]; citations: Citation[]; catalog_animals: Animal[]; abstained: boolean; disclosure: string };
+type Message = { role: "user" | "assistant"; content: string; reply?: Reply };
 
 const copy = {
-  it: { title: "Assistente per adozione e cura", intro: "Fai una domanda: userò le fonti riportate qui sotto.", placeholder: "Es. Quali alimenti sono pericolosi per un cane?", send: "Invia", language: "Lingua", source: "Fonti", disclosure: "Informazione generale: per diagnosi, emergenze o decisioni sanitarie contatta un veterinario.", error: "Non riesco a contattare l’assistente. Riprova tra poco.", model: "Risposta generata con un modello linguistico e fonti", fallback: "Risposta estratta dalle fonti (nessun modello linguistico configurato)", safety: "Indicazione di sicurezza", unknown: "Nessuna risposta: fonti insufficienti" },
-  en: { title: "Adoption and care assistant", intro: "Ask a question; the sources used are listed below.", placeholder: "E.g. Which foods are dangerous for a dog?", send: "Send", language: "Language", source: "Sources", disclosure: "General information: contact a veterinarian for diagnosis, emergencies, or health decisions.", error: "The assistant is unavailable. Please try again shortly.", model: "Answer generated with a language model and sources", fallback: "Source-based answer (no language model configured)", safety: "Safety guidance", unknown: "No answer: insufficient sources" },
+  it: { title: "Assistente per adozione e cura", intro: "Fai domande su cani, gatti e adozione. Risponderò con fonti, oppure dichiarerò quando non ne ho abbastanza.", placeholder: "Es. Come scelgo un cane adatto alla mia vita?", send: "Invia", language: "Lingua", source: "Fonte", disclosure: "Informazione generale: per diagnosi, emergenze o decisioni sanitarie contatta un veterinario.", error: "Non riesco a contattare l’assistente. Riprova tra poco.", model: "Risposta generata con un modello linguistico e affermazioni collegate alle fonti", fallback: "Risposta estratta dalla fonte indicata (nessun modello linguistico configurato)", safety: "Indicazione di sicurezza", unknown: "Fonti insufficienti", clear: "Nuova conversazione", trace: "Come ho costruito la risposta", animals: "Schede pubbliche disponibili", abstainExample: "Esempio di astensione: «Quale negozio vende questa marca a Torino?» non è coperto da dati aggiornati.", adoption: "Catalogo consultato in sola lettura. Chiedi al rifugio per confermare compatibilità e disponibilità." },
+  en: { title: "Adoption and care assistant", intro: "Ask about dogs, cats, and adoption. I’ll cite sources or say when evidence is insufficient.", placeholder: "E.g. How do I choose a dog that fits my life?", send: "Send", language: "Language", source: "Source", disclosure: "General information: contact a veterinarian for diagnosis, emergencies, or health decisions.", error: "The assistant is unavailable. Please try again shortly.", model: "Generated model answer with claims linked to sources", fallback: "Extracted from the cited source (no language model configured)", safety: "Safety guidance", unknown: "Insufficient sources", clear: "New conversation", trace: "How this answer was built", animals: "Published animals available", abstainExample: "Abstention example: store inventory and local prices are not covered by current data.", adoption: "Read-only public catalogue. Contact the shelter to confirm fit and availability." },
 } as const;
+
+function engineLabel(engine: string, text: { model: string; fallback: string; safety: string; unknown: string }) {
+  if (engine === "pretrained_model_rag") return text.model;
+  if (engine === "retrieval_fallback") return text.fallback;
+  if (engine === "safety_guidance") return text.safety;
+  return text.unknown;
+}
 
 export default function AssistantChat() {
   const [locale, setLocale] = useState<"it" | "en">("it");
   const [message, setMessage] = useState("");
-  const [reply, setReply] = useState<Reply | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const text = copy[locale];
 
   async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setBusy(true); setError(""); setReply(null);
+    event.preventDefault();
+    const question = message.trim();
+    if (!question) return;
+    setBusy(true); setError(""); setMessage("");
+    const history = messages.map(({ role, content }) => ({ role, content }));
     try {
-      const response = await fetch("/api/assistant", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message, locale }) });
+      const response = await fetch("/api/assistant", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: question, locale, history }) });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error ?? text.error);
-      setReply(payload as Reply);
-    } catch { setError(text.error); } finally { setBusy(false); }
+      setMessages((current) => [...current, { role: "user", content: question }, { role: "assistant", content: payload.answer, reply: payload as Reply }]);
+    } catch { setError(text.error); setMessage(question); } finally { setBusy(false); }
   }
 
   return <section className="assistant-chat">
     <label>{text.language}<select value={locale} onChange={(event) => setLocale(event.target.value as "it" | "en")}><option value="it">Italiano</option><option value="en">English</option></select></label>
     <h1>{text.title}</h1><p className="intro">{text.intro}</p>
-    <form onSubmit={submit}><label htmlFor="assistant-question">{locale === "it" ? "La tua domanda" : "Your question"}</label><textarea id="assistant-question" value={message} maxLength={1200} required minLength={2} onChange={(event) => setMessage(event.target.value)} placeholder={text.placeholder} /><button className="button" disabled={busy}>{busy ? "…" : text.send}</button></form>
+    <details className="assistant-demo-note"><summary>{locale === "it" ? "Ambito e limiti" : "Scope and limits"}</summary><p>{text.abstainExample}</p><p>{text.disclosure}</p></details>
+    <form onSubmit={submit}><label htmlFor="assistant-question">{locale === "it" ? "La tua domanda" : "Your question"}</label><textarea id="assistant-question" value={message} maxLength={1200} required minLength={2} onChange={(event) => setMessage(event.target.value)} placeholder={text.placeholder} /><div className="assistant-actions"><button className="button" disabled={busy}>{busy ? "…" : text.send}</button>{messages.length > 0 && <button className="button secondary" type="button" onClick={() => setMessages([])}>{text.clear}</button>}</div></form>
     {error && <p role="alert" className="match-error">{error}</p>}
-    {reply && <article className="assistant-reply"><p>{reply.answer}</p><p className="match-disclaimer">{reply.disclosure}</p><p><strong>{text.source}</strong></p><ul>{reply.citations.map((citation) => <li key={citation.url}><a href={citation.url} target="_blank" rel="noreferrer">{citation.organization}: {citation.title}</a> · {citation.verified_at}</li>)}</ul><small>{reply.engine === "pretrained_model_rag" ? text.model : reply.engine === "retrieval_fallback" ? text.fallback : reply.engine === "safety_guidance" ? text.safety : text.unknown}</small></article>}
+    <div className="assistant-thread" aria-live="polite">{messages.map((item, index) => <article className={`assistant-message ${item.role}`} key={`${index}-${item.role}`}><strong>{item.role === "user" ? (locale === "it" ? "Tu" : "You") : text.title}</strong>{(!item.reply || item.reply.claims.length === 0) && <p>{item.content}</p>}{item.reply && <>
+      {item.reply.claims.map((claim, claimIndex) => <div className="assistant-claim" key={claimIndex}><span>{claim.text}</span>{claim.source_ids.map((id) => { const source = item.reply?.citations.find((citation) => citation.id === id); return source ? <a key={id} href={source.url} target="_blank" rel="noreferrer">[{source.organization}: {source.title}]</a> : null; })}</div>)}
+      {item.reply.catalog_animals.length > 0 && <section className="assistant-animal-results"><h2>{text.animals}</h2><div>{item.reply.catalog_animals.map((animal) => <article key={animal.slug}><h3><a href={`/it/animali/${animal.slug}`}>{animal.name}</a></h3><p>{animal.species} · {animal.breed || (locale === "it" ? "Meticcio" : "Mixed breed")} · {animal.shelter}, {animal.city}</p>{animal.description && <p>{animal.description}</p>}</article>)}</div><small>{text.adoption}</small></section>}
+      <small>{engineLabel(item.reply.engine, text)}</small><details className="assistant-trace"><summary>{text.trace}</summary><ol>{item.reply.pipeline.map((step, stepIndex) => <li key={stepIndex}>{step}</li>)}</ol>{item.reply.retrieved.length > 0 && <p>{locale === "it" ? "Fonti candidate recuperate" : "Candidate sources retrieved"}: {item.reply.retrieved.map((source) => source.title).join("; ")}</p>}</details>
+      <p className="match-disclaimer">{item.reply.disclosure}</p>
+    </>}</article>)}</div>
     <p className="match-disclaimer">{text.disclosure}</p>
   </section>;
 }
