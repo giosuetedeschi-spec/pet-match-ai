@@ -254,7 +254,7 @@ jobs:
           shops = post("http://127.0.0.1:3000/api/assistant", {"message": "Quale negozio di animali a Torino vende Royal Canin?", "locale": "it"})
           assert shops["engine"] == "no_answer" and shops["abstained"] and not shops["citations"], shops
           catalog = post("http://127.0.0.1:3000/api/assistant", {"message": "Cerco un cane da adottare", "locale": "it"})
-          assert catalog["engine"] == "catalog_lookup" and "pubblicate" in catalog["answer"], catalog
+          assert catalog["engine"] == "catalog_lookup" and catalog["catalog_animals"] == [] and "Non ho trovato" in catalog["answer"], catalog
           for attempt in range(10):
               limited = post("http://127.0.0.1:3000/api/assistant", {"message": "Come scelgo il cibo per il gatto?", "locale": "it"}, {"x-forwarded-for": "198.51.100.10"})
               assert limited["engine"] == "retrieval_fallback", (attempt, limited)
