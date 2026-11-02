@@ -236,9 +236,20 @@ jobs:
           curl --fail --silent --show-error --retry 3 --retry-all-errors http://127.0.0.1:3000/api/health | python -c 'import json,sys; payload=json.load(sys.stdin); assert payload == {"status":"ok","database":"connected"}, payload'
           echo "Checking ML placeholder"
           curl --fail --silent --show-error --retry 3 --retry-all-errors http://127.0.0.1:8001/health | python -c 'import json,sys; payload=json.load(sys.stdin); assert payload["status"] == "ok", payload'
-          echo "Checking authenticated assistant retrieval"
-          curl --fail --silent --show-error http://127.0.0.1:8002/chat -H 'Authorization: Bearer local-chat-token' -H 'Content-Type: application/json' --data '{"message":"Il cane ha mangiato cioccolato","locale":"it"}' | python -c 'import json,sys; payload=json.load(sys.stdin); assert payload["engine"] == "safety_guidance" and payload["citations"] and "veterinario" in payload["answer"], payload'
-          echo "Checking Next.js assistant proxy"
-          curl --fail --silent --show-error http://127.0.0.1:3000/api/assistant -H 'Content-Type: application/json' --data '{"message":"Come scelgo il cibo per il gatto?","locale":"it"}' | python -c 'import json,sys; payload=json.load(sys.stdin); assert payload["citations"] and payload["engine"] == "retrieval_fallback", payload'
+          echo "Checking assistant API and Next.js proxy"
+          python - <<'PY'
+          import json
+          from urllib.request import Request, urlopen
+
+          def post(url, payload, headers=None):
+              request = Request(url, data=json.dumps(payload).encode(), headers={"Content-Type": "application/json", **(headers or {})}, method="POST")
+              with urlopen(request, timeout=10) as response:
+                  return json.load(response)
+
+          safety = post("http://127.0.0.1:8002/chat", {"message": "Il cane ha mangiato cioccolato", "locale": "it"}, {"Authorization": "Bearer local-chat-token"})
+          assert safety["engine"] == "safety_guidance" and safety["citations"] and "veterinario" in safety["answer"], safety
+          answer = post("http://127.0.0.1:3000/api/assistant", {"message": "Come scelgo il cibo per il gatto?", "locale": "it"})
+          assert answer["citations"] and answer["engine"] == "retrieval_fallback", answer
+          PY
           echo "Checking Mailpit API"
           curl --fail --silent --show-error --retry 3 --retry-all-errors http://127.0.0.1:8025/api/v1/info >/dev/null
