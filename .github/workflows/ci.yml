@@ -255,7 +255,7 @@ jobs:
           safety = post("http://127.0.0.1:8002/chat", {"message": "Il cane ha mangiato cioccolato", "locale": "it"}, {"Authorization": "Bearer local-chat-token"})
           assert safety["engine"] == "safety_guidance" and safety["citations"] and "veterinario" in safety["answer"], safety
           answer = post("http://127.0.0.1:3000/api/assistant", {"message": "Come scelgo il cibo per il gatto?", "locale": "it"})
-          assert answer["citations"] and answer["engine"] == "retrieval_fallback", answer
+          assert answer["citations"] and answer["engine"] == "controlled_source", answer
           shops = post("http://127.0.0.1:3000/api/assistant", {"message": "Quale negozio di animali a Torino vende Royal Canin?", "locale": "it"})
           assert shops["engine"] == "no_answer" and shops["abstained"] and not shops["citations"], shops
           catalog = post("http://127.0.0.1:3000/api/assistant", {"message": "Cerco un cane da adottare", "locale": "it"})
@@ -264,7 +264,7 @@ jobs:
           assert filtered_catalog["engine"] == "catalog_lookup" and filtered_catalog["catalog_filters"] == {"species": "dog", "city": "Torino", "good_with_children": True}, filtered_catalog
           for attempt in range(10):
               limited = post("http://127.0.0.1:3000/api/assistant", {"message": "Come scelgo il cibo per il gatto?", "locale": "it"}, {"x-forwarded-for": "198.51.100.10"})
-              assert limited["engine"] == "retrieval_fallback", (attempt, limited)
+              assert limited["engine"] == "controlled_source", (attempt, limited)
           try:
               post("http://127.0.0.1:3000/api/assistant", {"message": "Come scelgo il cibo per il gatto?", "locale": "it"}, {"x-forwarded-for": "198.51.100.10"})
           except Exception as error:
