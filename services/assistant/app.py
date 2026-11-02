@@ -42,11 +42,18 @@ class CatalogAnimal(BaseModel):
     description: str = Field(default="", max_length=400)
 
 
+class CatalogFilters(BaseModel):
+    species: Literal["dog", "cat"] | None = None
+    city: str | None = Field(default=None, min_length=2, max_length=100)
+    good_with_children: bool = False
+
+
 class ChatRequest(BaseModel):
     message: str = Field(min_length=2, max_length=1200)
     locale: str = Field(default="it", pattern="^(it|en)$")
     history: list[HistoryMessage] = Field(default_factory=list, max_length=8)
     catalog_animals: list[CatalogAnimal] = Field(default_factory=list, max_length=6)
+    catalog_filters: CatalogFilters = Field(default_factory=CatalogFilters)
 
 
 def authorized(credentials: HTTPAuthorizationCredentials | None = Depends(bearer)):
@@ -120,14 +127,31 @@ def _brand_query(message: str) -> bool:
 def _urgent(message: str) -> bool:
     text = message.lower()
     symptoms = bool(re.search(r"(difficolt[aà] respir|respira male|soffoc|chok|seizure|convulsion|convuls|collass|svenut|bleed(?:ing)? heavily|cannot breathe|trouble breathing)", text))
-    ingestion = bool(re.search(r"(mangiato|ingerito|ingest(?:ed|ion)?|ate\b|swallowed|ha mangiato|ha ingerito)", text))
-    toxic_or_unknown = bool(re.search(r"(cioccolat|chocolate|caffein|caff[eè]|uva|grapes?|uvetta|raisins?|xilitol|xylitol|cipoll|onion|aglio|garlic|velen|poison|rodenticid|rodenticide|candeggina|bleach|farmac\w*|medication|pill|unknown substance|sostanza sconosciuta|foreign object|corpo estraneo)", text))
-    negated = bool(re.search(r"\b(non|not|never|mai)\b.{0,28}\b(mangiato|ingerito|ingest|ate|swallowed)\b", text))
+    ingestion = bool(re.search(r"(mangiato|ingerito|ingest(?:ed|ion)?|eat(?:en)?\b|ate\b|swallowed|ha mangiato|ha ingerito|aver mangiato|aver ingerito)", text))
+    toxic_or_unknown = bool(re.search(r"(cioccolat|chocolate|caffein|caff[eè]|uva|grapes?|uvetta|raisins?|xilitol|xylitol|cipoll|onion|aglio|garlic|velen|poison|rodenticid|rodenticide|candeggina|bleach|farmac\w*|medication|acetaminophen|paracetamol|tylenol|ibuprofen|aspirin|pill|giglio|gigli|lil(?:y|ies)|pianta|plant|fiore|flower|detergent|cleaner|chemical|sostanza sconosciuta|unknown substance|qualcosa|something|non so cosa|not sure what|foreign object|corpo estraneo)", text))
+    negated = bool(re.search(r"\b(non|not|never|mai|didn't|did not|hasn't|has not)\b.{0,32}\b(mangiato|ingerito|ingest|ate|swallowed|eaten)\b", text))
+    cat = bool(re.search(r"\b(gatt\w*|cat|cats|kitten|kittens)\b", text))
+    dog = bool(re.search(r"\b(can\w*|dog|dogs|puppy|puppies)\b", text))
+    lily = bool(re.search(r"(giglio|gigli|lil(?:y|ies))", text))
+    if lily and dog and not cat:
+        toxic_or_unknown = bool(re.search(r"(pianta|plant|fiore|flower|unknown|sconosciut)", text))
     return symptoms or (ingestion and toxic_or_unknown and not negated)
 
 
 def _dose_request(message: str) -> bool:
     return bool(re.search(r"(dose|dosaggio|dos[e]?\s+di|quanti?\s+mg|milligram|dosage|how much (?:medicine|medication)|give .* medicine|farmac\w*|medicin\w*|ibuprof\w*|paracetamol\w*|aspirin\w*)", message.lower()))
+
+
+def _exposure_source_id(message: str, locale: str) -> str:
+    text = message.lower()
+    cat = bool(re.search(r"\b(gatt\w*|cat|cats|kitten|kittens)\b", text))
+    if cat and re.search(r"(giglio|gigli|lil(?:y|ies))", text):
+        return "lily-cat-it" if locale == "it" else "lily-cat-en"
+    if re.search(r"(acetaminophen|paracetamol|tylenol|farmac\w*|medication|pill|ibuprofen|aspirin)", text):
+        return "pain-relief-it" if locale == "it" else "pain-relief-en"
+    if re.search(r"(cioccolat|chocolate|caffein|caff[eè]|uva|grapes?|uvetta|raisins?|xilitol|xylitol|cipoll|onion|aglio|garlic)", text):
+        return "poison-foods-it" if locale == "it" else "poison-foods-en"
+    return "emergency-it" if locale == "it" else "emergency-en"
 
 
 def _catalog_query(message: str) -> bool:
@@ -186,9 +210,11 @@ def _source_records(documents: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 def answer(message: str, locale: str = "it", history: list[dict[str, str]] | None = None,
-           catalog_animals: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+           catalog_animals: list[dict[str, Any]] | None = None,
+           catalog_filters: dict[str, Any] | None = None) -> dict[str, Any]:
     history = (history or [])[-6:]
     catalog_animals = (catalog_animals or [])[:6]
+    catalog_filters = CatalogFilters.model_validate(catalog_filters or {})
     retrieval_query = message
     if len(_terms(message)) <= 3:
         last_user = next((item["content"] for item in reversed(history) if item["role"] == "user"), "")
@@ -202,42 +228,48 @@ def answer(message: str, locale: str = "it", history: list[dict[str, str]] | Non
     needs_vet = _dose_request(message)
     if urgent:
         text = (
-            "Potrebbe essere urgente: contatta subito il veterinario o un pronto soccorso veterinario locale. Non indurre il vomito e non somministrare rimedi senza istruzioni professionali."
+            "Una possibile ingestione o esposizione rischiosa richiede un parere veterinario immediato. Contatta il veterinario o un pronto soccorso veterinario e tieni a portata confezione, sostanza, quantità e orario. Non somministrare rimedi o farmaci e non indurre il vomito senza istruzioni professionali."
             if locale == "it" else
-            "This may be urgent: contact your veterinarian or a local emergency veterinary hospital now. Do not induce vomiting or give remedies without professional instructions."
+            "A possible risky ingestion or exposure needs immediate veterinary advice. Contact your veterinarian or an emergency veterinary hospital and keep the packaging, substance, estimated amount, and time available. Do not give remedies or medicine or induce vomiting unless a veterinary professional directs you."
         )
-        ingestion = bool(re.search(r"(mangiato|ingerito|ingest(?:ed|ion)?|ate\b|swallowed)", message.lower()))
-        target_topic = "emergency" if not ingestion else None
-        used_docs = [doc for doc in docs if doc["topic"] == target_topic][:1] if target_topic else docs[:1]
-        if not used_docs:
-            used_docs = [next(doc for doc in KB if doc["id"] == ("emergency-it" if locale == "it" else "emergency-en"))]
+        source_id = _exposure_source_id(message, locale)
+        used_docs = [next(doc for doc in KB if doc["id"] == source_id)]
         claims = [{"text": text, "source_ids": [used_docs[0]["id"]]}]
         engine = "safety_guidance"
-        pipeline = ["controllo di sicurezza", "selezione della fonte di emergenza"]
+        pipeline = ["controllo di sicurezza", "classificazione prudente dell'esposizione", "risposta controllata con fonte specifica"]
     elif needs_vet:
         text = (
             "Non posso indicare una dose o un farmaco per un animale. Contatta il veterinario, che può valutare specie, peso, età, salute e prodotto specifico."
             if locale == "it" else
             "I can’t recommend medicine or doses for a pet. Contact a veterinarian who can assess its species, weight, age, health, and the exact product."
         )
-        used_docs = [next(doc for doc in KB if doc["id"] == ("poison-cat-it" if locale == "it" else "poison-cat-en"))]
+        source_id = _exposure_source_id(message, locale)
+        used_docs = [next(doc for doc in KB if doc["id"] == source_id)]
         claims = [{"text": text, "source_ids": [used_docs[0]["id"]]}]
         engine = "safety_guidance"
         pipeline = ["controllo di sicurezza", "blocco delle indicazioni su farmaci/dosi"]
     elif _catalog_query(message):
         used_docs = []
         claims = []
+        applied_filters = []
+        if catalog_filters.species:
+            applied_filters.append(("cani" if catalog_filters.species == "dog" else "gatti") if locale == "it" else ("dogs" if catalog_filters.species == "dog" else "cats"))
+        if catalog_filters.city:
+            applied_filters.append(f'{"città" if locale == "it" else "city"}: {catalog_filters.city}')
+        if catalog_filters.good_with_children:
+            applied_filters.append("compatibilità esplicita con bambini" if locale == "it" else "explicit child-compatibility assessment")
+        filters_label = ((" Filtri applicati: " if locale == "it" else " Applied filters: ") + " · ".join(applied_filters)) if applied_filters else ""
         text = (
-            f"Ho trovato {len(catalog_animals)} schede pubblicate che puoi valutare con il rifugio."
+            f"Ho trovato {len(catalog_animals)} schede pubblicate che rispettano i filtri indicati.{filters_label}"
             if locale == "it" and catalog_animals else
-            "Non ho trovato schede disponibili che corrispondano alla ricerca."
+            f"Non ho trovato schede disponibili che rispettino i filtri indicati.{filters_label} Per la compatibilità con bambini mostro solo animali valutati esplicitamente come compatibili; chiedi comunque conferma al rifugio."
             if locale == "it" else
-            f"I found {len(catalog_animals)} published profiles you can discuss with the shelter."
+            f"I found {len(catalog_animals)} published profiles that match the requested filters.{filters_label}"
             if catalog_animals else
-            "I couldn't find available profiles matching that search."
+            f"I couldn't find available profiles matching those filters.{filters_label} For child compatibility, results require an explicit positive assessment; confirm details with the shelter."
         )
         engine = "catalog_lookup"
-        pipeline = ["ricerca nel catalogo pubblico", "filtro delle sole schede disponibili"]
+        pipeline = ["ricerca nel catalogo pubblico", "filtro delle sole schede disponibili", "applicazione dei vincoli espliciti"]
     elif _brand_query(message) and docs:
         used_docs = [next((doc for doc in docs if doc["topic"] == "nutrition"), docs[0])]
         text = (
@@ -258,6 +290,13 @@ def answer(message: str, locale: str = "it", history: list[dict[str, str]] | Non
         )
         engine = "no_answer"
         pipeline = ["ricerca RAG", "controllo della pertinenza", "astensione: fonti insufficienti"]
+    elif any(doc["topic"] in {"emergency", "nutrition"} for doc in docs):
+        # Lexical overlap cannot establish entailment. Health guidance is always controlled source text.
+        used_docs = docs[:1]
+        text = used_docs[0]["text"] + (" Sono informazioni generali, non una valutazione veterinaria individuale." if locale == "it" else " This is general information, not an individual veterinary assessment.")
+        claims = [{"text": text, "source_ids": [used_docs[0]["id"]]}]
+        engine = "controlled_source"
+        pipeline = ["ricerca RAG", "selezione della fonte pertinente", "contenuto sanitario controllato; generazione disattivata"]
     else:
         generated = _generate(message, docs, locale, history)
         document_map = {doc["id"]: doc for doc in docs}
@@ -283,6 +322,7 @@ def answer(message: str, locale: str = "it", history: list[dict[str, str]] | Non
         "retrieved": [{"id": doc["id"], "title": doc["title"]} for doc in docs],
         "citations": _source_records(used_docs),
         "catalog_animals": catalog_animals if engine == "catalog_lookup" else [],
+        "catalog_filters": catalog_filters.model_dump(exclude_none=True, exclude_defaults=True) if engine == "catalog_lookup" else {},
         "abstained": engine == "no_answer",
         "disclosure": "Informazione generale con fonti; non sostituisce il veterinario. Il catalogo mostra solo schede pubblicate e disponibili." if locale == "it" else "General, sourced information; not a substitute for a veterinarian. Catalog results include published, available profiles only.",
     }
@@ -295,4 +335,4 @@ def health():
 
 @app.post("/chat", dependencies=[Depends(authorized)])
 def chat(request: ChatRequest):
-    return answer(request.message.strip(), request.locale, [item.model_dump() for item in request.history], [item.model_dump() for item in request.catalog_animals])
+    return answer(request.message.strip(), request.locale, [item.model_dump() for item in request.history], [item.model_dump() for item in request.catalog_animals], request.catalog_filters.model_dump(exclude_none=True))

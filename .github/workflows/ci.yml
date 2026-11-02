@@ -131,6 +131,11 @@ jobs:
           fi
           python - <<'PY'
           from streamlit.testing.v1 import AppTest
+          from streamlit_app import assistant_catalog_filters
+
+          params, filters = assistant_catalog_filters("Find me a cat in Turin good with kids")
+          assert params == {"species": "CAT", "good_with_children": "true", "city": "Turin"}, params
+          assert filters == {"species": "cat", "good_with_children": True, "city": "Turin"}, filters
 
           app = AppTest.from_file("streamlit_app.py", default_timeout=30).run()
           if app.exception:
@@ -255,6 +260,8 @@ jobs:
           assert shops["engine"] == "no_answer" and shops["abstained"] and not shops["citations"], shops
           catalog = post("http://127.0.0.1:3000/api/assistant", {"message": "Cerco un cane da adottare", "locale": "it"})
           assert catalog["engine"] == "catalog_lookup" and catalog["catalog_animals"] == [] and "Non ho trovato" in catalog["answer"], catalog
+          filtered_catalog = post("http://127.0.0.1:3000/api/assistant", {"message": "Cerco un cane a Torino adatto ai bambini", "locale": "it"})
+          assert filtered_catalog["engine"] == "catalog_lookup" and filtered_catalog["catalog_filters"] == {"species": "dog", "city": "Torino", "good_with_children": True}, filtered_catalog
           for attempt in range(10):
               limited = post("http://127.0.0.1:3000/api/assistant", {"message": "Come scelgo il cibo per il gatto?", "locale": "it"}, {"x-forwarded-for": "198.51.100.10"})
               assert limited["engine"] == "retrieval_fallback", (attempt, limited)

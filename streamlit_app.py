@@ -118,18 +118,40 @@ def ml_request(path, ref, features):
     return response.json()["prediction"]
 
 
-def chat_request(message, locale, history=None, catalog_animals=None):
+def chat_request(message, locale, history=None, catalog_animals=None, catalog_filters=None):
     try:
         response = requests.post(
             f"{CHAT_BASE}/chat",
             headers={"Authorization": f"Bearer {CHAT_TOKEN}", "Accept": "application/json"},
-            json={"message": message, "locale": locale, "history": history or [], "catalog_animals": catalog_animals or []},
+            json={"message": message, "locale": locale, "history": history or [], "catalog_animals": catalog_animals or [], "catalog_filters": catalog_filters or {}},
             timeout=20,
         )
         response.raise_for_status()
     except requests.RequestException as exc:
         raise ApiError(f"Assistente non raggiungibile ({CHAT_BASE}). Avvia il servizio assistant e riprova.") from exc
     return response.json()
+
+
+def assistant_catalog_filters(message):
+    """Parse explicit catalog constraints consistently for Django and RAG."""
+    filters = {}
+    params = {}
+    text = message.strip()
+    if re.search(r"\b(gatt\w*|cat|cats|kitten|kittens)\b", text, re.IGNORECASE) != bool(re.search(r"\b(can\w*|dog|dogs|puppy|puppies)\b", text, re.IGNORECASE)):
+        species = "cat" if re.search(r"\b(gatt\w*|cat|cats|kitten|kittens)\b", text, re.IGNORECASE) else "dog"
+        filters["species"] = species
+        params["species"] = species.upper()
+    asks_for_children = bool(re.search(r"\b(bambin\w*|bimbi|children|kids)\b", text, re.IGNORECASE))
+    denies_children = bool(re.search(r"\b(non|not|without|no)\b.{0,28}\b(adatt\w*|compatibil\w*|good|suitable|safe)\b.{0,24}\b(bambin\w*|bimbi|children|kids)\b", text, re.IGNORECASE))
+    if asks_for_children and not denies_children:
+        filters["good_with_children"] = True
+        params["good_with_children"] = "true"
+    city_matches = re.finditer(r"\b(?:vicino\s+a|near|around|in|a)\s+([\wÀ-ÿ'’-]+(?:\s+[\wÀ-ÿ'’-]+){0,3}?)(?=\s+(?:adatt\w*|con\b|per\b|ai?\b|bambin\w*|children\b|kids\b|with\b|good\b|suitable\b|for\b|in\b|near\b|around\b|and\b|or\b)|[,;.!?]|$)", text, re.IGNORECASE)
+    city = next((match.group(1).strip() for match in city_matches if not re.search(r"\b(dog|dogs|cat|cats|kitten|kittens|pet|pets)\b", match.group(1), re.IGNORECASE)), None)
+    if city:
+        filters["city"] = city
+        params["city"] = city
+    return params, filters
 
 
 def predict_animal_outcome(animal):
@@ -428,7 +450,8 @@ def render_assistant():
     italian = locale == "it"
     engine_labels = {
         "pretrained_model_rag": "Modello linguistico + fonti" if italian else "Language model + sources",
-        "retrieval_fallback": "Risposta guidata dalle fonti, senza modello generativo" if italian else "Source-based response, no generative model",
+        "retrieval_fallback": "Estratto dalla fonte (modello non configurato o risposta generata non accettata)" if italian else "Source excerpt (model not configured or generated answer rejected)",
+        "controlled_source": "Fonte sanitaria controllata; generazione esclusa" if italian else "Controlled health source; generation disabled",
         "safety_guidance": "Indicazione di sicurezza" if italian else "Safety guidance",
         "catalog_lookup": "Ricerca in sola lettura nel catalogo pubblico" if italian else "Read-only public catalogue lookup",
         "no_answer": "Astensione: fonti insufficienti" if italian else "Abstained: insufficient sources",
@@ -458,8 +481,20 @@ def render_assistant():
                         st.markdown(f'- [{source["organization"]}: {source["title"]}]({source["url"]}) · {source["verified_at"]}')
             if reply.get("catalog_animals"):
                 st.markdown("**Schede pubbliche disponibili**" if italian else "**Published profiles available**")
+                filters = reply.get("catalog_filters", {})
+                labels = []
+                if filters.get("species"):
+                    labels.append(("cani" if filters["species"] == "dog" else "gatti") if italian else ("dogs" if filters["species"] == "dog" else "cats"))
+                if filters.get("city"):
+                    labels.append(f'{"città" if italian else "city"}: {filters["city"]}')
+                if filters.get("good_with_children"):
+                    labels.append("compatibilità esplicita con bambini" if italian else "explicitly assessed child compatibility")
+                if labels:
+                    st.caption(("Filtri applicati: " if italian else "Applied filters: ") + " · ".join(labels))
                 for animal in reply["catalog_animals"]:
                     st.markdown(f'- **{animal["name"]}** · {animal["species"]} · {animal.get("breed", "")} · {animal.get("shelter", "")}, {animal.get("city", "")}')
+                if filters.get("good_with_children"):
+                    st.caption("Compatibilità da verificare comunque con il rifugio." if italian else "Confirm compatibility with the shelter before adoption.")
             st.caption(engine_labels.get(reply.get("engine"), reply.get("engine", "")))
             with st.expander("Traccia RAG / RAG trace"):
                 for step in reply.get("pipeline", []):
@@ -471,13 +506,9 @@ def render_assistant():
     message = st.chat_input("La tua domanda" if italian else "Your question", max_chars=1200)
     if message and message.strip():
         animals = []
+        catalog_filters = {}
         if re.search(r"(adott|cerc\w*.{0,24}(cane|gatto|animal)|looking for (a )?(dog|cat|pet)|find me (a )?(dog|cat|pet)|available animals|animali disponibili|schede disponibili)", message, re.IGNORECASE):
-            params = {}
-            lowered = message.lower()
-            if re.search(r"\b(gatt|cat)", lowered):
-                params["species"] = "CAT"
-            elif re.search(r"\b(can|dog)", lowered):
-                params["species"] = "DOG"
+            params, catalog_filters = assistant_catalog_filters(message)
             try:
                 payload = api_request("GET", "catalog/animals/?" + urlencode(params))
                 animals = [
@@ -487,7 +518,7 @@ def render_assistant():
             except ApiError as exc:
                 st.error(str(exc))
         try:
-            reply = chat_request(message.strip(), locale, [{"role": item["role"], "content": item["content"]} for item in history[-8:]], animals)
+            reply = chat_request(message.strip(), locale, [{"role": item["role"], "content": item["content"]} for item in history[-8:]], animals, catalog_filters)
             st.session_state.assistant_history.extend([
                 {"role": "user", "content": message.strip()},
                 {"role": "assistant", "content": reply["answer"], "reply": reply},

@@ -11,7 +11,7 @@ The repository contains a working Django + Streamlit MVP and a parallel Next.js 
 - **Django + Streamlit MVP:** shelter animal management and publication, public catalogue, basic municipality search, applications, and visit scheduling.
 - **Next.js + Prisma:** public catalogue, adopter matching, shelter onboarding/review, and animal authoring with photo validation.
 - **ML service:** FastAPI serves two shelter-only demo models: an Austin adoption outcome/conditional stay estimate and a Kaggle synthetic dog return-risk estimate for an adopter–dog pair. The public compatibility ranking remains rule-based. Both models are explicitly experimental; see [`docs/14-mvp-ml-demo.md`](./docs/14-mvp-ml-demo.md).
-- **Assistant:** shared private FastAPI RAG demo for web and Streamlit, with bilingual cited guidance, relevance-based abstention, a read-only public animal lookup, and a no-credentials retrieval fallback. See [`docs/15-rag-assistant.md`](./docs/15-rag-assistant.md).
+- **Assistant:** shared private FastAPI RAG demo for web and Streamlit, with bilingual cited guidance, controlled text for health topics, relevance-based abstention, and read-only catalog filters for species, city, and explicit child compatibility. Model generation is optional; without a provider key, no request leaves the app. See [`docs/15-rag-assistant.md`](./docs/15-rag-assistant.md).
 - **Automatic translation:** LibreTranslate (Argos Translate engine) runs as a private Compose service for Italian/English UI and content display.
 
 See [`ROADMAP-OPERATIVA.md`](./ROADMAP-OPERATIVA.md) for the work tracker and [`STATE.md`](./STATE.md) for the latest repository checkpoint.

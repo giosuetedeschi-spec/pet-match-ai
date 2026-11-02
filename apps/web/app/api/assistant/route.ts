@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { AnimalSpecies, AnimalStatus, ShelterStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { isAssistantCatalogQuery, parseAssistantCatalogFilters } from "@/lib/assistant-catalog-query";
 
 export const runtime = "nodejs";
 const requestsByIp = new Map<string, number[]>();
@@ -24,10 +25,6 @@ function isRateLimited(request: Request) {
   return false;
 }
 
-function asksForAnimals(message: string) {
-  return /(adott|cerc\w*.{0,24}(cane|gatto|animal)|looking for (a )?(dog|cat|pet)|find me (a )?(dog|cat|pet)|available animals|animali disponibili|schede disponibili)/i.test(message);
-}
-
 export async function POST(request: Request) {
   if (isRateLimited(request)) return NextResponse.json({ error: "Hai raggiunto il limite temporaneo. Riprova tra un minuto." }, { status: 429, headers: { "Retry-After": "60" } });
   let body: unknown;
@@ -39,24 +36,28 @@ export async function POST(request: Request) {
   }
   try {
     const catalogAnimals = [];
-    if (asksForAnimals(message)) {
-      const text = message.toLowerCase();
-      const species = text.includes("gatt") || text.includes("cat") ? AnimalSpecies.cat : text.includes("can") || text.includes("dog") ? AnimalSpecies.dog : undefined;
+    const catalogFilters = parseAssistantCatalogFilters(message);
+    if (isAssistantCatalogQuery(message)) {
       const animals = await prisma.animal.findMany({
         where: {
           status: AnimalStatus.available,
           publishedAt: { not: null },
           deletedAt: null,
-          shelter: { status: ShelterStatus.active, deletedAt: null },
-          ...(species ? { species } : {}),
+          shelter: {
+            status: ShelterStatus.active,
+            deletedAt: null,
+            ...(catalogFilters.city ? { comune: { name: { equals: catalogFilters.city } } } : {}),
+          },
+          ...(catalogFilters.species ? { species: catalogFilters.species === "cat" ? AnimalSpecies.cat : AnimalSpecies.dog } : {}),
+          ...(catalogFilters.good_with_children ? { behaviorProfile: { is: { goodWithChildren: "yes" } } } : {}),
         },
         orderBy: [{ publishedAt: "desc" }, { name: "asc" }],
         take: 6,
-        select: { name: true, slug: true, species: true, breedPrimary: true, headlineIt: true, shelter: { select: { name: true, comune: { select: { name: true } } } } },
+        select: { name: true, slug: true, species: true, breedPrimary: true, headlineIt: true, headlineEn: true, shelter: { select: { name: true, comune: { select: { name: true } } } } },
       });
       catalogAnimals.push(...animals.map((animal) => ({
         name: animal.name, slug: animal.slug, species: animal.species, breed: animal.breedPrimary ?? "",
-        shelter: animal.shelter.name, city: animal.shelter.comune.name, description: animal.headlineIt ?? "",
+        shelter: animal.shelter.name, city: animal.shelter.comune.name, description: locale === "en" ? animal.headlineEn ?? animal.headlineIt ?? "" : animal.headlineIt ?? "",
       })));
     }
     const safeHistory = Array.isArray(history) ? history.slice(-8).flatMap((item) => {
@@ -69,7 +70,7 @@ export async function POST(request: Request) {
     const response = await fetch(`${(process.env.CHAT_SERVICE_URL ?? "http://assistant:8002").replace(/\/$/, "")}/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.CHAT_SERVICE_TOKEN ?? "local-chat-token"}` },
-      body: JSON.stringify({ message: message.trim(), locale: locale ?? "it", history: safeHistory, catalog_animals: catalogAnimals }),
+      body: JSON.stringify({ message: message.trim(), locale: locale ?? "it", history: safeHistory, catalog_animals: catalogAnimals, catalog_filters: catalogFilters }),
       cache: "no-store",
       signal: AbortSignal.timeout(15_000),
     });

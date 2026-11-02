@@ -55,7 +55,7 @@ The web application is the only thing that talks to the database. The ML service
 
 ### Current product boundaries
 
-Compose keeps the Django/Streamlit MVP database (`petmatch_mvp`) separate from the Next.js portal database (`petmatch_web`); records are not synchronized. The Next.js rule engine is authoritative for the web portal. Django has separate MVP matching rules, so scores from the two experiences are not comparable. Public matching is rule-based, not ML; trained ML demos are shelter-facing only. Both interfaces call the same authenticated RAG assistant.
+Compose keeps the Django/Streamlit MVP database (`petmatch_mvp`) separate from the Next.js portal database (`petmatch_web`); records are not synchronized. The Next.js rule engine is authoritative for the web portal. Django has separate MVP matching rules, so scores from the two experiences are not comparable. Public matching is rule-based, not ML; trained ML demos are shelter-facing only. Both interfaces call the same authenticated RAG assistant, which uses controlled source text for health topics and explicit filters for read-only catalog lookup.
 
 ### Web application — Next.js (TypeScript, App Router)
 

@@ -11,7 +11,7 @@ Dopo il login come rifugio, Streamlit mostra due funzioni sperimentali:
 1. **Esito dell'animale:** probabilitÃ  di adozione tra gli esiti storici registrati e permanenza media stimata, condizionata al fatto che l'animale venga adottato.
 2. **Esito della coppia cane-adottante:** indicatore di rischio di restituzione dopo l'adozione, basato su un dataset Kaggle sintetico. Ãˆ utilizzabile solo per discutere eventuale supporto aggiuntivo.
 
-Nessuna stima puÃ² rifiutare un adottante o un animale. Il modello di coppia Ã¨ solo per cani; il modello storico Austin copre cani e gatti.
+Nessuna stima puÃ² rifiutare un adottante o un animale. Il modello di coppia Ã¨ solo per cani; il modello storico Austin copre cani e gatti. Il matching pubblico Next.js e il ranking del questionario Django/Streamlit sono motori a regole separati: non sono confrontabili tra loro o con il modello Kaggle. Non abbiamo una valutazione testa-a-testa su casi comuni né esiti reali longitudinali. Il modello Kaggle stima un rischio sintetico di restituzione per la discussione interna; non è un modello di compatibilità validato.
 
 ## Dati, riproducibilitÃ  e risultati
 

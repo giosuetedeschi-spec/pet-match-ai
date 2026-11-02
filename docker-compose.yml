@@ -44,7 +44,7 @@ services:
     environment:
       CHAT_SERVICE_TOKEN: ${CHAT_SERVICE_TOKEN:-local-chat-token}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
-      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-haiku-4-5-20251001}
     ports:
       - "127.0.0.1:${CHAT_PORT:-8002}:8002"
     healthcheck:

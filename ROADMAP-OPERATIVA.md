@@ -26,11 +26,11 @@ Aggiornata: 2026-11-02. `docs/` descrive il prodotto e l'architettura di riferim
 - [x] Foto: upload fino a 10 MB, testo alternativo, conversione WebP, varianti adattive, rimozione dei metadati EXIF, copertina e ordine gestibili, rimozione logica, storage locale persistente o bucket S3 compatibile privato.
 - [x] Onboarding Next.js dei rifugi: account e struttura pending nella stessa transazione, verifica email, selezione comune ISTAT, revisione admin, approvazione/rifiuto con motivazione e bootstrap admin CLI.
 - [x] Interfaccia e contenuti leggibili in italiano/inglese tramite servizio self-hosted LibreTranslate/Argos; i testi originali rimangono intatti.
-- [x] Assistente RAG dimostrativo bilingue con corpus dog/cat verificabile, citazioni per affermazione, astensione su risultati deboli/specie non coperte e lookup read-only del catalogo; proxy con rate limit in memoria (limite adatto solo al demo).
+- [x] Assistente RAG dimostrativo bilingue con corpus dog/cat verificabile, citazioni per affermazione, risposte sanitarie da testo controllato, routing prudente per ingestione tossica/sconosciuta, astensione su risultati deboli/specie non coperte e lookup read-only filtrabile per specie, città e compatibilità esplicita con bambini; proxy con rate limit in memoria (limite adatto solo al demo).
 - [x] Questionario Django distingue cani e gatti già presenti; incompatibilità confermate con bambini o animali domestici escludono il risultato e dati ignoti generano cautele.
-- [x] Copertura CI dell'astensione per richieste commerciali, lookup del catalogo e limite 10 richieste/minuto del proxy; verifica visuale desktop/mobile eseguita per la pagina assistente.
+- [x] Copertura CI dell'astensione per richieste commerciali, filtri species/città/bambini del lookup, test parser web e Streamlit, e limite 10 richieste/minuto del proxy; verifica visuale desktop/mobile eseguita per la pagina assistente.
 
-Il matching Next.js supporta profili anonimi e account verificati. Gli account del portale rifugio devono essere membri di una struttura attiva; onboarding e approvazione sono gestiti fuori da questo flusso.
+Il matching Next.js supporta profili anonimi e account verificati. Gli account del portale rifugio devono essere membri di una struttura attiva; onboarding e approvazione sono gestiti fuori da questo flusso. I motori pubblici Next.js e Django/Streamlit applicano regole diverse e non sono confrontabili tra loro o con la demo Kaggle sintetica di rischio di restituzione; manca una valutazione comune su esiti reali.
 
 ## ML
 
