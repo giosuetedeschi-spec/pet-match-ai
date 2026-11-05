@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PetMatch AI · API demo</title>
+    <style>
+      :root { color-scheme: light; font-family: system-ui, sans-serif; color: #18312b; background: #f4f8f5; }
+      body { box-sizing: border-box; max-width: 760px; margin: 0 auto; padding: 3rem 1.25rem; }
+      main { padding: 2rem; border: 1px solid #d9e6dd; border-radius: 1rem; background: white; }
+      h1 { margin-top: 0; }
+      a { color: #176b50; }
+      li { margin: .6rem 0; }
+      .demo { display: inline-block; margin: .4rem 0 1rem; padding: .7rem 1rem; border-radius: .5rem; color: white; background: #176b50; text-decoration: none; }
+      code { padding: .12rem .3rem; border-radius: .25rem; background: #edf3ef; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>PetMatch AI · API demo</h1>
+      <p>Il backend Django è attivo. Per esplorare il catalogo e le schede degli animali, apri la demo Streamlit.</p>
+      <p><a class="demo" href="http://localhost:8501">Apri la demo</a></p>
+      <h2>Endpoint pubblici</h2>
+      <ul>
+        <li><a href="/catalog/animals/">Catalogo animali</a></li>
+        <li><a href="/geo/comuni/?q=Torino">Ricerca comuni</a></li>
+      </ul>
+    </main>
+  </body>
+</html>

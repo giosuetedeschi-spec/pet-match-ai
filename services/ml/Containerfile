@@ -1,9 +1,14 @@
 FROM python:3.12-slim
 
 WORKDIR /app
-COPY requirements.txt ./
+COPY services/ml/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
-COPY app.py ./
+COPY services/ml/app.py ./app.py
+COPY services/ml/train_models.py ./train_models.py
+COPY training-data/aac_intakes_outcomes.csv ./data/aac_intakes_outcomes.csv
+COPY training-data/dog_adoption_master.csv ./data/dog_adoption_master.csv
+RUN python train_models.py --data-dir /app/data --output-dir /app/models
 
+ENV ML_MODEL_DIR=/app/models
 EXPOSE 8001
 CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8001"]

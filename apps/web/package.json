@@ -6,15 +6,19 @@
     "dev": "bun --bun next dev",
     "build": "bun --bun next build",
     "start": "bun --bun next start",
+    "test:shelter": "bun test tests/shelter-flow.test.js",
     "typecheck": "bun --bun tsc --noEmit",
-    "worker:matching": "bun run scripts/matching-worker.ts"
+    "worker:matching": "bun run scripts/matching-worker.ts",
+    "admin:promote": "bun run scripts/promote-platform-admin.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1148.0",
     "@prisma/client": "6.19.3",
     "next": "16.3.8",
     "nodemailer": "^10.0.16",
     "react": "19.2.0",
-    "react-dom": "19.2.0"
+    "react-dom": "19.2.0",
+    "sharp": "^0.35.5"
   },
   "devDependencies": {
     "@types/node": "22.15.30",

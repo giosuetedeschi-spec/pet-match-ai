@@ -4,6 +4,9 @@ node_modules/
 .next/
 *.tsbuildinfo
 *.log
+apps/web/.media/
+training-data/*.zip
+services/ml/models/*.joblib
 
 # Python
 env/

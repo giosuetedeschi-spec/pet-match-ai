@@ -1,12 +1,16 @@
 # Roadmap operativa PetMatch AI
 
-Aggiornata: 2026-10-08. `docs/` descrive il prodotto e l'architettura di riferimento; questo file registra lo stato effettivo dell'implementazione.
+Aggiornata: 2026-11-02. `docs/` descrive il prodotto e l'architettura di riferimento; questo file registra lo stato effettivo dell'implementazione.
 
 ## MVP Django + Streamlit
 
 - [x] Gestione e pubblicazione degli animali da parte dei rifugi.
 - [x] Catalogo pubblico e ricerca geografica di base con dati ISTAT.
 - [x] API per candidature, revisione lato rifugio, richieste dell'adottante e programmazione visite.
+- [x] Questionario MVP per confronto adottante-animale con ranking deterministico; accesso dal tab Streamlit Compatibilità.
+- [x] Modello Austin per esito e permanenza condizionale, visibile solo nell'area rifugio autenticata.
+- [x] Modello Kaggle sintetico per rischio di restituzione cane-adottante, visibile solo al personale e dichiarato come demo.
+- [x] Disclosure pubblica dell'uso interno di ML; il questionario adozione non mostra previsioni interne.
 - [ ] Consolidare i flussi di gestione MVP e le verifiche CI prima di estendere il prodotto.
 
 ## Release parallela Next.js + Prisma
@@ -18,16 +22,22 @@ Aggiornata: 2026-10-08. `docs/` descrive il prodotto e l'architettura di riferim
 - [x] Cache e invalidazione degli abbinamenti, spiegazione Claude opzionale con fallback deterministico, notifiche in-app/email e disiscrizione senza login.
 - [x] Worker schedulato per ricalcolo e digest, con limite di una notifica email ogni 48 ore per profilo.
 - [ ] Completare il test d'usabilità con tre persone e verificare end-to-end invio digest e disiscrizione email. GitHub CI ha già avviato Compose e verificato la connessione MySQL.
-- [ ] Creazione e pubblicazione di animali da parte dei rifugi, con validazione.
-- [ ] Definire la consegna delle foto per Next.js. Nell'MVP Django le foto sono sul volume media; per ora non è previsto object storage.
+- [x] Portale Next.js per membri di rifugi: bozze animali, dati e comportamento validati, pubblicazione consentita solo a strutture attive.
+- [x] Foto: upload fino a 10 MB, testo alternativo, conversione WebP, varianti adattive, rimozione dei metadati EXIF, copertina e ordine gestibili, rimozione logica, storage locale persistente o bucket S3 compatibile privato.
+- [x] Onboarding Next.js dei rifugi: account e struttura pending nella stessa transazione, verifica email, selezione comune ISTAT, revisione admin, approvazione/rifiuto con motivazione e bootstrap admin CLI.
+- [x] Interfaccia e contenuti leggibili in italiano/inglese tramite servizio self-hosted LibreTranslate/Argos; i testi originali rimangono intatti.
+- [x] Assistente RAG dimostrativo bilingue con corpus dog/cat verificabile, citazioni per affermazione, risposte sanitarie da testo controllato, routing prudente per ingestione tossica/sconosciuta, astensione su risultati deboli/specie non coperte e lookup read-only filtrabile per specie, città e compatibilità esplicita con bambini; proxy con rate limit in memoria (limite adatto solo al demo).
+- [x] Questionario Django distingue cani e gatti già presenti; incompatibilità confermate con bambini o animali domestici escludono il risultato e dati ignoti generano cautele.
+- [x] Copertura CI dell'astensione per richieste commerciali, filtri species/città/bambini del lookup, test parser web e Streamlit, e limite 10 richieste/minuto del proxy; verifica visuale desktop/mobile eseguita per la pagina assistente.
 
-Il matching Next.js supporta profili anonimi e account verificati. I dati mancanti sono trattati in modo prudente e mostrati come verifiche da fare con il rifugio. Build, typecheck, test automatici e smoke test Compose in CI sono passati; restano il test d'usabilità e la prova end-to-end dell'email.
+Il matching Next.js supporta profili anonimi e account verificati. Gli account del portale rifugio devono essere membri di una struttura attiva; onboarding e approvazione sono gestiti fuori da questo flusso. I motori pubblici Next.js e Django/Streamlit applicano regole diverse e non sono confrontabili tra loro o con la demo Kaggle sintetica di rischio di restituzione; manca una valutazione comune su esiti reali.
 
 ## ML
 
-- [x] Scaffold del servizio FastAPI incluso in Docker Compose.
-- [ ] Configurare e servire un modello tramite API. Al momento `/health` riporta `model: not-configured`; le previsioni non sono una funzionalità live.
-- [ ] Validare il modello rispetto ai criteri e ai limiti specificati in [`docs/05-ml-spec.md`](./docs/05-ml-spec.md).
+- [x] API FastAPI privata con health, model-info, inferenza singola e batch; autenticazione bearer e triage rifugi collegato con storico append-only.
+- [x] Training riproducibile dei due modelli demo con feature di input separate dai target e metriche holdout registrate in `docs/14-mvp-ml-demo.md`. L'artefatto Cox resta escluso per leakage (`duration_days`, `is_adopted`).
+- [ ] Validare su esiti reali italiani, misurare calibrazione e follow-up; i modelli MVP sono sperimentali e non adatti a decisioni operative.
+- [ ] Raccogliere candidature, profili e follow-up post-adozione collegati per addestrare e validare una reale compatibilità adottante-animale; il dataset Kaggle corrente è sintetico e predice restituzione.
 
 ## Procedura per ogni unità
 
@@ -39,4 +49,4 @@ Il matching Next.js supporta profili anonimi e account verificati. I dati mancan
 
 ## Stato corrente
 
-Il catalogo pubblico Next.js è stato unito in PR #23. Il repository locale è su `main`, sincronizzato con `origin/main` al commit `10ad3ff` (merge di PR #23), senza modifiche locali al momento dell'aggiornamento. La prossima unità pianificata è il flusso rifugio per creare e pubblicare animali in Next.js; l'integrazione foto resta una decisione separata.
+Onboarding, revisione admin, modelli ML demo, triage, traduzione automatica e audit di assistente/matching sono implementati nel branch `chore/clean-modules-types-docs`; GitHub Actions run `41544976767` ha superato tutti i job, incluso Compose. Il motore Docker locale non è raggiungibile. Restano la validazione scientifica del modello, i test di usabilità con tre persone e la verifica end-to-end di email, digest e disiscrizione.

@@ -28,6 +28,21 @@ export async function sendVerificationEmail(email: string, name: string, token: 
   });
 }
 
+export async function sendShelterDecisionEmail(input: { email: string; name: string; shelter: string; approved: boolean; reason?: string; locale: "it" | "en" }) {
+  const italian = input.locale === "it";
+  const subject = input.approved
+    ? (italian ? "Richiesta rifugio approvata" : "Shelter application approved")
+    : (italian ? "Aggiornamento sulla richiesta rifugio" : "Shelter application update");
+  const text = input.approved
+    ? (italian
+      ? `Ciao ${input.name}, la richiesta per ${input.shelter} è stata approvata. Puoi accedere al portale e pubblicare gli animali dopo aver completato le schede.`
+      : `Hello ${input.name}, the application for ${input.shelter} has been approved. You can sign in to the portal and publish animals once their profiles are complete.`)
+    : (italian
+      ? `Ciao ${input.name}, la richiesta per ${input.shelter} non è stata approvata. Motivo: ${input.reason ?? "non specificato"}. Puoi contattare il supporto se desideri chiarimenti.`
+      : `Hello ${input.name}, the application for ${input.shelter} was not approved. Reason: ${input.reason ?? "not specified"}. Contact support if you need clarification.`);
+  return transporter().sendMail({ from: process.env.SMTP_FROM ?? "PetMatch AI <noreply@petmatch.local>", to: input.email, subject, text });
+}
+
 export type DigestAnimal = { name: string; species: string; slug: string; score: number; explanation: string };
 
 export async function sendMatchingDigestEmail(input: {

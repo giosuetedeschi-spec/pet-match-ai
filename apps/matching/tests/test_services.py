@@ -18,15 +18,16 @@ class MatchingServiceUnitTest(TestCase):
             role=User.Role.ADOPTER,
             gdpr_consent=True
         )
-        self.adopter_profile = self.adopter_user.adopter_profile
-        self.adopter_profile.housing_type = AdopterProfile.HousingType.HOUSE_GARDEN
-        self.adopter_profile.garden_sqm = 100
-        self.adopter_profile.has_children = False
-        self.adopter_profile.has_other_pets = False
-        self.adopter_profile.hours_away_from_home = 4
-        self.adopter_profile.activity_level = AdopterProfile.ActivityLevel.MODERATE
-        self.adopter_profile.experience_level = AdopterProfile.ExperienceLevel.BEGINNER
-        self.adopter_profile.save()
+        self.adopter_profile = AdopterProfile.objects.create(
+            user=self.adopter_user,
+            housing_type=AdopterProfile.HousingType.HOUSE_GARDEN,
+            garden_sqm=100,
+            has_children=False,
+            has_other_pets=False,
+            hours_away_from_home=4,
+            activity_level=AdopterProfile.ActivityLevel.MODERATE,
+            experience_level=AdopterProfile.ExperienceLevel.BEGINNER,
+        )
 
         # 2. Creazione Rifugio e Animale Base
         self.shelter_user = User.objects.create_user(
@@ -113,13 +114,44 @@ class MatchingServiceUnitTest(TestCase):
         self.assertLess(breakdown['lifestyle_score'], 25.0)
         self.assertTrue(any("Le ore di assenza" in penalty for penalty in breakdown['penalties']))
 
-    def test_ml_feature_preparation(self):
-        """
-        Verifica la corretta formattazione delle feature nel DataFrame per il modello ML.
-        """
-        feature_df = MatchingService._prepare_ml_features(self.adopter_profile, self.animal)
+    def test_unvalidated_model_fields_remain_empty(self):
+        match = MatchingService.process_and_save_match(self.adopter_user, self.animal)
 
-        self.assertEqual(feature_df.shape[0], 1)
-        self.assertIn('age_months', feature_df.columns)
-        self.assertIn('size_encoded', feature_df.columns)
-        self.assertEqual(feature_df['age_months'].iloc[0], 24)
+        self.assertIsNone(match.predicted_adoption_time_days)
+        self.assertIsNone(match.survival_probability_30d)
+
+    def test_confirmed_child_incompatibility_excludes_animal(self):
+        self.adopter_profile.has_children = True
+        self.adopter_profile.save()
+        self.animal.good_with_children = False
+        self.animal.save()
+
+        score, breakdown = MatchingService.calculate_match_score(self.adopter_profile, self.animal)
+
+        self.assertEqual(score, 0.0)
+        self.assertTrue(breakdown['excluded'])
+        self.assertIn("Non indicato per la convivenza con bambini.", breakdown['exclusions'])
+
+    def test_dog_only_household_does_not_get_cat_incompatibility_penalty(self):
+        self.adopter_profile.has_other_pets = True
+        self.adopter_profile.has_dogs = True
+        self.adopter_profile.save()
+        self.animal.good_with_dogs = True
+        self.animal.good_with_cats = False
+        self.animal.save()
+
+        score, breakdown = MatchingService.calculate_match_score(self.adopter_profile, self.animal)
+
+        self.assertEqual(score, 100.0)
+        self.assertFalse(breakdown['excluded'])
+        self.assertNotIn("Non idoneo alla convivenza con gatti.", breakdown['penalties'])
+
+    def test_unspecified_existing_pet_species_is_a_caution_not_a_guess(self):
+        self.adopter_profile.has_other_pets = True
+        self.adopter_profile.save()
+
+        score, breakdown = MatchingService.calculate_match_score(self.adopter_profile, self.animal)
+
+        self.assertEqual(score, 100.0)
+        self.assertFalse(breakdown['excluded'])
+        self.assertTrue(any("Specie degli animali già presenti" in item for item in breakdown['cautions']))
