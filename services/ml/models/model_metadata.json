@@ -1,0 +1,87 @@
+{
+  "compatibility_return_risk": {
+    "version": "kaggle-dog-return-0.1.0",
+    "dataset": "sergionefedov/dog-adoption-success-does-the-match-last",
+    "dataset_is_synthetic": true,
+    "target": "returned",
+    "features": [
+      "age_years",
+      "size",
+      "medical_needs",
+      "neutered",
+      "energy_level",
+      "first_time_owner",
+      "household_has_kids",
+      "household_has_pets",
+      "home_type",
+      "has_yard",
+      "hours_alone_per_day",
+      "adopter_activity_level",
+      "visits_before_adoption",
+      "met_resident_pets",
+      "adoption_counseling",
+      "expectation_score"
+    ],
+    "excluded_outcome_fields": [
+      "adoption_id",
+      "return_reason",
+      "days_to_return",
+      "returned",
+      "energy_mismatch",
+      "size_home_mismatch"
+    ],
+    "split": "stratified random 80/20, seed=42",
+    "metrics": {
+      "roc_auc": 0.6172,
+      "average_precision": 0.2223,
+      "brier_score": 0.1244,
+      "rows": 8400,
+      "positive_rate": 0.1499
+    },
+    "limitations": [
+      "The Kaggle dataset is synthetic and intended for education; scores are not real-world estimates.",
+      "Dog-only training data; do not apply to cats.",
+      "Predicts return risk after adoption, not objective adopter-animal compatibility or adoption success.",
+      "Use only as an internal discussion aid; a score must not reject an adopter or animal."
+    ]
+  },
+  "animal_adoption_outcome": {
+    "version": "austin-adoption-outcome-0.1.1",
+    "dataset": "Austin Animal Center Shelter Intakes and Outcomes (Kaggle)",
+    "dataset_is_synthetic": false,
+    "target": "eventual_adoption_among_records_with_observed_outcome",
+    "features": [
+      "species",
+      "breed",
+      "sex",
+      "age_months"
+    ],
+    "excluded_outcome_fields": [
+      "outcome_type",
+      "outcome_subtype",
+      "outcome_datetime",
+      "time_in_shelter_days",
+      "animal_id"
+    ],
+    "split": "train before 2017-01; validation 2017-01 to 2017-06; test from 2017-07",
+    "training_rows": 64056,
+    "test_metrics": {
+      "roc_auc": 0.6489,
+      "average_precision": 0.5922,
+      "brier_score": 0.2302,
+      "rows": 10776,
+      "positive_rate": 0.4813
+    },
+    "adoption_days_if_adopted": {
+      "mae_days": 20.44,
+      "test_rows": 5186,
+      "interpretation": "Estimated length of stay conditional on a recorded adoption, not a guaranteed date."
+    },
+    "limitations": [
+      "Austin, Texas historical data from 2013-2018; not representative of Italian shelters.",
+      "The joined file contains completed outcomes only; animals still in care at export are censored and absent.",
+      "Predicts adoption versus another observed outcome, not an adopter-specific match or exact time-to-adoption.",
+      "Use only internally for planning; never use to reject or deprioritize an animal."
+    ]
+  }
+}

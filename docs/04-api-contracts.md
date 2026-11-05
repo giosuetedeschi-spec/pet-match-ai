@@ -106,6 +106,8 @@ Internal error messages, stack traces and SQL never reach a response body. The `
 
 | Method | Path | Auth | Purpose |
 |---|---|---|---|
+| POST | `/api/auth/register` with `accountType: shelter` | Public | Create a pending shelter, verified-email account and first membership |
+| GET/POST | `/api/admin/shelters` | Platform admin | Review pending applications; approve verified emails or reject with a reason |
 | GET/POST | `/shelter/animals` | Member | List / create |
 | GET/PATCH/DELETE | `/shelter/animals/{id}` | Member | Read / update / soft-delete |
 | POST | `/shelter/animals/{id}/publish` | Member | Validate and publish |
@@ -113,7 +115,7 @@ Internal error messages, stack traces and SQL never reach a response body. The `
 | GET/POST | `/shelter/animals/{id}/medical` | Member | Medical log |
 | GET/POST | `/shelter/animals/{id}/vaccinations` | Member | Vaccinations |
 | POST | `/shelter/animals/{id}/media` | Member | Request an upload URL |
-| PATCH/DELETE | `/shelter/media/{id}` | Member | Reorder, set primary, alt text, delete |
+| PATCH/DELETE | `/shelter/animals/{animal_id}/media/{media_id}` | Member | Reorder, set primary, update alt text, or remove from listing (soft delete) |
 | GET | `/shelter/applications` | Member | Queue |
 | PATCH | `/shelter/applications/{id}` | Member | Decide or request info |
 | GET/POST/PATCH | `/shelter/slots` | Member | Availability |
@@ -444,6 +446,10 @@ Plan limits (`plan_limit_reached`) and unsupported types are rejected at step 1,
 ## 4. ML service contract
 
 Base URL `ML_SERVICE_URL`. Bearer token auth. The service is stateless, has no database access, and knows nothing about shelters or users — it receives features and returns numbers.
+
+**Implemented integration:** `GET /health`, `GET /model-info`, `POST /predict`, and `POST /predict/batch` are present. Prediction/model-info routes require `Authorization: Bearer $ML_SERVICE_TOKEN`. The current response has `mode: mock`, a mock version, bucket probabilities, completeness, and rule-shaped factors. This does not meet the validated-model target contract below and must never be described as a trained model. The Next.js shelter triage stores every returned item in `animal_predictions`; this table is append-only at application level and visible only to staff of active shelters.
+
+The existing Cox artifact is deliberately not loaded: its serialized feature list includes outcome fields (`duration_days`, `is_adopted`). Using those values at inference would leak the label. Replace the mock only after producing an inference-safe artifact and validating it with the criteria in [05](./05-ml-spec.md) §10.
 
 ### `GET /health`
 

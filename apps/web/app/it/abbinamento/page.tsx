@@ -21,6 +21,7 @@ export default function MatchingPage() {
       <p className="match-method-note">
         Il profilo resta anonimo in questo browser e può essere cancellato in qualsiasi momento.
         Il punteggio confronta compatibilità e preferenze; non sostituisce il colloquio con il rifugio.
+        Il portale web usa il suo motore di regole; il questionario Django/Streamlit MVP è una demo separata e produce punteggi non confrontabili.
       </p>
     </main>
   );

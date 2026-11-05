@@ -575,6 +575,8 @@ CREATE TABLE predictions (
 
 Predictions are append-only. Keeping the history lets us answer "was the model right?" later, which is the only honest route to knowing whether it is worth keeping — see [05](./05-ml-spec.md) §9.
 
+The current Next.js integration persists its narrower mock-compatible record in a separate `animal_predictions` table (`id`, `animal_id`, `model_version`, `mode`, `predicted_at`, adoption probability, bucket JSON, factor JSON, and data completeness). It is indexed by `(animal_id, predicted_at)` and appended by each shelter refresh. The richer `predictions` table above remains the target schema for a validated survival model.
+
 ## 11. Notifications
 
 ```sql

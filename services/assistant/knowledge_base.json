@@ -1,0 +1,280 @@
+[
+  {
+    "id": "poison-foods-it",
+    "title": "Alimenti e sostanze da evitare per cani e gatti",
+    "organization": "ASPCA Animal Poison Control",
+    "url": "https://www.aspca.org/pet-care/aspca-poison-control/people-foods-avoid-feeding-your-pets",
+    "verified_at": "2026-11-02",
+    "locale": "it",
+    "keywords": "cane gatto cioccolato caffeina uva uvetta xilitolo cipolla aglio alcol lievito",
+    "text": "Cioccolato, caffè e caffeina possono causare disturbi gastrointestinali, alterazioni cardiache, tremori e convulsioni. Uva e uvetta possono danneggiare i reni dei cani; cipolla, aglio ed erba cipollina possono danneggiare i globuli rossi. Lo xilitolo può causare ipoglicemia e danni al fegato, soprattutto nei cani. Se un animale ha ingerito una sostanza potenzialmente tossica, contatta subito un veterinario o un centro antiveleni veterinario; comunica prodotto, quantità stimata e orario. Non aspettare la comparsa dei sintomi.",
+    "topic": "emergency",
+    "species": [
+      "dog",
+      "cat"
+    ],
+    "review_interval_days": 365
+  },
+  {
+    "id": "poison-foods-en",
+    "title": "Foods and substances to avoid for dogs and cats",
+    "organization": "ASPCA Animal Poison Control",
+    "url": "https://www.aspca.org/pet-care/aspca-poison-control/people-foods-avoid-feeding-your-pets",
+    "verified_at": "2026-11-02",
+    "locale": "en",
+    "keywords": "dog cat chocolate caffeine grapes raisins xylitol onion garlic alcohol yeast",
+    "text": "Chocolate, coffee and caffeine can cause gastrointestinal upset, heart rhythm changes, tremors and seizures. Grapes and raisins can damage dogs' kidneys; onion, garlic and chives can damage red blood cells. Xylitol can cause low blood sugar and liver injury, especially in dogs. If a pet may have ingested a toxic substance, contact a veterinarian or veterinary poison center immediately; share the product, estimated amount and time. Do not wait for symptoms.",
+    "topic": "emergency",
+    "species": [
+      "dog",
+      "cat"
+    ],
+    "review_interval_days": 365
+  },
+  {
+    "id": "emergency-it",
+    "title": "Primo soccorso e urgenze per animali",
+    "organization": "American Veterinary Medical Association",
+    "url": "https://ebusiness.avma.org/files/productdownloads/mcm-client-brochures-pet-first-aid-2023.pdf",
+    "verified_at": "2026-11-02",
+    "locale": "it",
+    "keywords": "emergenza pronto soccorso respirazione soffocamento convulsioni avvelenamento veterinario",
+    "text": "Il primo soccorso non sostituisce le cure veterinarie. In caso di emergenza, chiama il veterinario o un pronto soccorso veterinario locale affinché possa prepararsi al tuo arrivo. Difficoltà respiratoria, soffocamento, convulsioni, collasso o possibile avvelenamento richiedono contatto veterinario immediato. Mantieni l'animale calmo e porta con te confezione o informazioni sulla sostanza ingerita, quantità e orario. Non somministrare farmaci e non indurre il vomito se non su indicazione del veterinario.",
+    "topic": "emergency",
+    "species": [
+      "dog",
+      "cat"
+    ],
+    "review_interval_days": 365
+  },
+  {
+    "id": "emergency-en",
+    "title": "Pet first aid and emergencies",
+    "organization": "American Veterinary Medical Association",
+    "url": "https://ebusiness.avma.org/files/productdownloads/mcm-client-brochures-pet-first-aid-2023.pdf",
+    "verified_at": "2026-11-02",
+    "locale": "en",
+    "keywords": "emergency first aid breathing choking seizures poisoning veterinarian",
+    "text": "First aid is not a substitute for veterinary care. In an emergency, call your veterinarian or a local emergency veterinary hospital so they can prepare for your arrival. Difficulty breathing, choking, seizures, collapse or suspected poisoning require immediate veterinary contact. Keep the pet calm and bring the product label and information about the substance, estimated amount and time. Do not give medicine or induce vomiting unless a veterinarian directs you.",
+    "topic": "emergency",
+    "species": [
+      "dog",
+      "cat"
+    ],
+    "review_interval_days": 365
+  },
+  {
+    "id": "nutrition-it",
+    "title": "Nutrizione di cani e gatti e scelta dell'alimento",
+    "organization": "World Small Animal Veterinary Association",
+    "url": "https://wsava.org/Global-Guidelines/Global-Nutrition-Guidelines/",
+    "verified_at": "2026-11-02",
+    "locale": "it",
+    "keywords": "nutrizione cane gatto cibo dieta marca etichetta alimentazione peso",
+    "text": "La scelta dell'alimento deve considerare specie, età, stato di salute e condizione corporea. Le linee guida WSAVA invitano a valutare chi formula la dieta, le qualifiche del nutrizionista, il controllo qualità, la completezza nutrizionale e la disponibilità di informazioni caloriche. Termini promozionali come 'premium' o 'olistico' da soli non dimostrano qualità nutrizionale. Le esigenze individuali e i cambi di dieta vanno discussi con il veterinario; diete terapeutiche o casalinghe richiedono supervisione professionale.",
+    "topic": "nutrition",
+    "species": [
+      "dog",
+      "cat"
+    ],
+    "review_interval_days": 365
+  },
+  {
+    "id": "nutrition-en",
+    "title": "Dog and cat nutrition and choosing pet food",
+    "organization": "World Small Animal Veterinary Association",
+    "url": "https://wsava.org/Global-Guidelines/Global-Nutrition-Guidelines/",
+    "verified_at": "2026-11-02",
+    "locale": "en",
+    "keywords": "nutrition dog cat food diet brand label feeding weight",
+    "text": "Food choice should account for species, age, health and body condition. WSAVA guidelines suggest checking who formulates the diet, nutritionist qualifications, quality control, nutritional completeness and calorie information. Marketing terms such as 'premium' or 'holistic' alone do not establish nutritional quality. Individual needs and diet changes should be discussed with a veterinarian; therapeutic or home-prepared diets require professional supervision.",
+    "topic": "nutrition",
+    "species": [
+      "dog",
+      "cat"
+    ],
+    "review_interval_days": 365
+  },
+  {
+    "id": "cat-feeding-it",
+    "title": "Alimentazione del gatto e perdita di appetito",
+    "organization": "Cornell Feline Health Center",
+    "url": "https://www.vet.cornell.edu/departments-centers-and-institutes/cornell-feline-health-center/health-information/feline-health-topics/feeding-your-cat",
+    "verified_at": "2026-11-02",
+    "locale": "it",
+    "keywords": "gatto cibo alimentazione dieta appetito digiuno peso veterinario",
+    "text": "I gatti hanno esigenze nutrizionali specifiche e necessitano di acqua fresca. Una dieta completa e bilanciata è preferibile; integratori non vanno aggiunti senza approvazione veterinaria. Non esiste una quantità universale adatta a ogni gatto: peso ideale e variazioni della dieta vanno concordati con il veterinario. Un gatto che rifiuta il cibo e perde peso deve essere visitato.",
+    "topic": "nutrition",
+    "species": [
+      "cat"
+    ],
+    "review_interval_days": 365
+  },
+  {
+    "id": "cat-feeding-en",
+    "title": "Cat feeding and loss of appetite",
+    "organization": "Cornell Feline Health Center",
+    "url": "https://www.vet.cornell.edu/departments-centers-and-institutes/cornell-feline-health-center/health-information/feline-health-topics/feeding-your-cat",
+    "verified_at": "2026-11-02",
+    "locale": "en",
+    "keywords": "cat food feeding diet appetite fasting weight veterinarian",
+    "text": "Cats have specific nutritional needs and require fresh water. A complete and balanced diet is preferred; supplements should not be added without veterinary approval. There is no universal portion for every cat: discuss ideal weight and diet changes with a veterinarian. A cat that refuses food and is losing weight should be examined.",
+    "topic": "nutrition",
+    "species": [
+      "cat"
+    ],
+    "review_interval_days": 365
+  },
+  {
+    "id": "poison-cat-it",
+    "title": "Sospetta ingestione di sostanze tossiche nel gatto",
+    "organization": "Cornell Feline Health Center",
+    "url": "https://www.vet.cornell.edu/departments-centers-and-institutes/cornell-feline-health-center/health-information/feline-health-topics/poisons",
+    "verified_at": "2026-11-02",
+    "locale": "it",
+    "keywords": "gatto veleno tossico farmaco dose vomito veterinario",
+    "text": "La gravità di un'intossicazione dipende da sostanza, quantità, età, taglia e salute dell'animale. Se sospetti che un gatto abbia ingerito un veleno, contatta subito il veterinario o un centro antiveleni veterinario. Non indurre il vomito e non somministrare rimedi o farmaci senza istruzioni professionali.",
+    "topic": "emergency",
+    "species": [
+      "cat"
+    ],
+    "review_interval_days": 365
+  },
+  {
+    "id": "poison-cat-en",
+    "title": "Suspected poisoning in cats",
+    "organization": "Cornell Feline Health Center",
+    "url": "https://www.vet.cornell.edu/departments-centers-and-institutes/cornell-feline-health-center/health-information/feline-health-topics/poisons",
+    "verified_at": "2026-11-02",
+    "locale": "en",
+    "keywords": "cat poison toxic medication dose vomiting veterinarian",
+    "text": "The severity of poisoning depends on the substance, amount, age, size and health of the animal. If you suspect a cat ingested poison, contact a veterinarian or veterinary poison center immediately. Do not induce vomiting or give remedies or medicine without professional instructions.",
+    "topic": "emergency",
+    "species": [
+      "cat"
+    ],
+    "review_interval_days": 365
+  },
+  {
+    "id": "dog-selection-it",
+    "title": "Scegliere un cane adatto alla propria vita",
+    "organization": "American Veterinary Medical Association",
+    "url": "https://avma.org/resources/pet-owners/petcare/selecting-pet-dog",
+    "verified_at": "2026-11-02",
+    "locale": "it",
+    "topic": "adoption",
+    "species": [
+      "dog"
+    ],
+    "review_interval_days": 365,
+    "keywords": "adozione cane razza taglia famiglia casa stile vita esercizio tempo esperienza esigenze",
+    "text": "La scelta di un cane dovrebbe considerare famiglia, casa, stile di vita, tempo, esercizio e cure veterinarie che puoi garantire nel lungo periodo. Razza e taglia da sole non determinano l’adeguatezza: chiedi al rifugio informazioni sul singolo cane, sul suo comportamento osservato e sulle sue esigenze. Cani di razza e meticci possono essere adottati da rifugi e associazioni."
+  },
+  {
+    "id": "dog-selection-en",
+    "title": "Choosing a dog that fits your life",
+    "organization": "American Veterinary Medical Association",
+    "url": "https://avma.org/resources/pet-owners/petcare/selecting-pet-dog",
+    "verified_at": "2026-11-02",
+    "locale": "en",
+    "topic": "adoption",
+    "species": [
+      "dog"
+    ],
+    "review_interval_days": 365,
+    "keywords": "adoption dog breed size family home lifestyle exercise time experience needs",
+    "text": "Choosing a dog should take into account your family, home, lifestyle, time, exercise, and the veterinary care you can provide long term. Breed and size alone do not determine fit: ask the shelter about the individual dog, observed behaviour, and needs. Both purebred and mixed-breed dogs can be adopted from shelters and rescue groups."
+  },
+  {
+    "id": "breed-standards-it",
+    "title": "Razze canine e standard ufficiali FCI/ENCI",
+    "organization": "ENCI - Ente Nazionale della Cinofilia Italiana",
+    "url": "https://www.enci.it/documenti-e-pubblicazioni/standard-razze-e-commenti",
+    "verified_at": "2026-11-02",
+    "locale": "it",
+    "topic": "breed_reference",
+    "species": [
+      "dog"
+    ],
+    "review_interval_days": 180,
+    "keywords": "razza razze cane cani standard FCI ENCI standard ufficiale elenco razze",
+    "text": "ENCI mette a disposizione gli standard FCI tradotti in italiano quando disponibili. La pagina segnala gli standard in inglese aggiornati recentemente, perche alcune traduzioni italiane possono non essere ancora allineate. Per dettagli aggiornati sulla razza, consulta la pagina ufficiale e la versione piu recente dello standard."
+  },
+  {
+    "id": "breed-standards-en",
+    "title": "Dog breeds and official FCI/ENCI standards",
+    "organization": "ENCI - Italian National Kennel Club",
+    "url": "https://www.enci.it/documenti-e-pubblicazioni/standard-razze-e-commenti",
+    "verified_at": "2026-11-02",
+    "locale": "en",
+    "topic": "breed_reference",
+    "species": [
+      "dog"
+    ],
+    "review_interval_days": 180,
+    "keywords": "breed breeds dog dogs official standard FCI ENCI list",
+    "text": "ENCI provides Italian translations of FCI breed standards where available. Its page flags standards recently updated in English because Italian translations may not yet match. For current breed-standard details, consult the official page and the latest version of the standard."
+  },
+  {
+    "id": "lily-cat-it",
+    "locale": "it",
+    "topic": "emergency",
+    "species": [
+      "cat"
+    ],
+    "title": "Gigli e rischio di ingestione nei gatti",
+    "organization": "ASPCA Animal Poison Control",
+    "url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/lily",
+    "verified_at": "2026-11-03",
+    "review_interval_days": 365,
+    "keywords": "giglio gigli lily lilies gatto gatti pianta fiore ingestione tossica rischio avvelenamento",
+    "text": "Alcune piante comunemente chiamate gigli sono tossiche per i gatti. Se un gatto potrebbe averne ingerito una parte, contatta appena possibile il veterinario o un centro antiveleni veterinario. Fornisci il nome della pianta, la quantità presunta e l'orario; non aspettare che compaiano sintomi."
+  },
+  {
+    "id": "lily-cat-en",
+    "locale": "en",
+    "topic": "emergency",
+    "species": [
+      "cat"
+    ],
+    "title": "Lilies and ingestion risk in cats",
+    "organization": "ASPCA Animal Poison Control",
+    "url": "https://www.aspca.org/pet-care/aspca-poison-control/toxic-and-non-toxic-plants/lily",
+    "verified_at": "2026-11-03",
+    "review_interval_days": 365,
+    "keywords": "lily lilies cat cats plant flower ingestion toxic risk poisoning",
+    "text": "Some plants commonly called lilies are toxic to cats. If a cat may have ingested any part of one, contact a veterinarian or veterinary poison center as soon as possible. Provide the plant name, estimated amount, and time; do not wait for symptoms."
+  },
+  {
+    "id": "pain-relief-it",
+    "locale": "it",
+    "topic": "emergency",
+    "species": [
+      "dog",
+      "cat"
+    ],
+    "title": "Farmaci antidolorifici umani e animali domestici",
+    "organization": "ASPCA Animal Poison Control",
+    "url": "https://www.aspca.org/news/what-pet-toxins-are-hiding-in-your-diaper-bag",
+    "verified_at": "2026-11-03",
+    "review_interval_days": 365,
+    "keywords": "paracetamolo acetaminofene tylenol ibuprofene aspirina farmaco pillola analgesico umano cane gatto ingestione",
+    "text": "Gli antidolorifici per uso umano, tra cui paracetamolo e ibuprofene, possono essere pericolosi per gli animali; i gatti sono particolarmente sensibili ad alcuni farmaci. Dopo una possibile ingestione, contatta immediatamente il veterinario o un centro antiveleni veterinario e comunica il prodotto, la quantità presunta e l'orario. Non somministrare farmaci o rimedi senza indicazione veterinaria."
+  },
+  {
+    "id": "pain-relief-en",
+    "locale": "en",
+    "topic": "emergency",
+    "species": [
+      "dog",
+      "cat"
+    ],
+    "title": "Human pain relievers and pets",
+    "organization": "ASPCA Animal Poison Control",
+    "url": "https://www.aspca.org/news/what-pet-toxins-are-hiding-in-your-diaper-bag",
+    "verified_at": "2026-11-03",
+    "review_interval_days": 365,
+    "keywords": "acetaminophen paracetamol tylenol ibuprofen aspirin medication pill human pain reliever dog cat ingestion",
+    "text": "Human pain relievers, including acetaminophen and ibuprofen, can be dangerous to pets; cats are especially sensitive to some medicines. After a possible ingestion, contact a veterinarian or veterinary poison center immediately and share the product, estimated amount, and time. Do not give medicines or remedies unless a veterinarian directs you."
+  }
+]

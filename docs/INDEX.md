@@ -2,9 +2,11 @@
 
 **Purpose of this file:** the documentation set is ~42,000 words. This index exists so you do not have to read it. It carries the product in one paragraph, a routing table from question to document, every normative constant in one place, and the hard rules that must never be broken. Read the full document only when you are about to build the thing it describes.
 
-## Implementation status — 8 October 2026
+## Implementation status — 9 October 2026
 
-This index and the documents below specify the **target product**; they are not a checklist of features already delivered. The repository currently has a Django + Streamlit MVP and a parallel Next.js + Prisma release. The Next.js release has a database foundation and an Italian public catalogue with text, species, and size filters and pagination. Its shelter animal creation and publishing flow is still planned. The FastAPI ML service is present but its model is not configured for live predictions.
+Implementation checkpoint: 9 October 2026. The Next.js release includes shelter application and admin review, animal drafts with photo upload/publication validation, a private ML API with a labelled mock, and automatic Italian/English display translation.
+
+This index and the documents below specify the **target product**; they are not a checklist of features already delivered. The repository has a Django + Streamlit MVP and a parallel Next.js + Prisma release. Next.js has a public catalogue, shelter onboarding/review, shelter authoring, and Italian/English automatic translation. FastAPI's Cox artifact is excluded due to target leakage; the authenticated service currently returns a visibly labelled mock, not a validated model.
 
 For the component-by-component status, see the [operational roadmap](../ROADMAP-OPERATIVA.md). For the latest branch and commit checkpoint, see [STATE.md](../STATE.md).
 
@@ -27,7 +29,7 @@ For the component-by-component status, see the [operational roadmap](../ROADMAP-
 | Why the stack is what it is | [02](./02-architecture.md) | §2, incl. rejected alternatives |
 | Where files live in the repo | [02](./02-architecture.md) | §3 |
 | How tenancy is enforced | [02](./02-architecture.md) | §4–5 |
-| i18n mechanics | [02](./02-architecture.md) | §6 |
+| Automatic translation mechanics | [02](./02-architecture.md) | §6 |
 | Photo/video handling | [02](./02-architecture.md) | §7 |
 | Distance search SQL | [02](./02-architecture.md) | §8 |
 | Env vars and dev fallbacks | [02](./02-architecture.md) | §10 |
@@ -46,6 +48,7 @@ For the component-by-component status, see the [operational roadmap](../ROADMAP-
 | How to actually train (Colab) | [11](./11-training-workflow.md) | §2 notebook sequence |
 | Reproducibility requirements | [11](./11-training-workflow.md) | §4 |
 | **Which model to build, and why** | [12](./12-modelling-approaches.md) | **§3 survival recommendation, §7 summary** |
+| Current model validation and reconstruction | [13](./13-ml-validation-and-reconstruction.md) | Leakage findings, blockers, and release gate |
 | Why not fine-tune an LLM | [12](./12-modelling-approaches.md) | §5 |
 | Adapting the model to Italian data | [12](./12-modelling-approaches.md) | §6 |
 | Modelling ideas already rejected | [12](./12-modelling-approaches.md) | §8 |

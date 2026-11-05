@@ -10,6 +10,8 @@ from apps.core.models import Animal, AnimalEnergy, AnimalImage, AnimalSize, Anim
 from apps.users.models import ShelterProfile
 
 User = get_user_model()
+DEMO_SHELTER_USERNAME = 'rifugio_esperanza'
+DEMO_SHELTER_PASSWORD = 'DemoRifugio123!'
 
 SHELTERS = (
     ('rifugio_esperanza', 'Torino', 'TO', '10121', 'RESCUE', 'Piemonte'),
@@ -64,7 +66,7 @@ STOCK_IMAGES = {
 
 
 class Command(BaseCommand):
-    help = 'Crea un catalogo demo locale, senza credenziali di accesso predefinite.'
+    help = 'Crea un catalogo demo locale e un account rifugio di test.'
 
     def handle(self, *args, **options):
         if not settings.DEBUG:
@@ -81,7 +83,7 @@ class Command(BaseCommand):
             f'Catalogo demo pronto: {len(shelters)} rifugi approvati, '
             f'{Animal.objects.count()} animali totali, {created_animals} nuovi.'
         ))
-        self.stdout.write('Account demo senza password utilizzabile. Crea un admin locale con createsuperuser.')
+        self.stdout.write(f'Login rifugio demo locale: {DEMO_SHELTER_USERNAME} / {DEMO_SHELTER_PASSWORD}')
 
     def _seed_breeds(self):
         breeds = {}
@@ -107,7 +109,10 @@ class Command(BaseCommand):
                 'gdpr_consent_date': timezone.now(),
             },
         )
-        if created or user.has_usable_password():
+        if username == DEMO_SHELTER_USERNAME:
+            user.set_password(DEMO_SHELTER_PASSWORD)
+            user.save(update_fields=('password',))
+        elif created or user.has_usable_password():
             user.set_unusable_password()
             user.save(update_fields=('password',))
         if user.role != User.Role.SHELTER:
