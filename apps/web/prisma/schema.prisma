@@ -152,6 +152,25 @@ enum AnimalUnavailableReason {
   @@map("animal_unavailable_reason")
 }
 
+enum AdoptionApplicationStatus {
+  submitted
+  in_review
+  home_visit
+  approved
+  rejected
+  withdrawn
+
+  @@map("adoption_application_status")
+}
+
+enum HomeVisitOutcome {
+  pending
+  passed
+  failed
+
+  @@map("home_visit_outcome")
+}
+
 enum AnimalMediaKind {
   photo
   video
@@ -230,25 +249,26 @@ model Comune {
 }
 
 model User {
-  id                 String              @id @db.Char(26)
-  email              String              @unique(map: "uq_users_email") @db.VarChar(255)
-  emailVerifiedAt    DateTime?           @map("email_verified_at") @db.DateTime(3)
-  passwordHash       String?             @map("password_hash") @db.VarChar(255)
-  fullName           String              @map("full_name") @db.VarChar(160)
-  phone              String?             @db.VarChar(32)
-  locale             UserLocale          @default(it)
-  role               UserRole            @default(adopter)
-  status             UserStatus          @default(active)
-  marketingOptIn     Boolean             @default(false) @map("marketing_opt_in")
-  lastLoginAt        DateTime?           @map("last_login_at") @db.DateTime(3)
-  createdAt          DateTime            @default(now()) @map("created_at") @db.DateTime(3)
-  updatedAt          DateTime            @default(now()) @updatedAt @map("updated_at") @db.DateTime(3)
-  deletedAt          DateTime?           @map("deleted_at") @db.DateTime(3)
-  memberships        ShelterMember[]
-  adopterProfile     AdopterProfile?
-  sessions           Session[]
-  verificationTokens VerificationToken[]
-  notifications      Notification[]
+  id                   String                @id @db.Char(26)
+  email                String                @unique(map: "uq_users_email") @db.VarChar(255)
+  emailVerifiedAt      DateTime?             @map("email_verified_at") @db.DateTime(3)
+  passwordHash         String?               @map("password_hash") @db.VarChar(255)
+  fullName             String                @map("full_name") @db.VarChar(160)
+  phone                String?               @db.VarChar(32)
+  locale               UserLocale            @default(it)
+  role                 UserRole              @default(adopter)
+  status               UserStatus            @default(active)
+  marketingOptIn       Boolean               @default(false) @map("marketing_opt_in")
+  lastLoginAt          DateTime?             @map("last_login_at") @db.DateTime(3)
+  createdAt            DateTime              @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt            DateTime              @default(now()) @updatedAt @map("updated_at") @db.DateTime(3)
+  deletedAt            DateTime?             @map("deleted_at") @db.DateTime(3)
+  memberships          ShelterMember[]
+  adopterProfile       AdopterProfile?
+  sessions             Session[]
+  verificationTokens   VerificationToken[]
+  notifications        Notification[]
+  adoptionApplications AdoptionApplication[]
 
   @@index([role, status], map: "idx_users_role_status")
   @@map("users")
@@ -359,6 +379,7 @@ model Animal {
   matchResults          MatchResult[]
   favorites             Favorite[]
   predictions           AnimalPrediction[]
+  adoptionApplications  AdoptionApplication[]
 
   @@index([shelterId, status], map: "idx_animals_shelter_status")
   @@index([status, species, publishedAt], map: "idx_animals_public")
@@ -393,17 +414,17 @@ model AnimalMedia {
 }
 
 model AnimalPrediction {
-  id                    String   @id @db.Char(26)
-  animalId              String   @map("animal_id") @db.Char(26)
-  modelVersion          String   @map("model_version") @db.VarChar(80)
-  mode                  String   @db.VarChar(20)
-  predictedAt           DateTime @default(now()) @map("predicted_at") @db.DateTime(3)
-  adoptionProbability   Float    @map("adoption_probability")
-  estimatedDaysIfAdopted Float?  @map("estimated_days_if_adopted")
-  bucketProbabilities  Json     @map("bucket_probabilities")
-  topFactors            Json     @map("top_factors")
-  dataCompleteness      Float    @map("data_completeness")
-  animal                Animal   @relation(fields: [animalId], references: [id], onDelete: Cascade)
+  id                     String   @id @db.Char(26)
+  animalId               String   @map("animal_id") @db.Char(26)
+  modelVersion           String   @map("model_version") @db.VarChar(80)
+  mode                   String   @db.VarChar(20)
+  predictedAt            DateTime @default(now()) @map("predicted_at") @db.DateTime(3)
+  adoptionProbability    Float    @map("adoption_probability")
+  estimatedDaysIfAdopted Float?   @map("estimated_days_if_adopted")
+  bucketProbabilities    Json     @map("bucket_probabilities")
+  topFactors             Json     @map("top_factors")
+  dataCompleteness       Float    @map("data_completeness")
+  animal                 Animal   @relation(fields: [animalId], references: [id], onDelete: Cascade)
 
   @@index([animalId, predictedAt], map: "idx_prediction_animal_date")
   @@map("animal_predictions")
@@ -515,6 +536,39 @@ model Favorite {
   @@unique([profileId, animalId], map: "uq_favorite")
   @@index([animalId], map: "idx_favorite_animal")
   @@map("favorites")
+}
+
+model AdoptionApplication {
+  id                String                    @id @db.Char(26)
+  adopterId         String                    @map("adopter_id") @db.Char(26)
+  animalId          String                    @map("animal_id") @db.Char(26)
+  status            AdoptionApplicationStatus @default(submitted)
+  motivationalNotes String                    @map("motivational_notes") @db.Text
+  shelterNotes      String?                   @map("shelter_notes") @db.Text
+  submittedAt       DateTime                  @default(now()) @map("submitted_at") @db.DateTime(3)
+  updatedAt         DateTime                  @default(now()) @updatedAt @map("updated_at") @db.DateTime(3)
+  adopter           User                      @relation(fields: [adopterId], references: [id], onDelete: Cascade)
+  animal            Animal                    @relation(fields: [animalId], references: [id], onDelete: Cascade)
+  homeVisit         HomeVisit?
+
+  @@unique([adopterId, animalId], map: "uq_application_adopter_animal")
+  @@index([animalId, status, submittedAt], map: "idx_application_animal_status")
+  @@index([adopterId, submittedAt], map: "idx_application_adopter_date")
+  @@map("adoption_applications")
+}
+
+model HomeVisit {
+  id            String              @id @db.Char(26)
+  applicationId String              @unique(map: "uq_home_visit_application") @map("application_id") @db.Char(26)
+  evaluatorName String              @map("evaluator_name") @db.VarChar(150)
+  scheduledAt   DateTime            @map("scheduled_at") @db.DateTime(3)
+  outcome       HomeVisitOutcome    @default(pending)
+  reportNotes   String              @default("") @map("report_notes") @db.Text
+  createdAt     DateTime            @default(now()) @map("created_at") @db.DateTime(3)
+  updatedAt     DateTime            @default(now()) @updatedAt @map("updated_at") @db.DateTime(3)
+  application   AdoptionApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@map("home_visits")
 }
 
 model Session {

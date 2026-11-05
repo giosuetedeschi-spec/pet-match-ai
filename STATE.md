@@ -1,5 +1,17 @@
 # PetMatch AI — Operational State
 
+## Work in progress checkpoint — 2026-11-05
+
+The current working tree contains uncommitted changes from the requested audit fixes. Streamlit and Next.js remain separate demos with separate MySQL databases by user decision. The existing local `manage.py` edit predates this work and was not changed.
+
+- Django recommendations now exclude unverified shelters and validate `limit`; adoption applications also reject animals from unverified shelters. Focused Django tests passed before the final-verification stop request.
+- The shared assistant rejects unsupported generated adoption claims unless they exactly reproduce a complete cited source sentence. Web and Streamlit catalog query parsing now handles households without children and city phrases such as `Torino compatibile`. The web catalog answer has a distinct label; Streamlit avoids repeating cited answer text and can open returned animal profiles.
+- Streamlit now builds and loads the synthetic dog-pair return-risk joblib model in a dedicated Docker target. The public matching tab shows its experimental return-risk indicator separately from deterministic compatibility. The Streamlit demo now includes adopter registration/login, adoption applications/status/visits, and shelter application/visit management using the existing Django API. The shelter dashboard displays summary counts.
+- The Next.js demo has an additive Prisma migration and adopter/shelter application and visit flows. The schema validated, TypeScript typecheck passed, and 27 Bun tests passed before the final-verification stop request. All six Prisma migrations, including the new one, applied to an isolated MySQL database.
+- A bounded live-commerce connector reads current online Product/Offer data from public L'Isola dei Tesori pages. It returns price, online availability, official link, and fetch timestamp, and abstains for unverified local-store stock. One live Special Dog lookup succeeded. The final query-normalization, timeout, UI, and documentation edits were not retested after the user's stop request. Arcaplanet product data was observed but its search integration was not completed.
+- The user requested that final tests be skipped. The isolated Docker MySQL and Mailpit containers were stopped without removing volumes. A Django Docker build was interrupted before completion. Full Compose/browser end-to-end flows, live provider generation, and final UI verification remain outstanding. The current branch should not be described as fully verified or bug-free.
+- `graphify update .` was attempted but failed because `apps/matching/tests/tmpz9pav9gu/`, a directory created by a failed temporary-file test, denies enumeration on Windows. It was not removed. `git status` also warns about that path.
+
 Updated: 2026-11-03
 Branch: `chore/clean-modules-types-docs`; audit pushed as `bc1775d` (implementation `adef1ff`)
 Working tree: separate local `manage.py` demo-login comment remains uncommitted

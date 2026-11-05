@@ -38,6 +38,7 @@ export default async function ShelterAnimalsPage() {
       <h1>I tuoi animali</h1>
       <p className="intro">Crea le schede e pubblicale quando tutti i requisiti sono completi.</p>
       <a className="button" href="/it/rifugio/animali/nuovo">Aggiungi un animale</a>
+      <a className="button secondary" href="/it/rifugio/candidature">Candidature ricevute</a>
       <a className="button secondary" href="/it/rifugio/triage">Apri triage ML</a>
     </header>
     {animals.length ? <section className="animal-grid" aria-label="Schede animali">

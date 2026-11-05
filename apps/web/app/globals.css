@@ -116,6 +116,14 @@ h1 { max-width: 700px; margin: 1rem 0; font-size: clamp(2.5rem, 8vw, 5rem); line
 .animal-profile-card { padding: 1.5rem; border: 1px solid #e9e4da; border-radius: 1rem; background: white; line-height: 1.6; }
 .animal-story-full { white-space: pre-wrap; }
 .animal-profile-card .button { border: 0; cursor: pointer; font: inherit; }
+.animal-application, .application-card { margin: 1.25rem 0; padding: 1.5rem; border: 1px solid #e9e4da; border-radius: 1rem; background: white; line-height: 1.6; }
+.animal-application h2, .application-card h2 { margin-top: 0; }
+.animal-application form, .application-card { display: grid; gap: .8rem; }
+.animal-application textarea, .application-card input, .application-card select { width: 100%; padding: .7rem; border: 1px solid #cfc8bb; border-radius: .5rem; font: inherit; }
+.application-list { display: grid; gap: 1rem; }
+.application-card .eyebrow { margin: 0; }
+.visit-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.animal-application button:disabled { opacity: .6; cursor: wait; }
 .animal-card h2 a { text-decoration: none; }
 .animal-card h2 a:hover, .animal-card h2 a:focus-visible { text-decoration: underline; }
 .notification-list { display: grid; gap: 1rem; }

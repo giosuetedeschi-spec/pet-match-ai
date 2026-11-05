@@ -21,6 +21,10 @@ class MatchResultSerializer(serializers.ModelSerializer):
         )
 
 
+class RecommendationsQuerySerializer(serializers.Serializer):
+    limit = serializers.IntegerField(required=False, default=10, min_value=1, max_value=100)
+
+
 class AdopterRecommendationsAPIView(views.APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
@@ -31,8 +35,12 @@ class AdopterRecommendationsAPIView(views.APIView):
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        limit = int(request.query_params.get('limit', 10))
-        top_matches = MatchingService.get_top_matches_for_adopter(request.user, limit=limit)
+        query_serializer = RecommendationsQuerySerializer(data=request.query_params)
+        query_serializer.is_valid(raise_exception=True)
+        top_matches = MatchingService.get_top_matches_for_adopter(
+            request.user,
+            limit=query_serializer.validated_data['limit'],
+        )
         serializer = MatchResultSerializer(top_matches, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)

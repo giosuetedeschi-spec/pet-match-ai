@@ -46,9 +46,13 @@ jobs:
           python manage.py test
           apps.users.tests.test_auth_api
           apps.core.tests.test_shelter_api
+          apps.core.tests.test_adoption_api
           apps.matching.tests.test_services
           apps.matching.tests.test_api
           --verbosity 2
+
+      - name: Test Streamlit experimental matching model
+        run: python -m unittest apps.matching.tests.test_streamlit_matching_ml -v
 
       - name: Prepare isolated SQLite database
         run: python manage.py migrate --noinput
@@ -136,6 +140,12 @@ jobs:
           params, filters = assistant_catalog_filters("Find me a cat in Turin good with kids")
           assert params == {"species": "CAT", "good_with_children": "true", "city": "Turin"}, params
           assert filters == {"species": "cat", "good_with_children": True, "city": "Turin"}, filters
+          params, filters = assistant_catalog_filters("Cerco un cane per una famiglia senza bambini")
+          assert params == {"species": "DOG"}, params
+          assert filters == {"species": "dog"}, filters
+          params, filters = assistant_catalog_filters("Cerco un cane a Torino compatibile con bambini")
+          assert params == {"species": "DOG", "good_with_children": "true", "city": "Torino"}, params
+          assert filters == {"species": "dog", "good_with_children": True, "city": "Torino"}, filters
 
           app = AppTest.from_file("streamlit_app.py", default_timeout=30).run()
           if app.exception:

@@ -3,7 +3,7 @@ import numpy as np
 from django.utils import timezone
 
 from apps.users.models import User, AdopterProfile
-from apps.core.models import Animal, AnimalEnergy, Species
+from apps.core.models import Animal, AnimalEnergy, AnimalStatus
 from apps.matching.models import MatchResult
 
 
@@ -173,7 +173,10 @@ class MatchingService:
         """
         Ricalcola (se necessario) ed estrae i migliori animali per l'adottante ordinati per punteggio.
         """
-        available_animals = Animal.objects.filter(status='AVAILABLE')
+        available_animals = Animal.objects.filter(
+            status=AnimalStatus.AVAILABLE,
+            shelter__is_verified=True,
+        )
         results = []
 
         for animal in available_animals:

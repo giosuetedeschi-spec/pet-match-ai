@@ -100,6 +100,57 @@ class MatchingAPITestCase(APITestCase):
         self.assertIn('overall_score', response.data[0])
         self.assertIn('score_breakdown', response.data[0])
 
+    def test_recommendations_exclude_available_animals_from_unverified_shelters(self):
+        unverified_user = User.objects.create_user(
+            username="unverified_shelter",
+            email="unverified@test.com",
+            password="Password123!",
+            role=User.Role.SHELTER,
+            gdpr_consent=True,
+        )
+        unverified_shelter = ShelterProfile.objects.create(
+            user=unverified_user,
+            shelter_name="Rifugio non verificato",
+            tax_code_vat="12345678902",
+            official_email="unverified@test.com",
+            is_verified=False,
+        )
+        unverified_animal = Animal.objects.create(
+            shelter=unverified_shelter,
+            name="Luna non verificata",
+            species=Species.DOG,
+            breed=self.breed,
+            age_years=2,
+            size=AnimalSize.MEDIUM,
+            energy_level=AnimalEnergy.MEDIUM,
+            date_entry_shelter="2026-01-01",
+            status=AnimalStatus.AVAILABLE,
+        )
+        self.client.force_authenticate(user=self.adopter)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual([item['animal_name'] for item in response.data], ["Rocky"])
+        from apps.matching.models import MatchResult
+        self.assertFalse(MatchResult.objects.filter(adopter=self.adopter, animal=unverified_animal).exists())
+
+    def test_recommendations_reject_invalid_limits(self):
+        self.client.force_authenticate(user=self.adopter)
+
+        for limit in ("invalid", "-1", "101", "999999999999999999999999"):
+            with self.subTest(limit=limit):
+                response = self.client.get(self.url, {"limit": limit})
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_recommendations_accept_limit_within_safe_range(self):
+        self.client.force_authenticate(user=self.adopter)
+
+        response = self.client.get(self.url, {"limit": "1"})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertLessEqual(len(response.data), 1)
+
     def test_preview_only_penalizes_pets_of_the_matching_species(self):
         self.animal.good_with_dogs = True
         self.animal.good_with_cats = False

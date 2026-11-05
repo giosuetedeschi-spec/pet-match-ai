@@ -118,12 +118,14 @@ services:
     build:
       context: .
       dockerfile: Containerfile
+      target: streamlit
     restart: unless-stopped
     command: ["streamlit", "run", "streamlit_app.py", "--server.address=0.0.0.0", "--server.port=8501"]
     environment:
       PET_MATCH_API_URL: http://django:8000
       ML_SERVICE_URL: http://ml:8001
       ML_SERVICE_TOKEN: ${ML_SERVICE_TOKEN:-local-development-token}
+      ML_MODEL_DIR: /app/models
       CHAT_SERVICE_URL: http://assistant:8002
       CHAT_SERVICE_TOKEN: ${CHAT_SERVICE_TOKEN:-local-chat-token}
     depends_on:

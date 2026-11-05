@@ -395,7 +395,7 @@ class AdoptionApplicationCreateAPIView(APIView):
         animal = get_object_or_404(Animal, id=animal_id)
 
         # 1. Verifica disponibilità dell'animale
-        if animal.status != AnimalStatus.AVAILABLE:
+        if animal.status != AnimalStatus.AVAILABLE or not animal.shelter.is_verified:
             return Response(
                 {"detail": "Questo animale non è al momento disponibile per l'adozione."},
                 status=status.HTTP_400_BAD_REQUEST
